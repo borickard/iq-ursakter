@@ -15,11 +15,21 @@ export const dynamic = "force-dynamic";
  * även mindre använda ursäkter dyker upp.
  */
 export async function GET() {
-  const excuses = await prisma.excuse.findMany({
-    where: { status: "approved" },
-    select: { id: true, text: true, sentCount: true },
-    orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
-  });
+  try {
+    const excuses = await prisma.excuse.findMany({
+      where: { status: "approved" },
+      select: { id: true, text: true, sentCount: true },
+      orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
+    });
 
-  return NextResponse.json({ excuses });
+    return NextResponse.json({ excuses });
+  } catch (e) {
+    // TEMPORARY diagnostic – returns the real DB error so we can debug the
+    // 500 on Vercel. Remove once the connection works.
+    return NextResponse.json({
+      _debug: true,
+      name: e instanceof Error ? e.name : "Unknown",
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
 }
