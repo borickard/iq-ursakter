@@ -44,16 +44,15 @@ src/
   app/
     page.tsx            # renderar flödet
     layout.tsx
-    admin/page.tsx      # moderering: lista pending, godkänn/avslå
+    admin/page.tsx      # hantera ursäkter: på/av, antal, lägg till/ta bort, moderera
     api/
       excuses/route.ts  # GET – godkända ursäkter, mest skickade först + sentCount
       send/route.ts     # POST – validerar, rate-limitar, skickar SMS
       suggest/route.ts  # POST – tar emot förslag (pending), skickar ALDRIG SMS
       admin/
-        pending/route.ts   # GET – förslag som väntar på moderering
-        moderate/route.ts  # POST – approve/reject
+        excuses/route.ts # GET alla | POST skapa | PATCH status | DELETE
   components/
-    Flow.tsx            # hela klient-flödet (steg för steg, inkl. föreslå egen)
+    Flow.tsx            # klient-flöde: landning → skapa (live-förhandsvisning) → klart
     ui.tsx              # knappar/kort
   lib/
     sms/                # interface + dummy/46elks-leverantörer
@@ -183,13 +182,13 @@ Tas på allvar redan i Fas 1 (det går inte att bolta på efteråt):
 
 ## Datamodell
 
-`Excuse`: `id`, `text`, `source` (`seed` | `user`), `status`
-(`approved` | `pending` | `rejected`), `sentCount`, `createdAt`.
+`Excuse`: `id`, `text`, `source` (`seed` | `user` | `admin`), `status`
+(`approved` | `pending` | `rejected` | `disabled`), `sentCount`, `createdAt`.
 
-`sentCount` räknas upp vid varje sändning och driver Fas 2:s
-popularitetssortering och räknaren i flödet. Statusfältet driver
-modereringskön: `pending`/`rejected` visas aldrig för andra, bara `approved`
-hamnar i den publika poolen.
+`sentCount` räknas upp vid varje sändning och driver popularitetssorteringen och
+räknaren i flödet. Statusfältet styr synligheten: bara `approved` visas/skickas.
+`pending`/`rejected` är modereringskön, och `disabled` är en ursäkt som admin
+slagit av (dold men inte borttagen).
 
 ## Fas 2 (byggt)
 
@@ -203,9 +202,11 @@ hamnar i den publika poolen.
   systemet som SMS, vilket stänger den värsta missbruks-/GDPR-vektorn och låter
   OTP fortsatt vara uppskjutet.)
 - **Admin-vy (`/admin`).** Lösenordsskyddad (HTTP Basic Auth via
-  `src/middleware.ts`, med `ADMIN_USER`/`ADMIN_PASSWORD`). Listar väntande
-  förslag och låter oss `Godkänn` (→ `approved`, läggs i den publika poolen)
-  eller `Avslå` (→ `rejected`).
+  `src/middleware.ts`, med `ADMIN_USER`/`ADMIN_PASSWORD`). En samlad
+  hanteringsvy via `/api/admin/excuses` (GET alla | POST skapa | PATCH status |
+  DELETE): moderera väntande förslag (Godkänn/Avslå), slå på/av valfri ursäkt
+  (`approved`↔`disabled`), se hur många gånger varje ursäkt använts, lägga till
+  nya och ta bort.
 
 ### Admin
 

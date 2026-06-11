@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { downloadVCard } from "@/lib/vcard";
 import { normalizeToE164 } from "@/lib/phone";
-import { Button, Card, Chip } from "@/components/ui";
+import { Button, Chip } from "@/components/ui";
 
-type Step = "landing" | "details" | "vcard" | "browse" | "result" | "suggest";
+type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = { id: string; text: string; sentCount: number };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
@@ -17,55 +17,27 @@ export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
   const [phone, setPhone] = useState("");
   const [sender, setSender] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
-
-  function goDetails() {
-    setStep("details");
-  }
-
-  function submitDetails() {
-    if (!normalizeToE164(phone)) {
-      setFormError(COPY.details.invalidPhone);
-      return;
-    }
-    if (!sender.trim()) {
-      setFormError(COPY.details.missingSender);
-      return;
-    }
-    setFormError(null);
-    setStep("vcard");
-  }
 
   return (
     <main className="flex flex-1 flex-col py-6">
-      {step === "landing" && <Landing onStart={goDetails} />}
+      {step === "landing" && <Landing onStart={() => setStep("compose")} />}
 
-      {step === "details" && (
-        <Details
+      {step === "compose" && (
+        <Compose
           phone={phone}
           sender={sender}
-          error={formError}
           onPhone={setPhone}
           onSender={setSender}
           onBack={() => setStep("landing")}
-          onNext={submitDetails}
-        />
-      )}
-
-      {step === "vcard" && (
-        <VCardStep
-          sender={sender}
-          onBack={() => setStep("details")}
-          onContinue={() => setStep("browse")}
-        />
-      )}
-
-      {(step === "browse" || step === "result") && (
-        <Browse
-          phone={phone}
-          sender={sender}
-          onBack={() => setStep("vcard")}
           onSuggest={() => setStep("suggest")}
+          onSent={() => setStep("result")}
+        />
+      )}
+
+      {step === "result" && (
+        <Result
+          sender={sender}
+          onAgain={() => setStep("compose")}
           onRestart={() => {
             setPhone("");
             setSender("");
@@ -74,7 +46,7 @@ export default function Flow() {
         />
       )}
 
-      {step === "suggest" && <Suggest onBack={() => setStep("browse")} />}
+      {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
       <Footer />
     </main>
@@ -123,145 +95,30 @@ function Landing({ onStart }: { onStart: () => void }) {
   );
 }
 
-/* ── Steg: uppgifter ────────────────────────────────────────────────────── */
+/* ── Steg: skapa (uppgifter + live-förhandsvisning + skicka) ─────────────── */
 
-function Details({
+function Compose({
   phone,
   sender,
-  error,
   onPhone,
   onSender,
   onBack,
-  onNext,
+  onSuggest,
+  onSent,
 }: {
   phone: string;
   sender: string;
-  error: string | null;
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
   onBack: () => void;
-  onNext: () => void;
-}) {
-  const presets: readonly string[] = COPY.details.senderPresets;
-
-  return (
-    <div className="flex flex-1 flex-col gap-6">
-      <Header title={COPY.details.title} onBack={onBack} />
-
-      <div className="space-y-2">
-        <label htmlFor="phone" className="block text-sm font-medium">
-          {COPY.details.phoneLabel}
-        </label>
-        <input
-          id="phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder={COPY.details.phonePlaceholder}
-          value={phone}
-          onChange={(e) => onPhone(e.target.value)}
-          className="w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
-        />
-        <p className="text-xs text-muted">{COPY.details.phoneHelp}</p>
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">
-          {COPY.details.senderLabel}
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {presets.map((name) => (
-            <Chip
-              key={name}
-              active={sender === name}
-              onClick={() => onSender(name)}
-            >
-              {name}
-            </Chip>
-          ))}
-        </div>
-        <input
-          type="text"
-          placeholder={COPY.details.senderPlaceholder}
-          value={presets.includes(sender) ? "" : sender}
-          onChange={(e) => onSender(e.target.value)}
-          className="mt-1 w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
-        />
-      </div>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
-
-      <div className="mt-auto pt-4">
-        <Button block onClick={onNext}>
-          {COPY.details.next}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Steg: kontaktkort (vCard) ──────────────────────────────────────────── */
-
-function VCardStep({
-  sender,
-  onBack,
-  onContinue,
-}: {
-  sender: string;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
-  return (
-    <div className="flex flex-1 flex-col gap-6">
-      <Header title={COPY.vcard.title} onBack={onBack} />
-
-      <Card className="space-y-4">
-        <p className="text-sm leading-relaxed text-muted">
-          {fill(COPY.vcard.explainer, { name: sender })}
-        </p>
-
-        <Button
-          block
-          variant="secondary"
-          onClick={() => downloadVCard(sender, SENDER_NUMBER)}
-        >
-          ⬇ {COPY.vcard.download}
-        </Button>
-
-        <p className="text-xs text-muted">{COPY.vcard.micro}</p>
-      </Card>
-
-      <div className="mt-auto space-y-3 pt-4">
-        <Button block onClick={onContinue}>
-          {COPY.vcard.done}
-        </Button>
-        <Button block variant="ghost" onClick={onContinue}>
-          {COPY.vcard.skip}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Steg: bläddra + skicka + resultat ──────────────────────────────────── */
-
-function Browse({
-  phone,
-  sender,
-  onBack,
-  onSuggest,
-  onRestart,
-}: {
-  phone: string;
-  sender: string;
-  onBack: () => void;
   onSuggest: () => void;
-  onRestart: () => void;
+  onSent: () => void;
 }) {
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [index, setIndex] = useState(0);
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<"success" | SendError | null>(null);
+  const [error, setError] = useState<SendError | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -278,20 +135,29 @@ function Browse({
     };
   }, []);
 
-  const current = excuses && excuses.length > 0 ? excuses[index % excuses.length] : null;
+  const current =
+    excuses && excuses.length > 0 ? excuses[index % excuses.length] : null;
 
-  const next = useCallback(() => {
-    setIndex((i) => i + 1);
-  }, []);
+  const next = useCallback(() => setIndex((i) => i + 1), []);
+  const shuffle = useCallback(() => setIndex(() => Math.floor(Math.random() * 100000)), []);
 
-  const shuffle = useCallback(() => {
-    setIndex(() => Math.floor(Math.random() * 100000));
-  }, []);
+  const presets: readonly string[] = COPY.details.senderPresets;
+  const contactName = sender.trim() || COPY.compose.senderFallback;
 
   async function send() {
+    if (!normalizeToE164(phone)) {
+      setFormError(COPY.details.invalidPhone);
+      return;
+    }
+    if (!sender.trim()) {
+      setFormError(COPY.details.missingSender);
+      return;
+    }
     if (!current) return;
+
+    setFormError(null);
+    setError(null);
     setSending(true);
-    setResult(null);
     try {
       const res = await fetch("/api/send", {
         method: "POST",
@@ -299,77 +165,110 @@ function Browse({
         body: JSON.stringify({ phone, excuseId: current.id }),
       });
       if (res.ok) {
-        setResult("success");
+        onSent();
       } else {
         const data = await res.json().catch(() => ({}));
         const err = (data?.error ?? "unknown") as string;
-        setResult((err in COPY.result.errors ? err : "unknown") as SendError);
+        setError((err in COPY.result.errors ? err : "unknown") as SendError);
       }
     } catch {
-      setResult("send_failed");
+      setError("send_failed");
     } finally {
       setSending(false);
     }
   }
 
-  if (result === "success") {
-    return (
-      <Result
-        ok
-        sender={sender}
-        onAgain={() => {
-          setResult(null);
-          next();
-        }}
-        onRestart={onRestart}
-      />
-    );
-  }
-
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <Header title={COPY.browse.title} onBack={onBack} />
+    <div className="flex flex-1 flex-col gap-5">
+      <Header title={COPY.compose.title} onBack={onBack} />
 
-      <div className="flex flex-1 flex-col justify-center">
-        {excuses === null ? (
-          <Card className="text-center text-muted">…</Card>
-        ) : current ? (
-          <Card className="min-h-[9rem] items-center justify-center text-center">
-            <p className="flex min-h-[7rem] items-center justify-center text-xl font-semibold leading-snug">
-              “{current.text}”
-            </p>
-            {formatSentCount(current.sentCount) && (
-              <p className="text-xs text-muted">
-                {formatSentCount(current.sentCount)}
-              </p>
-            )}
-          </Card>
-        ) : (
-          <Card className="text-center text-muted">{COPY.browse.empty}</Card>
-        )}
-
-        {result && (
-          <p className="mt-4 text-center text-sm text-danger">
-            {COPY.result.errors[result]}
-          </p>
-        )}
+      {/* Uppgifter */}
+      <div className="space-y-2">
+        <label htmlFor="phone" className="block text-sm font-medium">
+          {COPY.details.phoneLabel}
+        </label>
+        <input
+          id="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder={COPY.details.phonePlaceholder}
+          value={phone}
+          onChange={(e) => onPhone(e.target.value)}
+          className="w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
+        />
       </div>
 
-      {current && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="secondary" onClick={next}>
-              {COPY.browse.next}
-            </Button>
-            <Button variant="secondary" onClick={shuffle}>
-              🎲 {COPY.browse.shuffle}
-            </Button>
-          </div>
-          <Button block onClick={send} disabled={sending}>
-            {sending ? COPY.browse.sending : COPY.browse.send}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">
+          {COPY.details.senderLabel}
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {presets.map((name) => (
+            <Chip key={name} active={sender === name} onClick={() => onSender(name)}>
+              {name}
+            </Chip>
+          ))}
+        </div>
+        <input
+          type="text"
+          placeholder={COPY.details.senderPlaceholder}
+          value={presets.includes(sender) ? "" : sender}
+          onChange={(e) => onSender(e.target.value)}
+          className="mt-1 w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
+        />
+      </div>
+
+      {/* Live-förhandsvisning som iOS-meddelande */}
+      <ChatPreview
+        name={contactName}
+        text={current?.text}
+        sentCount={current?.sentCount}
+        loading={excuses === null}
+        empty={excuses !== null && excuses.length === 0}
+      />
+
+      {/* Bläddra */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button variant="secondary" onClick={next} disabled={!current}>
+          {COPY.browse.next}
+        </Button>
+        <Button variant="secondary" onClick={shuffle} disabled={!current}>
+          🎲 {COPY.browse.shuffle}
+        </Button>
+      </div>
+
+      {(formError || error) && (
+        <p className="text-center text-sm text-danger">
+          {formError ?? COPY.result.errors[error!]}
+        </p>
+      )}
+
+      {/* Skicka */}
+      <Button block onClick={send} disabled={sending || !current}>
+        {sending ? COPY.browse.sending : COPY.browse.send}
+      </Button>
+
+      {/* Sändningsnummer + spara kontakt */}
+      <div className="space-y-2 rounded-3xl border border-border bg-surface p-4 shadow-soft">
+        <p className="text-xs text-muted">{COPY.compose.fromLabel}</p>
+        <div className="flex items-center justify-between gap-3">
+          <span className="select-all font-mono text-sm font-semibold">
+            {SENDER_NUMBER}
+          </span>
+          <Button
+            variant="secondary"
+            onClick={() => downloadVCard(contactName, SENDER_NUMBER)}
+            disabled={!sender.trim()}
+            className="px-4 py-2 text-sm"
+          >
+            ⬇ {COPY.compose.saveContact}
           </Button>
         </div>
-      )}
+        <p className="text-[11px] leading-relaxed text-muted/80">
+          {COPY.compose.fromHelp}
+        </p>
+      </div>
 
       <Button block variant="ghost" onClick={onSuggest} className="text-sm">
         {COPY.browse.suggestLink}
@@ -378,13 +277,64 @@ function Browse({
   );
 }
 
+/* ── iOS-liknande chatt-förhandsvisning ─────────────────────────────────── */
+
+function ChatPreview({
+  name,
+  text,
+  sentCount,
+  loading,
+  empty,
+}: {
+  name: string;
+  text?: string;
+  sentCount?: number;
+  loading: boolean;
+  empty: boolean;
+}) {
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const countLabel = formatSentCount(sentCount ?? 0);
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-soft">
+      {/* Kontakt-header (som i Meddelanden) */}
+      <div className="flex flex-col items-center gap-1.5 border-b border-black/5 bg-[#f7f7f8] px-4 py-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c7c7cc] text-base font-semibold text-white">
+          {initial}
+        </div>
+        <span className="text-[13px] font-semibold text-black/80">{name}</span>
+      </div>
+
+      {/* Meddelanden */}
+      <div className="flex min-h-[8.5rem] flex-col justify-end gap-1 bg-white px-4 py-4">
+        {loading ? (
+          <div className="max-w-[80%] self-start rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] text-black/40">
+            …
+          </div>
+        ) : empty || !text ? (
+          <div className="self-center text-sm text-black/40">{COPY.compose.empty}</div>
+        ) : (
+          <div className="flex flex-col items-start gap-1">
+            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] leading-snug text-black">
+              {text}
+            </div>
+            {countLabel && (
+              <span className="pl-1 text-[11px] text-black/35">{countLabel}</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Steg: resultat ─────────────────────────────────────────────────────── */
+
 function Result({
-  ok,
   sender,
   onAgain,
   onRestart,
 }: {
-  ok: boolean;
   sender: string;
   onAgain: () => void;
   onRestart: () => void;
@@ -392,7 +342,7 @@ function Result({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <div className="text-5xl">{ok ? "📱" : "⚠️"}</div>
+        <div className="text-5xl">📱</div>
         <h1 className="text-2xl font-extrabold">{COPY.result.successTitle}</h1>
         <p className="max-w-xs text-muted">
           {fill(COPY.result.successBody, { name: sender })}

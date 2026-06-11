@@ -86,12 +86,35 @@ export const COPY = {
   },
 
   admin: {
-    title: "Moderering",
-    subtitle: "Inskickade förslag som väntar på granskning.",
-    empty: "Inga förslag väntar just nu. 🎉",
+    title: "Hantera ursäkter",
+    subtitle: "Granska förslag, slå på/av ursäkter, lägg till eller ta bort.",
+    pendingTitle: "Väntar på granskning",
+    poolTitle: "Alla ursäkter",
+    pendingEmpty: "Inga förslag väntar just nu. 🎉",
     approve: "Godkänn",
     reject: "Avslå",
-    loadError: "Kunde inte hämta förslagen. Ladda om sidan.",
+    on: "På",
+    off: "Av",
+    delete: "Ta bort",
+    confirmDelete: "Ta bort den här ursäkten? Det går inte att ångra.",
+    used: "Använd {count} ggr",
+    addTitle: "Lägg till ny ursäkt",
+    addPlaceholder: "Skriv en ny ursäkt …",
+    add: "Lägg till",
+    loadError: "Kunde inte hämta ursäkterna. Ladda om sidan.",
+    sourceUser: "Förslag",
+    sourceAdmin: "Tillagd",
+    sourceSeed: "Standard",
+  },
+
+  compose: {
+    title: "Skapa din ursäkt",
+    senderFallback: "Avsändare",
+    empty: "Inga ursäkter tillgängliga just nu.",
+    fromLabel: "SMS:et kommer från det här numret:",
+    fromHelp:
+      "Spara numret som en kontakt med namnet du valt, så visas SMS:et som om det kom därifrån. Behövs bara göras en gång.",
+    saveContact: "Spara kontakt",
   },
 
   result: {

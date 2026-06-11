@@ -59,13 +59,12 @@ src/middleware.ts         # HTTP Basic Auth in front of /admin + /api/admin
 src/app/page.tsx          # renders <Flow/>
 src/app/layout.tsx        # html shell, themeColor, metadata
 src/app/globals.css       # THEME (CSS variables) + body gradient
-src/app/admin/page.tsx    # moderation UI (client component)
+src/app/admin/page.tsx    # admin UI: manage all excuses + moderate suggestions
 src/app/api/excuses/route.ts   # GET approved excuses, most-sent first + sentCount
 src/app/api/send/route.ts      # POST validate -> rate-limit -> send SMS -> bump sentCount
 src/app/api/suggest/route.ts   # POST user suggestion -> pending (NEVER sends SMS)
-src/app/api/admin/pending/route.ts   # GET pending suggestions
-src/app/api/admin/moderate/route.ts  # POST approve|reject
-src/components/Flow.tsx    # the whole step-by-step client flow
+src/app/api/admin/excuses/route.ts   # GET all | POST create | PATCH status | DELETE
+src/components/Flow.tsx    # client flow: landing -> compose (live iMessage preview) -> result
 src/components/ui.tsx      # Button / Card / Chip (the design primitives)
 src/lib/sms/{index,types,dummy,elks}.ts  # provider interface + impls
 src/lib/excuses.ts         # SEED_EXCUSES source list
@@ -78,9 +77,10 @@ src/lib/clsx.ts            # tiny className helper
 ```
 
 ### Data model (`prisma/schema.prisma`)
-- **Excuse**: `id`, `text`, `source` (`seed`|`user`), `status`
-  (`approved`|`pending`|`rejected`), `sentCount`, `createdAt`.
-  Index on `[status, source]`.
+- **Excuse**: `id`, `text`, `source` (`seed`|`user`|`admin`), `status`
+  (`approved`|`pending`|`rejected`|`disabled`), `sentCount`, `createdAt`.
+  Index on `[status, source]`. Only `approved` is public; `disabled` = an
+  admin-hidden excuse (toggled off, not deleted).
 - **RateBucket**: `key` (`ip:<ip>` | `num:<hash>` | `suggest:<ip>` |
   `global:<YYYY-MM-DD>`), `count`, `resetAt`.
 - **The recipient phone number is NEVER stored.** It is received, validated to
@@ -105,10 +105,22 @@ guard). GDPR: number never stored, no PII in URLs.
    `source="user"`, `status="pending"` via `/api/suggest`. **It is NEVER sent
    as an SMS** (see decision #1 below). Length cap 5–200 chars + per-IP rate
    limit (`RATE_LIMIT_SUGGEST_PER_IP`).
-3. **Admin moderation.** `/admin`, protected by HTTP Basic Auth in
+3. **Admin management.** `/admin`, protected by HTTP Basic Auth in
    `src/middleware.ts` (`ADMIN_USER`/`ADMIN_PASSWORD`, fail-closed if unset).
-   Lists pending suggestions with Godkänn (→approved, enters public pool) /
-   Avslå (→rejected).
+   One unified API: `src/app/api/admin/excuses/route.ts`
+   (GET all | POST create | PATCH status | DELETE). The page lets the admin:
+   moderate pending suggestions (Godkänn/Avslå), toggle any excuse On/Off
+   (approved↔disabled), see each excuse's usage count, add new ones, and delete.
+   (Replaced the older `pending` + `moderate` routes.)
+
+### Flow redesign — complete (this session)
+The step-by-step flow was collapsed: landing → **one compose screen** that has
+the phone + sender inputs, a **live iOS-Messages-style preview** (grey incoming
+bubble from the chosen sender, updates in real time as you change sender /
+next / shuffle), the send button, and — next to it — the sending number plus a
+"Spara kontakt" (vCard) button. Then a result screen. `ChatPreview` in
+`Flow.tsx` is the iMessage card (white bg, `#e9e9eb` bubble — deliberately
+iOS-looking regardless of the pink theme).
 
 ### Design overhaul — complete
 Reworked from the old dark theme to a soft pink, rounded, depth-shadowed look
