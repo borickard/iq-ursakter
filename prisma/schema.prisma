@@ -1,0 +1,33 @@
+// Prisma schema för Ursäkten (POC).
+//
+// SQLite räcker gott för POC. Vid serverless-hosting utan persistent
+// filsystem (t.ex. Vercel): byt provider till "postgresql" och peka
+// DATABASE_URL mot en hostad Postgres (Supabase/Neon). Inga modelländringar
+// behövs för det bytet.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// En ursäkt. Mottagarnummer lagras ALDRIG här – se README/brief avsnitt 7–8.
+model Excuse {
+  id        String   @id @default(cuid())
+  text      String
+  // "seed"  = del av den kurerade startlistan
+  // "user"  = inskickad av en användare (Fas 2)
+  source    String   @default("seed")
+  // "approved" | "pending" | "rejected"
+  // Endast "approved" visas/skickas. Förbereder Fas 2:s modereringskö.
+  status    String   @default("approved")
+  // Räknare för hur många gånger ursäkten skickats. Förbereder Fas 2:s
+  // popularitetssortering. Visas inte i Fas 1.
+  sentCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([status, source])
+}

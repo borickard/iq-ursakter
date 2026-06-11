@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Tema via CSS-variabler (brief avsnitt 9). Mörkt, lugnt uttryck – appen
+ * används ofta i en mörk, högljudd miljö på en liten skärm. Justera färgerna
+ * här för att tematisera (t.ex. tona upp/ner IQ-koppling) utan kodändring.
+ */
+:root {
+  --color-bg: 12 14 20;
+  --color-surface: 22 25 34;
+  --color-surface-2: 32 36 48;
+  --color-text: 240 242 248;
+  --color-muted: 156 163 180;
+  --color-brand: 124 92 255;
+  --color-brand-fg: 255 255 255;
+  --color-border: 48 53 68;
+  --color-danger: 248 113 113;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-text));
+  -webkit-font-smoothing: antialiased;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+/* Förhindra att iOS zoomar in på fält med liten text. */
+input,
+button,
+textarea {
+  font-size: 16px;
+}
