@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * fri text. Det stänger den värsta missbruksvektorn.
  */
 export async function POST(req: Request) {
-  let payload: { phone?: unknown; excuseId?: unknown };
+  let payload: { phone?: unknown; excuseId?: unknown; sender?: unknown };
   try {
     payload = await req.json();
   } catch {
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
 
   const phoneRaw = typeof payload.phone === "string" ? payload.phone : "";
   const excuseId = typeof payload.excuseId === "string" ? payload.excuseId : "";
+  const senderRaw = typeof payload.sender === "string" ? payload.sender : "";
 
   if (!phoneRaw || !excuseId) {
     return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });
@@ -56,9 +57,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "bad_request" }, { status: 404 });
   }
 
-  const from = getSenderNumber();
+  // Avsändare. Två lägen (NEXT_PUBLIC_SMS_SENDER_MODE):
+  //  - "number" (default): fast sändningsnummer, namnet syns via sparad kontakt
+  //    (vCard-modellen i briefen – tryggast).
+  //  - "name": det valda namnet används som alfanumeriskt avsändar-ID direkt.
+  //    Bra för demo (man skickar till sig själv). OBS: i skarp drift öppnar det
+  //    imitationsvektorn som briefen stänger – kräv OTP innan publik launch.
+  let from = getSenderNumber();
+  const senderMode = process.env.NEXT_PUBLIC_SMS_SENDER_MODE ?? "number";
+  if (senderMode === "name") {
+    const id = toAlphanumericSenderId(senderRaw);
+    if (id) from = id;
+  }
+
   if (!from) {
-    console.error("[send] SMS_FROM_NUMBER saknas – kan inte skicka.");
+    console.error("[send] avsändare saknas – kan inte skicka.");
     return NextResponse.json({ ok: false, error: "send_failed" }, { status: 500 });
   }
 
@@ -77,4 +90,20 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * Gör om ett valt namn till ett giltigt alfanumeriskt 46elks-avsändar-ID:
+ * å/ä→a, ö→o m.fl. translittereras, övriga icke-bokstäver/siffror tas bort,
+ * inledande siffror tas bort, längd 3–11. Returnerar null om inget giltigt
+ * återstår (då används det fasta sändningsnumret istället).
+ */
+function toAlphanumericSenderId(raw: string): string | null {
+  const stripped = raw
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "") // ta bort diakritiska tecken (å ä ö é …)
+    .replace(/[^A-Za-z0-9]/g, "") // bara a–z, A–Z, 0–9 (inga mellanslag)
+    .replace(/^[0-9]+/, ""); // får inte börja med siffra
+  if (stripped.length < 3) return null;
+  return stripped.slice(0, 11);
 }

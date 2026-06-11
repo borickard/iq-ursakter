@@ -49,6 +49,18 @@ below as "brief §N".
 - **SMS behind a small interface** (`sms.send({ to, from, message })`) so the
   provider is swappable. Implementations: `dummy` (logs only, default) and
   `elks` (46elks). Selected via `SMS_PROVIDER`.
+- **Sender mode** (`NEXT_PUBLIC_SMS_SENDER_MODE`, read on both server + client):
+  - `number` (default) = fixed sending number, name shown via a saved contact
+    (vCard model — safest).
+  - `name` = the picked name (Mamma/Chefen/…) is used as the SMS sender directly
+    (46elks alphanumeric sender ID). `/api/send` sanitises it via
+    `toAlphanumericSenderId` (NFKD → strip diacritics so å/ä→a, ö→o; keep
+    `[A-Za-z0-9]`; no leading digit; 3–11 chars; falls back to `SMS_FROM_NUMBER`
+    if nothing valid remains). The compose screen hides the vCard/number block in
+    this mode and the success copy drops the "om du sparat kontakten" caveat.
+  - **Decision (this session):** user chose `name` for the free team demo (each
+    person texts their own phone — safe). For PUBLIC launch this reopens the
+    impersonation vector the brief closed → add OTP first (still deferred).
 - **Hosting: Vercel.** Node 22.
 
 ### Project structure
@@ -217,8 +229,15 @@ Required (deploy + demo safely in dummy SMS mode — costs nothing):
 | `ADMIN_USER` | e.g. `admin` |
 | `ADMIN_PASSWORD` | a strong password (unlocks `/admin`) |
 
-Only for REAL SMS (when the user confirms): `SMS_PROVIDER=elks`,
-`ELKS_API_USERNAME`, `ELKS_API_PASSWORD`, and a rented `SMS_FROM_NUMBER`.
+For REAL SMS: `SMS_PROVIDER=elks`, `ELKS_API_USERNAME`, `ELKS_API_PASSWORD`
+(46elks creds — in Vercel only, NEVER in repo). The user has ~40 test credits.
+- **Demo config (name mode, free):** `NEXT_PUBLIC_SMS_SENDER_MODE=name`,
+  `SMS_FROM_NUMBER=Ursakten` (fallback alnum sender), and a budget guard
+  `RATE_LIMIT_GLOBAL_DAILY=35` so it can't exceed the ~40 credits. The chosen
+  name becomes the SMS sender (no rented number needed). Send to your own phone.
+- **Full contact-card model:** rent a 46elks numeric number, set
+  `SMS_FROM_NUMBER` to it and `NEXT_PUBLIC_SMS_SENDER_MODE=number`.
+- Revert to no-cost: `SMS_PROVIDER=dummy`.
 
 Optional overrides (defaults baked in): `RATE_LIMIT_PER_IP` (5),
 `RATE_LIMIT_PER_NUMBER` (3), `RATE_LIMIT_SUGGEST_PER_IP` (5),

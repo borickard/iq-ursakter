@@ -13,6 +13,10 @@ type SuggestError = keyof typeof COPY.suggest.errors;
 
 const SENDER_NUMBER = process.env.NEXT_PUBLIC_SMS_FROM_NUMBER ?? "";
 
+// "name" = det valda namnet används som SMS-avsändare (då behövs ingen vCard).
+// "number" (default) = fast nummer + sparad kontakt (vCard-modellen).
+const NAME_MODE = (process.env.NEXT_PUBLIC_SMS_SENDER_MODE ?? "number") === "name";
+
 export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
   const [phone, setPhone] = useState("");
@@ -165,7 +169,7 @@ function Compose({
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, excuseId: current.id }),
+        body: JSON.stringify({ phone, excuseId: current.id, sender }),
       });
       if (res.ok) {
         onSent();
@@ -252,26 +256,28 @@ function Compose({
         {sending ? COPY.browse.sending : COPY.browse.send}
       </Button>
 
-      {/* Sändningsnummer + spara kontakt */}
-      <div className="space-y-2 rounded-3xl border border-border bg-surface p-4 shadow-soft">
-        <p className="text-xs text-muted">{COPY.compose.fromLabel}</p>
-        <div className="flex items-center justify-between gap-3">
-          <span className="select-all font-mono text-sm font-semibold">
-            {SENDER_NUMBER}
-          </span>
-          <Button
-            variant="secondary"
-            onClick={() => downloadVCard(contactName, SENDER_NUMBER)}
-            disabled={!sender.trim()}
-            className="px-4 py-2 text-sm"
-          >
-            ⬇ {COPY.compose.saveContact}
-          </Button>
+      {/* Sändningsnummer + spara kontakt – bara i nummer-läget (vCard-modellen) */}
+      {!NAME_MODE && (
+        <div className="space-y-2 rounded-3xl border border-border bg-surface p-4 shadow-soft">
+          <p className="text-xs text-muted">{COPY.compose.fromLabel}</p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="select-all font-mono text-sm font-semibold">
+              {SENDER_NUMBER}
+            </span>
+            <Button
+              variant="secondary"
+              onClick={() => downloadVCard(contactName, SENDER_NUMBER)}
+              disabled={!sender.trim()}
+              className="px-4 py-2 text-sm"
+            >
+              ⬇ {COPY.compose.saveContact}
+            </Button>
+          </div>
+          <p className="text-[11px] leading-relaxed text-muted/80">
+            {COPY.compose.fromHelp}
+          </p>
         </div>
-        <p className="text-[11px] leading-relaxed text-muted/80">
-          {COPY.compose.fromHelp}
-        </p>
-      </div>
+      )}
 
       <Button block variant="ghost" onClick={onSuggest} className="text-sm">
         {COPY.browse.suggestLink}
@@ -518,7 +524,9 @@ function Result({
         <div className="text-5xl">📱</div>
         <h1 className="text-2xl font-extrabold">{COPY.result.successTitle}</h1>
         <p className="max-w-xs text-muted">
-          {fill(COPY.result.successBody, { name: sender })}
+          {fill(NAME_MODE ? COPY.result.successBodyName : COPY.result.successBody, {
+            name: sender,
+          })}
         </p>
       </div>
       <div className="space-y-3 pt-4">

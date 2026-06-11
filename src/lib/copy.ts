@@ -127,6 +127,8 @@ export const COPY = {
     successTitle: "Skickat – kolla din telefon 📱",
     successBody:
       "Ursäkten är på väg. Den dyker upp som ett SMS från “{name}” om du sparat kontakten.",
+    successBodyName:
+      "Ursäkten är på väg och dyker upp som ett SMS från “{name}”.",
     again: "Skicka en till",
     restart: "Börja om",
     errorTitle: "Det gick inte att skicka",
