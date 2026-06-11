@@ -8,14 +8,14 @@
  * kodändring.
  */
 :root {
-  --color-bg: 247 219 221;
-  --color-surface: 255 251 251;
-  --color-surface-2: 250 231 233;
-  --color-text: 45 33 38;
-  --color-muted: 138 104 113;
+  --color-bg: 244 211 215;
+  --color-surface: 255 254 254;
+  --color-surface-2: 249 226 229;
+  --color-text: 41 28 33;
+  --color-muted: 150 110 120;
   --color-brand: 224 78 110;
   --color-brand-fg: 255 255 255;
-  --color-border: 242 207 212;
+  --color-border: 238 196 203;
   --color-danger: 198 40 66;
 }
 
@@ -27,11 +27,13 @@ body {
 
 body {
   min-height: 100dvh;
-  background: linear-gradient(
-    180deg,
-    rgb(250 226 228) 0%,
-    rgb(244 212 215) 100%
-  );
+  background:
+    radial-gradient(
+      120% 80% at 50% -10%,
+      rgb(252 233 235) 0%,
+      rgba(252, 233, 235, 0) 55%
+    ),
+    linear-gradient(180deg, rgb(248 221 224) 0%, rgb(238 200 205) 100%);
   background-attachment: fixed;
   color: rgb(var(--color-text));
   -webkit-font-smoothing: antialiased;

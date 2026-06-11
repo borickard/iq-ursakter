@@ -59,8 +59,8 @@ function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col justify-center gap-7">
-        <div className="flex flex-col items-center gap-5 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-border bg-surface text-3xl shadow-raised">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-b from-[#ef6a87] to-[#d83a5f] text-4xl shadow-float ring-[6px] ring-white/70">
             🤫
           </div>
           <div className="space-y-3">
