@@ -272,10 +272,17 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
 All Fas 1 + Fas 2 code, the pink redesign, and the corrected seed excuses.
 
 ### Waiting on the user (the go-live checklist)
-1. ⬜ Set GitHub **default branch** to `main`.
+1. ✅ GitHub **default branch** = `main`; Vercel **Production env Branch Tracking**
+   set to `main` (was pinned to the old branch — that was why deploys stayed on
+   the old dark theme). NOTE: Vercel "Redeploy" reuses the *original commit*, so
+   forcing pink to Production required a fresh push to `main` (or "Promote to
+   Production" on a `main` preview deployment).
 2. ⬜ Run the **excuse-update SQL** (§7) in Supabase.
 3. ⬜ Add the **Vercel env vars** (§7), including the pooler `DATABASE_URL`.
-4. ⬜ Deploy / Redeploy on Vercel.
+   Until `DATABASE_URL` is set, `/api/excuses` fails and the UI shows
+   "Inga ursäkter tillgängliga just nu." (empty list). ONLY the user can enter
+   this in the Vercel dashboard — this Claude env has no Vercel access.
+4. ⬜ Redeploy on Vercel after env vars are added.
 
 ### Planned / possible future work
 - **Real SMS via 46elks** — only after the user explicitly confirms (costs
