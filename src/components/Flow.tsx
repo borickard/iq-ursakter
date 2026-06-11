@@ -64,8 +64,8 @@ function Landing({ onStart }: { onStart: () => void }) {
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col justify-center gap-7">
         <div className="flex flex-col items-center gap-6 text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-b from-[#ef6a87] to-[#d83a5f] text-4xl shadow-float ring-[6px] ring-white/70">
-            🤫
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-b from-[#ef6a87] to-[#d83a5f] font-serif text-4xl font-bold text-white shadow-float ring-[6px] ring-white/70">
+            U
           </div>
           <div className="space-y-3">
             <p className="text-sm font-medium uppercase tracking-wide text-brand">
@@ -95,6 +95,16 @@ function Landing({ onStart }: { onStart: () => void }) {
       <Button block onClick={onStart} className="mt-8">
         {COPY.landing.cta}
       </Button>
+
+      {/* Grundningsblock – varför Ursäkten finns (sajtens röst) */}
+      <div className="mt-8 rounded-3xl border border-border bg-surface/70 p-5 shadow-soft">
+        <p className="text-sm leading-relaxed text-muted">{COPY.landing.grounding}</p>
+        {COPY.landing.groundingBy && (
+          <p className="mt-3 text-xs font-medium text-muted/80">
+            {COPY.landing.groundingBy}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -270,7 +280,7 @@ function Compose({
               disabled={!sender.trim()}
               className="px-4 py-2 text-sm"
             >
-              ⬇ {COPY.compose.saveContact}
+              {COPY.compose.saveContact}
             </Button>
           </div>
           <p className="text-[11px] leading-relaxed text-muted/80">
@@ -305,46 +315,47 @@ function SenderField({
         {COPY.compose.senderLabel}
       </label>
 
-      <FramedField>
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-full bg-white px-5 py-3.5 shadow-inset"
-        >
-          <span className={value ? "font-medium" : "text-muted"}>
-            {value || COPY.compose.choose}
-          </span>
-          <span className="text-muted">{open ? "▴" : "▾"}</span>
-        </button>
-      </FramedField>
+      {/* Trigger + alternativ i EN sammanhängande behållare (ingen lös panel). */}
+      <div className="rounded-3xl bg-surface-2 p-1.5 shadow-raised">
+        <div className="overflow-hidden rounded-[1.4rem] bg-white shadow-inset">
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left"
+          >
+            <span className={value ? "font-medium" : "text-muted"}>
+              {value || COPY.compose.choose}
+            </span>
+            <span className="text-sm text-muted">{open ? "▴" : "▾"}</span>
+          </button>
 
-      {open && (
-        <Card className="gap-3 p-4">
-          <div className="flex flex-wrap gap-2">
-            {presets.map((name) => (
-              <Chip
-                key={name}
-                active={value === name}
-                onClick={() => {
-                  onChange(name);
-                  setOpen(false);
-                }}
-              >
-                {name}
-              </Chip>
-            ))}
-          </div>
-          <FramedField>
-            <input
-              type="text"
-              placeholder={COPY.details.senderPlaceholder}
-              value={isCustom ? value : ""}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full rounded-full bg-white px-5 py-3 shadow-inset outline-none ring-brand/30 transition focus:ring-2"
-            />
-          </FramedField>
-        </Card>
-      )}
+          {open && (
+            <div className="space-y-3 border-t border-border px-4 pb-4 pt-3">
+              <div className="flex flex-wrap gap-2">
+                {presets.map((name) => (
+                  <Chip
+                    key={name}
+                    active={value === name}
+                    onClick={() => {
+                      onChange(name);
+                      setOpen(false);
+                    }}
+                  >
+                    {name}
+                  </Chip>
+                ))}
+              </div>
+              <input
+                type="text"
+                placeholder={COPY.details.senderPlaceholder}
+                value={isCustom ? value : ""}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full rounded-full border border-border bg-surface px-4 py-2.5 shadow-inset outline-none ring-brand/30 transition focus:ring-2"
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -521,7 +532,20 @@ function Result({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <div className="text-5xl">📱</div>
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-b from-[#ef6a87] to-[#d83a5f] shadow-float ring-[6px] ring-white/70">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-9 w-9"
+            fill="none"
+            stroke="white"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
         <h1 className="text-2xl font-extrabold">{COPY.result.successTitle}</h1>
         <p className="max-w-xs text-muted">
           {fill(NAME_MODE ? COPY.result.successBodyName : COPY.result.successBody, {

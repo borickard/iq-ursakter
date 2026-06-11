@@ -14,16 +14,22 @@ export const COPY = {
   },
 
   landing: {
-    eyebrow: "Behöver du komma härifrån?",
+    eyebrow: "Slut på socialt batteri?",
     title: "Ursäkten",
     subtitle:
-      "Få en trovärdig ursäkt skickad som SMS till din egen telefon – så den ser ut att komma från t.ex. Mamma eller Älskling. När du fått nog och inte orkar förklara dig.",
+      "En trovärdig ursäkt, skickad som SMS till din egen telefon – så den ser ut att komma från t.ex. Mamma eller Älskling. För när kvällen drar ut på tiden, batteriet är slut och du bara vill hem – utan att behöva förklara dig.",
     cta: "Skapa min ursäkt",
     points: [
       "Du väljer vem det ska se ut att komma från.",
       "Vi sparar aldrig ditt nummer.",
       "SMS:et landar bara hos dig – inte hos någon annan.",
     ],
+    // Grundningsblock längre ner – sajtens röst, tillåtande ton (alkoholvinkeln
+    // finns i kontexten utan pekpinne). Lätt att justera här.
+    grounding:
+      "Att smita hem utan långa förklaringar – en ”Irish exit” – är ett av de vanligaste sätten att avsluta en kväll. Och mitt i en fest, när alla andra verkar vilja stanna och tempot är högt, kan det kännas knepigt att säga att man fått nog för ikväll. Det ska det inte behöva vara. Ursäkten finns för att göra det lite lättare att gå när du vill gå.",
+    // IQ-avsändare läggs här om/när synligheten bestämts. Tom = avsändarneutral.
+    groundingBy: "",
   },
 
   details: {
@@ -71,7 +77,7 @@ export const COPY = {
     submit: "Skicka in förslag",
     submitting: "Skickar in …",
     back: "Tillbaka",
-    successTitle: "Tack för ditt förslag! 🙌",
+    successTitle: "Tack för ditt förslag!",
     successBody:
       "Vi tittar igenom det och lägger till det i listan om det passar. Det skickas inte som SMS.",
     another: "Föreslå en till",
@@ -90,7 +96,7 @@ export const COPY = {
     subtitle: "Granska förslag, slå på/av ursäkter, lägg till eller ta bort.",
     pendingTitle: "Väntar på granskning",
     poolTitle: "Alla ursäkter",
-    pendingEmpty: "Inga förslag väntar just nu. 🎉",
+    pendingEmpty: "Inga förslag väntar just nu.",
     approve: "Godkänn",
     reject: "Avslå",
     on: "På",
@@ -124,9 +130,9 @@ export const COPY = {
   },
 
   result: {
-    successTitle: "Skickat – kolla din telefon 📱",
+    successTitle: "Skickat – kolla din telefon",
     successBody:
-      "Ursäkten är på väg. Den dyker upp som ett SMS från “{name}” om du sparat kontakten.",
+      "Ursäkten är på väg. Har du sparat kontakten dyker den upp som ett SMS från “{name}”.",
     successBodyName:
       "Ursäkten är på väg och dyker upp som ett SMS från “{name}”.",
     again: "Skicka en till",
