@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { downloadVCard } from "@/lib/vcard";
 import { normalizeToE164 } from "@/lib/phone";
-import { Button, Chip } from "@/components/ui";
+import { Button, Card, Chip } from "@/components/ui";
 
 type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = { id: string; text: string; sentCount: number };
@@ -95,7 +95,7 @@ function Landing({ onStart }: { onStart: () => void }) {
   );
 }
 
-/* ── Steg: skapa (uppgifter + live-förhandsvisning + skicka) ─────────────── */
+/* ── Steg: skapa ────────────────────────────────────────────────────────── */
 
 function Compose({
   phone,
@@ -135,13 +135,13 @@ function Compose({
     };
   }, []);
 
+  const count = excuses?.length ?? 0;
   const current =
-    excuses && excuses.length > 0 ? excuses[index % excuses.length] : null;
+    excuses && count > 0 ? excuses[((index % count) + count) % count] : null;
 
   const next = useCallback(() => setIndex((i) => i + 1), []);
-  const shuffle = useCallback(() => setIndex(() => Math.floor(Math.random() * 100000)), []);
+  const prev = useCallback(() => setIndex((i) => i - 1), []);
 
-  const presets: readonly string[] = COPY.details.senderPresets;
   const contactName = sender.trim() || COPY.compose.senderFallback;
 
   async function send() {
@@ -182,60 +182,47 @@ function Compose({
     <div className="flex flex-1 flex-col gap-5">
       <Header title={COPY.compose.title} onBack={onBack} />
 
-      {/* Uppgifter */}
-      <div className="space-y-2">
-        <label htmlFor="phone" className="block text-sm font-medium">
-          {COPY.details.phoneLabel}
-        </label>
-        <input
-          id="phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder={COPY.details.phonePlaceholder}
-          value={phone}
-          onChange={(e) => onPhone(e.target.value)}
-          className="w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
-        />
-      </div>
+      {/* Avsändare (dropdown) – styr förhandsvisningens namn */}
+      <SenderField value={sender} onChange={onSender} />
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">
-          {COPY.details.senderLabel}
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {presets.map((name) => (
-            <Chip key={name} active={sender === name} onClick={() => onSender(name)}>
-              {name}
-            </Chip>
-          ))}
-        </div>
-        <input
-          type="text"
-          placeholder={COPY.details.senderPlaceholder}
-          value={presets.includes(sender) ? "" : sender}
-          onChange={(e) => onSender(e.target.value)}
-          className="mt-1 w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
-        />
-      </div>
-
-      {/* Live-förhandsvisning som iOS-meddelande */}
+      {/* Live-förhandsvisning som iOS-meddelande, swipe-bar */}
       <ChatPreview
         name={contactName}
         text={current?.text}
         sentCount={current?.sentCount}
         loading={excuses === null}
-        empty={excuses !== null && excuses.length === 0}
+        empty={excuses !== null && count === 0}
+        onNext={next}
+        onPrev={prev}
       />
 
-      {/* Bläddra */}
+      {/* Bläddra (för den som inte sveper) */}
       <div className="grid grid-cols-2 gap-3">
+        <Button variant="secondary" onClick={prev} disabled={!current}>
+          {COPY.compose.prev}
+        </Button>
         <Button variant="secondary" onClick={next} disabled={!current}>
-          {COPY.browse.next}
+          {COPY.compose.next}
         </Button>
-        <Button variant="secondary" onClick={shuffle} disabled={!current}>
-          🎲 {COPY.browse.shuffle}
-        </Button>
+      </div>
+
+      {/* Mobilnummer – precis före skicka */}
+      <div className="space-y-2 pt-1">
+        <label htmlFor="phone" className="block text-sm font-medium">
+          {COPY.details.phoneLabel}
+        </label>
+        <FramedField>
+          <input
+            id="phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder={COPY.details.phonePlaceholder}
+            value={phone}
+            onChange={(e) => onPhone(e.target.value)}
+            className="w-full rounded-full bg-white px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:ring-2"
+          />
+        </FramedField>
       </div>
 
       {(formError || error) && (
@@ -244,7 +231,6 @@ function Compose({
         </p>
       )}
 
-      {/* Skicka */}
       <Button block onClick={send} disabled={sending || !current}>
         {sending ? COPY.browse.sending : COPY.browse.send}
       </Button>
@@ -277,7 +263,70 @@ function Compose({
   );
 }
 
-/* ── iOS-liknande chatt-förhandsvisning ─────────────────────────────────── */
+/* ── Avsändar-dropdown ──────────────────────────────────────────────────── */
+
+function SenderField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const presets: readonly string[] = COPY.details.senderPresets;
+  const isCustom = value.trim() !== "" && !presets.includes(value);
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium">
+        {COPY.compose.senderLabel}
+      </label>
+
+      <FramedField>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center justify-between rounded-full bg-white px-5 py-3.5 shadow-inset"
+        >
+          <span className={value ? "font-medium" : "text-muted"}>
+            {value || COPY.compose.choose}
+          </span>
+          <span className="text-muted">{open ? "▴" : "▾"}</span>
+        </button>
+      </FramedField>
+
+      {open && (
+        <Card className="gap-3 p-4">
+          <div className="flex flex-wrap gap-2">
+            {presets.map((name) => (
+              <Chip
+                key={name}
+                active={value === name}
+                onClick={() => {
+                  onChange(name);
+                  setOpen(false);
+                }}
+              >
+                {name}
+              </Chip>
+            ))}
+          </div>
+          <FramedField>
+            <input
+              type="text"
+              placeholder={COPY.details.senderPlaceholder}
+              value={isCustom ? value : ""}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-full rounded-full bg-white px-5 py-3 shadow-inset outline-none ring-brand/30 transition focus:ring-2"
+            />
+          </FramedField>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/* ── iOS-liknande chatt-förhandsvisning med swipe ───────────────────────── */
 
 function ChatPreview({
   name,
@@ -285,46 +334,105 @@ function ChatPreview({
   sentCount,
   loading,
   empty,
+  onNext,
+  onPrev,
 }: {
   name: string;
   text?: string;
   sentCount?: number;
   loading: boolean;
   empty: boolean;
+  onNext: () => void;
+  onPrev: () => void;
 }) {
   const initial = name.trim().charAt(0).toUpperCase() || "?";
   const countLabel = formatSentCount(sentCount ?? 0);
+  const swipeable = !loading && !empty && !!text;
+
+  const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startX = useRef(0);
+
+  function onDown(e: React.PointerEvent) {
+    if (!swipeable) return;
+    setDragging(true);
+    startX.current = e.clientX;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onMove(e: React.PointerEvent) {
+    if (!dragging) return;
+    setDx(e.clientX - startX.current);
+  }
+  function onUp() {
+    if (!dragging) return;
+    if (dx < -60) onNext();
+    else if (dx > 60) onPrev();
+    setDx(0);
+    setDragging(false);
+  }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-soft">
-      {/* Kontakt-header (som i Meddelanden) */}
-      <div className="flex flex-col items-center gap-1.5 border-b border-black/5 bg-[#f7f7f8] px-4 py-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c7c7cc] text-base font-semibold text-white">
-          {initial}
-        </div>
-        <span className="text-[13px] font-semibold text-black/80">{name}</span>
-      </div>
-
-      {/* Meddelanden */}
-      <div className="flex min-h-[8.5rem] flex-col justify-end gap-1 bg-white px-4 py-4">
-        {loading ? (
-          <div className="max-w-[80%] self-start rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] text-black/40">
-            …
-          </div>
-        ) : empty || !text ? (
-          <div className="self-center text-sm text-black/40">{COPY.compose.empty}</div>
-        ) : (
-          <div className="flex flex-col items-start gap-1">
-            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] leading-snug text-black">
-              {text}
+    <div className="space-y-2">
+      <div
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        style={{
+          transform: `translateX(${dx}px) rotate(${dx * 0.03}deg)`,
+          transition: dragging ? "none" : "transform 0.25s ease",
+          touchAction: "pan-y",
+        }}
+        className={
+          "select-none rounded-[2rem] bg-surface-2 p-1.5 shadow-raised " +
+          (swipeable ? "cursor-grab active:cursor-grabbing" : "")
+        }
+      >
+        <div className="overflow-hidden rounded-[1.65rem] bg-white shadow-inset">
+          {/* Kontakt-header */}
+          <div className="flex flex-col items-center gap-1.5 border-b border-black/5 bg-[#f7f7f8] px-4 py-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c7c7cc] text-base font-semibold text-white">
+              {initial}
             </div>
-            {countLabel && (
-              <span className="pl-1 text-[11px] text-black/35">{countLabel}</span>
+            <span className="text-[13px] font-semibold text-black/80">{name}</span>
+          </div>
+
+          {/* Meddelanden */}
+          <div className="flex min-h-[8.5rem] flex-col justify-end gap-1 bg-white px-4 py-4">
+            {loading ? (
+              <div className="max-w-[80%] self-start rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] text-black/40">
+                …
+              </div>
+            ) : empty || !text ? (
+              <div className="self-center text-sm text-black/40">
+                {COPY.compose.empty}
+              </div>
+            ) : (
+              <div className="flex flex-col items-start gap-1">
+                <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] leading-snug text-black">
+                  {text}
+                </div>
+                {countLabel && (
+                  <span className="pl-1 text-[11px] text-black/35">{countLabel}</span>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
+
+      {swipeable && (
+        <p className="text-center text-[11px] text-muted">{COPY.compose.swipeHint}</p>
+      )}
     </div>
+  );
+}
+
+/* ── Inramat fält (höjd ram, insänkt innehåll) ──────────────────────────── */
+
+function FramedField({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-full bg-surface-2 p-1.5 shadow-raised">{children}</div>
   );
 }
 
@@ -360,7 +468,7 @@ function Result({
   );
 }
 
-/* ── Steg: föreslå egen ursäkt (Fas 2) ──────────────────────────────────── */
+/* ── Steg: föreslå egen ursäkt ──────────────────────────────────────────── */
 
 function Suggest({ onBack }: { onBack: () => void }) {
   const [text, setText] = useState("");
