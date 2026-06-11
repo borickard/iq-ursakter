@@ -116,9 +116,7 @@ export const COPY = {
     choose: "Välj avsändare",
     senderFallback: "Avsändare",
     empty: "Inga ursäkter tillgängliga just nu.",
-    swipeHint: "Svep för att byta ursäkt – eller använd pilarna",
-    prev: "‹ Förra",
-    next: "Nästa ›",
+    swipeHint: "Svep eller använd pilarna för att byta ursäkt",
     fromLabel: "SMS:et kommer från det här numret:",
     fromHelp:
       "Spara numret som en kontakt med namnet du valt, så visas SMS:et som om det kom därifrån. Behövs bara göras en gång.",

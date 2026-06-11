@@ -136,8 +136,11 @@ function Compose({
   }, []);
 
   const count = excuses?.length ?? 0;
-  const current =
-    excuses && count > 0 ? excuses[((index % count) + count) % count] : null;
+  const at = (i: number) =>
+    excuses && count > 0 ? excuses[((i % count) + count) % count] : null;
+  const current = at(index);
+  const nextExcuse = at(index + 1);
+  const prevExcuse = at(index - 1);
 
   const next = useCallback(() => setIndex((i) => i + 1), []);
   const prev = useCallback(() => setIndex((i) => i - 1), []);
@@ -188,22 +191,36 @@ function Compose({
       {/* Live-förhandsvisning som iOS-meddelande, swipe-bar */}
       <ChatPreview
         name={contactName}
-        text={current?.text}
-        sentCount={current?.sentCount}
+        current={current}
+        next={nextExcuse}
+        prev={prevExcuse}
         loading={excuses === null}
         empty={excuses !== null && count === 0}
         onNext={next}
         onPrev={prev}
       />
 
-      {/* Bläddra (för den som inte sveper) */}
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="secondary" onClick={prev} disabled={!current}>
-          {COPY.compose.prev}
-        </Button>
-        <Button variant="secondary" onClick={next} disabled={!current}>
-          {COPY.compose.next}
-        </Button>
+      {/* Liten hint + diskreta pilar (för den som inte sveper) */}
+      <div className="flex items-center justify-center gap-3 text-muted">
+        <button
+          type="button"
+          onClick={prev}
+          disabled={!current}
+          aria-label="Förra ursäkten"
+          className="text-xl leading-none transition hover:text-brand disabled:opacity-40"
+        >
+          ‹
+        </button>
+        <span className="text-[11px]">{COPY.compose.swipeHint}</span>
+        <button
+          type="button"
+          onClick={next}
+          disabled={!current}
+          aria-label="Nästa ursäkt"
+          className="text-xl leading-none transition hover:text-brand disabled:opacity-40"
+        >
+          ›
+        </button>
       </div>
 
       {/* Mobilnummer – precis före skicka */}
@@ -326,35 +343,40 @@ function SenderField({
   );
 }
 
-/* ── iOS-liknande chatt-förhandsvisning med swipe ───────────────────────── */
+/* ── iOS-liknande chatt-förhandsvisning med kort-swipe ──────────────────── */
 
 function ChatPreview({
   name,
-  text,
-  sentCount,
+  current,
+  next,
+  prev,
   loading,
   empty,
   onNext,
   onPrev,
 }: {
   name: string;
-  text?: string;
-  sentCount?: number;
+  current: Excuse | null;
+  next: Excuse | null;
+  prev: Excuse | null;
   loading: boolean;
   empty: boolean;
   onNext: () => void;
   onPrev: () => void;
 }) {
-  const initial = name.trim().charAt(0).toUpperCase() || "?";
-  const countLabel = formatSentCount(sentCount ?? 0);
-  const swipeable = !loading && !empty && !!text;
+  const swipeable = !loading && !empty && !!current;
 
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [flying, setFlying] = useState<null | "left" | "right">(null);
+  const [instant, setInstant] = useState(false);
   const startX = useRef(0);
 
+  // Kortet som skymtar bakom beror på svep-riktningen (annars nästa).
+  const back = dx > 0 ? prev : next;
+
   function onDown(e: React.PointerEvent) {
-    if (!swipeable) return;
+    if (!swipeable || flying) return;
     setDragging(true);
     startX.current = e.clientX;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -365,65 +387,108 @@ function ChatPreview({
   }
   function onUp() {
     if (!dragging) return;
-    if (dx < -60) onNext();
-    else if (dx > 60) onPrev();
-    setDx(0);
     setDragging(false);
+    if (dx < -60) flyOff("left", onNext);
+    else if (dx > 60) flyOff("right", onPrev);
+    else setDx(0);
   }
 
+  function flyOff(dir: "left" | "right", advance: () => void) {
+    setFlying(dir);
+    window.setTimeout(() => {
+      // Byt ursäkt och nollställ kortet UTAN animation (kortet bakom är redan
+      // det nya, så det blir ingen blink).
+      setInstant(true);
+      advance();
+      setFlying(null);
+      setDx(0);
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => setInstant(false)),
+      );
+    }, 230);
+  }
+
+  const frontTransform = flying
+    ? `translateX(${flying === "left" ? -700 : 700}px) rotate(${
+        flying === "left" ? -16 : 16
+      }deg)`
+    : `translateX(${dx}px) rotate(${dx * 0.03}deg)`;
+
   return (
-    <div className="space-y-2">
+    <div className="relative">
+      {/* Kortet bakom (nästa/förra) – skymtar och tas fram när toppkortet sveps bort */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 scale-[0.97]">
+        <CardFace name={name} excuse={back ?? current} loading={loading} empty={empty} />
+      </div>
+
+      {/* Toppkortet – dragbart */}
       <div
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
         style={{
-          transform: `translateX(${dx}px) rotate(${dx * 0.03}deg)`,
-          transition: dragging ? "none" : "transform 0.25s ease",
+          transform: frontTransform,
+          transition: dragging || instant ? "none" : "transform 0.24s ease, opacity 0.24s ease",
+          opacity: flying ? 0 : 1,
           touchAction: "pan-y",
         }}
         className={
-          "select-none rounded-[2rem] bg-surface-2 p-1.5 shadow-raised " +
+          "relative select-none " +
           (swipeable ? "cursor-grab active:cursor-grabbing" : "")
         }
       >
-        <div className="overflow-hidden rounded-[1.65rem] bg-white shadow-inset">
-          {/* Kontakt-header */}
-          <div className="flex flex-col items-center gap-1.5 border-b border-black/5 bg-[#f7f7f8] px-4 py-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c7c7cc] text-base font-semibold text-white">
-              {initial}
-            </div>
-            <span className="text-[13px] font-semibold text-black/80">{name}</span>
-          </div>
+        <CardFace name={name} excuse={current} loading={loading} empty={empty} />
+      </div>
+    </div>
+  );
+}
 
-          {/* Meddelanden */}
-          <div className="flex min-h-[8.5rem] flex-col justify-end gap-1 bg-white px-4 py-4">
-            {loading ? (
-              <div className="max-w-[80%] self-start rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] text-black/40">
-                …
-              </div>
-            ) : empty || !text ? (
-              <div className="self-center text-sm text-black/40">
-                {COPY.compose.empty}
-              </div>
-            ) : (
-              <div className="flex flex-col items-start gap-1">
-                <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] leading-snug text-black">
-                  {text}
-                </div>
-                {countLabel && (
-                  <span className="pl-1 text-[11px] text-black/35">{countLabel}</span>
-                )}
-              </div>
-            )}
+function CardFace({
+  name,
+  excuse,
+  loading,
+  empty,
+}: {
+  name: string;
+  excuse: Excuse | null;
+  loading: boolean;
+  empty: boolean;
+}) {
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const countLabel = excuse ? formatSentCount(excuse.sentCount) : null;
+
+  return (
+    <div className="rounded-[2rem] bg-surface-2 p-1.5 shadow-raised">
+      <div className="overflow-hidden rounded-[1.65rem] bg-white shadow-inset">
+        {/* Kontakt-header */}
+        <div className="flex flex-col items-center gap-1.5 border-b border-black/5 bg-[#f7f7f8] px-4 py-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c7c7cc] text-base font-semibold text-white">
+            {initial}
           </div>
+          <span className="text-[13px] font-semibold text-black/80">{name}</span>
+        </div>
+
+        {/* Meddelanden */}
+        <div className="flex min-h-[8.5rem] flex-col justify-end gap-1 bg-white px-4 py-4">
+          {loading ? (
+            <div className="max-w-[80%] self-start rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] text-black/40">
+              …
+            </div>
+          ) : empty || !excuse ? (
+            <div className="self-center text-sm text-black/40">{COPY.compose.empty}</div>
+          ) : (
+            <div className="flex flex-col items-start gap-1">
+              <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-2.5 text-[15px] leading-snug text-black">
+                {excuse.text}
+              </div>
+              {countLabel && (
+                <span className="pl-1 text-[11px] text-black/35">{countLabel}</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
-
-      {swipeable && (
-        <p className="text-center text-[11px] text-muted">{COPY.compose.swipeHint}</p>
-      )}
     </div>
   );
 }
