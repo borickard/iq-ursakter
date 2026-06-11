@@ -86,17 +86,22 @@ export default function Flow() {
 function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col justify-center gap-6">
-        <div className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-wide text-brand">
-            {COPY.landing.eyebrow}
-          </p>
-          <h1 className="text-4xl font-extrabold leading-tight">
-            {COPY.landing.title}
-          </h1>
-          <p className="text-base leading-relaxed text-muted">
-            {COPY.landing.subtitle}
-          </p>
+      <div className="flex flex-1 flex-col justify-center gap-7">
+        <div className="flex flex-col items-center gap-5 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-border bg-surface text-3xl shadow-raised">
+            🤫
+          </div>
+          <div className="space-y-3">
+            <p className="text-sm font-medium uppercase tracking-wide text-brand">
+              {COPY.landing.eyebrow}
+            </p>
+            <h1 className="text-4xl font-extrabold leading-tight">
+              {COPY.landing.title}
+            </h1>
+            <p className="text-base leading-relaxed text-muted">
+              {COPY.landing.subtitle}
+            </p>
+          </div>
         </div>
 
         <ul className="space-y-2">
@@ -155,7 +160,7 @@ function Details({
           placeholder={COPY.details.phonePlaceholder}
           value={phone}
           onChange={(e) => onPhone(e.target.value)}
-          className="w-full rounded-2xl border border-border bg-surface px-4 py-3.5 outline-none ring-brand/40 focus:ring-2"
+          className="w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
         />
         <p className="text-xs text-muted">{COPY.details.phoneHelp}</p>
       </div>
@@ -180,7 +185,7 @@ function Details({
           placeholder={COPY.details.senderPlaceholder}
           value={presets.includes(sender) ? "" : sender}
           onChange={(e) => onSender(e.target.value)}
-          className="mt-1 w-full rounded-2xl border border-border bg-surface px-4 py-3.5 outline-none ring-brand/40 focus:ring-2"
+          className="mt-1 w-full rounded-full border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
         />
       </div>
 
@@ -473,7 +478,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
         placeholder={COPY.suggest.placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="w-full resize-none rounded-2xl border border-border bg-surface px-4 py-3.5 outline-none ring-brand/40 focus:ring-2"
+        className="w-full resize-none rounded-3xl border border-border bg-surface px-5 py-4 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
       />
 
       {error && <p className="text-sm text-danger">{COPY.suggest.errors[error]}</p>}
@@ -496,7 +501,7 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
         type="button"
         onClick={onBack}
         aria-label="Tillbaka"
-        className="rounded-full bg-surface-2 px-3 py-1.5 text-sm text-muted"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-lg text-muted shadow-soft transition hover:text-brand active:scale-95"
       >
         ←
       </button>

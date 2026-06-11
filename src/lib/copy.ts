@@ -67,7 +67,7 @@ export const COPY = {
     title: "Föreslå en ursäkt",
     intro:
       "Skriv ett förslag på en ursäkt. Det skickas inte som SMS – det går till oss för granskning och kan dyka upp i listan för andra om vi godkänner det.",
-    placeholder: "T.ex. “Grannen behöver hjälp med en vattenläcka.”",
+    placeholder: "T.ex. “Du måste komma hem nu, det har hänt något.”",
     submit: "Skicka in förslag",
     submitting: "Skickar in …",
     back: "Tillbaka",

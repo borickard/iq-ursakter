@@ -16,10 +16,12 @@ export function Button({
   return (
     <button
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" && "bg-brand text-brand-fg shadow-lg shadow-brand/20",
-        variant === "secondary" && "bg-surface-2 text-text",
-        variant === "ghost" && "text-muted hover:text-text",
+        "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 font-semibold transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
+        variant === "primary" &&
+          "bg-brand text-brand-fg shadow-raised hover:brightness-105",
+        variant === "secondary" &&
+          "border border-border bg-surface text-text shadow-soft hover:bg-surface-2",
+        variant === "ghost" && "text-muted hover:text-brand",
         block && "w-full",
         className,
       )}
@@ -35,7 +37,7 @@ export function Card({
   return (
     <div
       className={clsx(
-        "rounded-2xl border border-border bg-surface p-5",
+        "flex flex-col rounded-3xl border border-border bg-surface p-6 shadow-soft",
         className,
       )}
       {...props}
@@ -54,8 +56,8 @@ export function Chip({
       className={clsx(
         "rounded-full border px-4 py-2 text-sm font-medium transition active:scale-95",
         active
-          ? "border-brand bg-brand text-brand-fg"
-          : "border-border bg-surface-2 text-text",
+          ? "border-brand bg-brand text-brand-fg shadow-raised"
+          : "border-border bg-surface text-text shadow-soft hover:bg-surface-2",
         className,
       )}
       {...props}

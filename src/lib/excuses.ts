@@ -1,25 +1,31 @@
 /**
  * Seedade start-ursäkter.
  *
- * Håll dem korta, vardagliga och trovärdiga. Avsändarnamnet sätts separat av
- * användaren, så texten bör fungera oavsett vem den "kommer från".
+ * VIKTIGT om perspektivet: SMS:et kommer till användaren och ser ut att komma
+ * från t.ex. "Mamma" eller "Chefen". Texten är alltså AVSÄNDAREN som ger
+ * MOTTAGAREN (användaren) en anledning att gå/komma – inte användaren som själv
+ * ursäktar sig. Skriv därför "Kan du komma hem?" / "Du behöver komma in",
+ * inte "Jag måste hem".
+ *
+ * Håll dem korta, vardagliga och trovärdiga, och gärna så att de fungerar
+ * oavsett vilket avsändarnamn användaren valt.
  *
  * Den här listan är källan för databas-seeden (se prisma/seed.ts).
  */
 export const SEED_EXCUSES: string[] = [
-  "Hunden kräktes i sängen, jag måste hem.",
-  "Jag har feber, kan du komma hem?",
-  "Shit, jag glömde nycklarna – kan du låsa upp?",
-  "Grannen ringde, det läcker vatten hos oss.",
-  "Förlåt, jag blandade ihop dagarna – jobbet behöver mig imorgon bitti.",
-  "Mamma mår inte bra, jag åker dit.",
-  "Bilen larmar på gatan, måste kolla.",
-  "Barnvakten ringde, hon måste gå.",
-  "Jag tror jag glömde spisen på.",
-  "Kompisen blev av med plånboken, jag måste hjälpa till.",
-  "Jag är jättedålig i magen, måste hem nu.",
-  "Det har hänt något hemma, jag berättar imorgon.",
-  "Tåget går tidigare än jag trodde, måste sticka.",
-  "Jag fick precis ett samtal från jobbet, måste rycka in.",
-  "Larmet hemma har gått, jag måste åka och kolla.",
+  "Hunden har kräkts i hela sängen – kan du komma hem?",
+  "Jag har feber och mår uselt, kan du komma hem?",
+  "Jag har låst mig ute, kan du komma och låsa upp?",
+  "Grannen ringde – det läcker vatten hos oss, du måste komma hem.",
+  "Du behöver komma in tidigt imorgon bitti, något har dykt upp på jobbet.",
+  "Jag mår inte bra, kan du komma hit?",
+  "Billarmet har gått igång på gatan, kan du komma och kolla?",
+  "Barnvakten måste gå nu, du behöver komma hem.",
+  "Jag tror spisen står på – kan du komma hem och kolla?",
+  "Jag har blivit av med plånboken, kan du komma och hjälpa mig?",
+  "Jag är jättedålig i magen, kan du komma hem?",
+  "Det har hänt något hemma – du behöver komma hem nu.",
+  "Vi behöver dig på jobbet nu, kan du rycka in?",
+  "Larmet hemma har gått, du måste komma och kolla.",
+  "Kan du komma hem? Jag vill inte vara ensam ikväll.",
 ];

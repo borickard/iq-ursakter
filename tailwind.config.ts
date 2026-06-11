@@ -23,6 +23,16 @@ const config: Config = {
       borderRadius: {
         xl: "1rem",
         "2xl": "1.25rem",
+        "3xl": "1.75rem",
+      },
+      boxShadow: {
+        // Mjukt djup under kort/fält – ger den lyfta känslan i referensbilden.
+        soft: "0 14px 34px -14px rgba(193, 53, 96, 0.40)",
+        // Upphöjd knapp: skugga nedåt + ljus highlight i överkant.
+        raised:
+          "0 10px 22px -8px rgba(193, 53, 96, 0.50), inset 0 1px 0 0 rgba(255, 255, 255, 0.40)",
+        // Insänkt fält (mjuk inre skugga).
+        inset: "inset 0 2px 7px rgba(193, 53, 96, 0.14)",
       },
     },
   },

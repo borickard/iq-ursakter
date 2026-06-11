@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 /*
- * Tema via CSS-variabler (brief avsnitt 9). Mörkt, lugnt uttryck – appen
- * används ofta i en mörk, högljudd miljö på en liten skärm. Justera färgerna
- * här för att tematisera (t.ex. tona upp/ner IQ-koppling) utan kodändring.
+ * Tema via CSS-variabler (brief avsnitt 9). Mjukt, ljust rosa uttryck med
+ * djup och rundade former. Justera färgerna här för att tematisera utan
+ * kodändring.
  */
 :root {
-  --color-bg: 12 14 20;
-  --color-surface: 22 25 34;
-  --color-surface-2: 32 36 48;
-  --color-text: 240 242 248;
-  --color-muted: 156 163 180;
-  --color-brand: 124 92 255;
+  --color-bg: 247 219 221;
+  --color-surface: 255 251 251;
+  --color-surface-2: 250 231 233;
+  --color-text: 45 33 38;
+  --color-muted: 138 104 113;
+  --color-brand: 224 78 110;
   --color-brand-fg: 255 255 255;
-  --color-border: 48 53 68;
-  --color-danger: 248 113 113;
+  --color-border: 242 207 212;
+  --color-danger: 198 40 66;
 }
 
 html,
@@ -26,7 +26,13 @@ body {
 }
 
 body {
-  background-color: rgb(var(--color-bg));
+  min-height: 100dvh;
+  background: linear-gradient(
+    180deg,
+    rgb(250 226 228) 0%,
+    rgb(244 212 215) 100%
+  );
+  background-attachment: fixed;
   color: rgb(var(--color-text));
   -webkit-font-smoothing: antialiased;
   font-family:
