@@ -64,7 +64,13 @@ export async function POST(req: Request) {
   //    Bra för demo (man skickar till sig själv). OBS: i skarp drift öppnar det
   //    imitationsvektorn som briefen stänger – kräv OTP innan publik launch.
   let from = getSenderNumber();
-  const senderMode = process.env.NEXT_PUBLIC_SMS_SENDER_MODE ?? "number";
+  // Server-side mode läses från en RUNTIME-variabel (SMS_SENDER_MODE). NEXT_PUBLIC_*
+  // bakas in vid build och är opålitlig på servern – därför en egen icke-publik
+  // variabel här (med NEXT_PUBLIC som reserv).
+  const senderMode =
+    process.env.SMS_SENDER_MODE ??
+    process.env.NEXT_PUBLIC_SMS_SENDER_MODE ??
+    "number";
   if (senderMode === "name") {
     const id = toAlphanumericSenderId(senderRaw);
     if (id) from = id;

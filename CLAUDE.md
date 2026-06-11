@@ -316,9 +316,24 @@ All Fas 1 + Fas 2 code, the pink redesign, and the corrected seed excuses.
 4. ✅ Deployed on Vercel from `main`. App is **LIVE** at `ursakter.vercel.app`
    (pink design, DB connected, excuses loading). SMS still in `dummy` mode.
 
+### Real SMS — LIVE (name mode, for the team demo)
+46elks is configured in Vercel (`SMS_PROVIDER=elks`, creds in Vercel only) with
+`SMS_FROM_NUMBER=Ursakten` and `RATE_LIMIT_GLOBAL_DAILY=35` as a budget guard
+(~40 test credits). Real SMS delivery is confirmed working.
+
+**Sender-name mode needs BOTH vars set to `name`:** `SMS_SENDER_MODE` (server,
+runtime — authoritative) and `NEXT_PUBLIC_SMS_SENDER_MODE` (client UI, build-time
+inlined). Gotcha learned: `NEXT_PUBLIC_*` is baked in at build, so the server
+uses the non-public `SMS_SENDER_MODE` for the actual send (falls back to the
+public one, then `number`). If only `SMS_FROM_NUMBER` shows up as sender, the
+mode wasn't picked up server-side. Revert to free with `SMS_PROVIDER=dummy`.
+
 ### Planned / possible future work
-- **Real SMS via 46elks** — only after the user explicitly confirms (costs
-  money). Switch `SMS_PROVIDER=elks` + add 46elks creds + rent a number.
+- **OTP before public launch** — name mode lets the sender name reach any
+  number, reopening the impersonation vector. Verify recipient == sender's own
+  phone before going public (brief §8, currently deferred).
+- **Contact-card model + rented number** — rent a 46elks numeric number and set
+  `NEXT_PUBLIC_SMS_SENDER_MODE=number` for the safest per-name effect.
 - **IQ branding decision** (brief §9) — how visible the IQ connection should be.
 - **PR-based workflow** — offered; user hasn't decided vs. pushing straight to
   `main`.
