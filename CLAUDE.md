@@ -277,12 +277,13 @@ All Fas 1 + Fas 2 code, the pink redesign, and the corrected seed excuses.
    the old dark theme). NOTE: Vercel "Redeploy" reuses the *original commit*, so
    forcing pink to Production required a fresh push to `main` (or "Promote to
    Production" on a `main` preview deployment).
-2. ⬜ Run the **excuse-update SQL** (§7) in Supabase.
-3. ⬜ Add the **Vercel env vars** (§7), including the pooler `DATABASE_URL`.
-   Until `DATABASE_URL` is set, `/api/excuses` fails and the UI shows
-   "Inga ursäkter tillgängliga just nu." (empty list). ONLY the user can enter
-   this in the Vercel dashboard — this Claude env has no Vercel access.
-4. ⬜ Redeploy on Vercel after env vars are added.
+2. ✅ Ran the **excuse-update SQL** (§7) in Supabase — live DB now has the
+   sender-perspective excuses.
+3. ✅ Added the **Vercel env vars** (§7), including the pooler `DATABASE_URL`.
+   The DB password was reset (twice) before it took; current working password is
+   stored only in Vercel. The pooler region is **eu-west-1**.
+4. ✅ Deployed on Vercel from `main`. App is **LIVE** at `ursakter.vercel.app`
+   (pink design, DB connected, excuses loading). SMS still in `dummy` mode.
 
 ### Planned / possible future work
 - **Real SMS via 46elks** — only after the user explicitly confirms (costs
