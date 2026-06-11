@@ -1,16 +1,16 @@
 // Prisma schema för Ursäkten (POC).
 //
-// SQLite räcker gott för POC. Vid serverless-hosting utan persistent
-// filsystem (t.ex. Vercel): byt provider till "postgresql" och peka
-// DATABASE_URL mot en hostad Postgres (Supabase/Neon). Inga modelländringar
-// behövs för det bytet.
+// Postgres används så att appen fungerar på serverless-hosting (t.ex. Vercel),
+// där filsystemet inte är persistent och SQLite inte håller mellan anrop.
+// Använd en hostad Postgres (Neon/Supabase) – samma DATABASE_URL fungerar både
+// lokalt och i produktion.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -30,4 +30,16 @@ model Excuse {
   createdAt DateTime @default(now())
 
   @@index([status, source])
+}
+
+// Rate limiting-bucket. Fungerar över flera serverless-instanser (till skillnad
+// från in-memory). GDPR: mottagarnumret lagras ALDRIG i klartext – nyckeln för
+// nummer-buckets är en saltad HASH. Utgångna buckets städas bort löpande, så
+// hashen "auto-raderas" efter rate limit-fönstret (brief avsnitt 7–8).
+model RateBucket {
+  key     String   @id // "ip:<ip>", "num:<hash>" eller "global:<YYYY-MM-DD>"
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
 }

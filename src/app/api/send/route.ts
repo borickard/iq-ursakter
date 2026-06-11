@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
   // Rate limiting (per IP + kortlivad nummer-hash + globalt dygnstak).
   const ip = getClientIp(req.headers);
-  const limit = checkRateLimit(ip, to);
+  const limit = await checkRateLimit(ip, to);
   if (!limit.allowed) {
     return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }

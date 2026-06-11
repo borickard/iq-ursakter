@@ -1,33 +1,19 @@
 import { createHash } from "crypto";
+import { prisma } from "./db";
 
 /**
- * In-memory rate limiting för POC (brief avsnitt 7–8).
+ * DB-backad rate limiting (brief avsnitt 7–8).
  *
- * GDPR: mottagarnumret skrivs ALDRIG till disk eller databas. Här används
- * enbart en kortlivad, saltad HASH av numret som nyckel, och den lever bara i
- * processminnet tills fönstret löper ut. Vi begränsar både per IP och per
- * nummer-hash, plus ett globalt dygnstak som budget-skydd.
+ * Varför DB och inte in-memory: på serverless (Vercel) körs varje anrop ofta i
+ * en ny/återvunnen instans, så in-memory-räknare skyddar i praktiken inte alls.
+ * Buckets i databasen delas däremot mellan alla instanser.
  *
- * Notera: in-memory state återställs vid omstart och delas inte mellan flera
- * serverless-instanser. För POC räcker det. Inför produktion: flytta till en
- * delad store (t.ex. Redis/Upstash) bakom samma interface.
+ * GDPR: mottagarnumret skrivs ALDRIG till disk i klartext. För nummer-buckets
+ * används enbart en kortlivad, saltad HASH som nyckel. Utgångna buckets städas
+ * bort löpande, så hashen "auto-raderas" efter fönstret.
+ *
+ * Vi begränsar per IP, per nummer-hash och ett globalt dygnstak (budget-skydd).
  */
-
-type Bucket = { count: number; resetAt: number };
-
-const ipBuckets = new Map<string, Bucket>();
-const numberBuckets = new Map<string, Bucket>();
-let globalDay = { count: 0, resetAt: startOfNextUtcDay() };
-
-function startOfNextUtcDay(): number {
-  const now = new Date();
-  const next = Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate() + 1,
-  );
-  return next;
-}
 
 function envInt(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -40,13 +26,32 @@ function hashNumber(e164: string): string {
   return createHash("sha256").update(salt + ":" + e164).digest("hex");
 }
 
-/** Räknar upp en bucket och returnerar true om gränsen redan är nådd. */
-function hit(map: Map<string, Bucket>, key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const existing = map.get(key);
+/** Best-effort städning av utgångna buckets (auto-radering av hashar). */
+async function sweepExpired(): Promise<void> {
+  try {
+    await prisma.rateBucket.deleteMany({ where: { resetAt: { lte: new Date() } } });
+  } catch {
+    // städning är best-effort; ignorera fel
+  }
+}
 
+/**
+ * Räknar upp en bucket och returnerar true om gränsen redan är nådd.
+ * Atomärt nog för POC: läs → skapa/återställ/inkrementera.
+ */
+async function hit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  const now = new Date();
+  const resetAt = new Date(now.getTime() + windowMs);
+
+  const existing = await prisma.rateBucket.findUnique({ where: { key } });
+
+  // Ny eller utgången bucket -> starta om fönstret.
   if (!existing || existing.resetAt <= now) {
-    map.set(key, { count: 1, resetAt: now + windowMs });
+    await prisma.rateBucket.upsert({
+      where: { key },
+      create: { key, count: 1, resetAt },
+      update: { count: 1, resetAt },
+    });
     return false;
   }
 
@@ -54,52 +59,57 @@ function hit(map: Map<string, Bucket>, key: string, limit: number, windowMs: num
     return true; // blockerad
   }
 
-  existing.count += 1;
+  await prisma.rateBucket.update({
+    where: { key },
+    data: { count: { increment: 1 } },
+  });
   return false;
-}
-
-/** Städar bort utgångna buckets så map:en inte växer obegränsat. */
-function sweep(map: Map<string, Bucket>): void {
-  const now = Date.now();
-  for (const [key, bucket] of map) {
-    if (bucket.resetAt <= now) map.delete(key);
-  }
 }
 
 export type RateLimitResult = { allowed: true } | { allowed: false; reason: string };
 
 /**
- * Kontrollerar och registrerar ett sändningsförsök.
- * Anropas precis innan SMS skickas. Numret skickas in i klartext men lagras
- * aldrig – endast dess hash hamnar (kortlivat) i minnet.
+ * Kontrollerar och registrerar ett sändningsförsök. Anropas precis innan SMS
+ * skickas. Numret skickas in i klartext men lagras aldrig – endast dess hash
+ * hamnar (kortlivat) i databasen.
  */
-export function checkRateLimit(ip: string, e164Number: string): RateLimitResult {
+export async function checkRateLimit(
+  ip: string,
+  e164Number: string,
+): Promise<RateLimitResult> {
   const windowMs = envInt("RATE_LIMIT_WINDOW_SECONDS", 3600) * 1000;
   const perIp = envInt("RATE_LIMIT_PER_IP", 5);
   const perNumber = envInt("RATE_LIMIT_PER_NUMBER", 3);
   const globalDaily = envInt("RATE_LIMIT_GLOBAL_DAILY", 500);
 
-  // Globalt dygnstak (budget-skydd).
-  const now = Date.now();
-  if (globalDay.resetAt <= now) {
-    globalDay = { count: 0, resetAt: startOfNextUtcDay() };
-  }
-  if (globalDaily > 0 && globalDay.count >= globalDaily) {
-    return { allowed: false, reason: "global_daily_cap" };
+  await sweepExpired();
+
+  // Globalt dygnstak (budget-skydd). En bucket per UTC-dygn.
+  if (globalDaily > 0) {
+    const dayKey = "global:" + new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const endOfDay = new Date(now);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const globalBucket = await prisma.rateBucket.findUnique({ where: { key: dayKey } });
+    if (globalBucket && globalBucket.count >= globalDaily) {
+      return { allowed: false, reason: "global_daily_cap" };
+    }
+    await prisma.rateBucket.upsert({
+      where: { key: dayKey },
+      create: { key: dayKey, count: 1, resetAt: endOfDay },
+      update: { count: { increment: 1 } },
+    });
   }
 
-  sweep(ipBuckets);
-  sweep(numberBuckets);
-
-  if (hit(ipBuckets, ip, perIp, windowMs)) {
+  if (await hit("ip:" + ip, perIp, windowMs)) {
     return { allowed: false, reason: "per_ip" };
   }
 
-  if (hit(numberBuckets, hashNumber(e164Number), perNumber, windowMs)) {
+  if (await hit("num:" + hashNumber(e164Number), perNumber, windowMs)) {
     return { allowed: false, reason: "per_number" };
   }
 
-  globalDay.count += 1;
   return { allowed: true };
 }
 

@@ -25,8 +25,8 @@ värsta missbruksvektorn (se [Risk & GDPR](#risk--gdpr)).
 
 - **Next.js (App Router) + TypeScript** – frontend och server-routes i ett.
 - **Tailwind CSS** – mobil-först, mörkt tema, tematiserbart via CSS-variabler.
-- **Prisma + SQLite** – räcker gott för POC (byt till Postgres vid serverless
-  hosting, se nedan).
+- **Prisma + Postgres** (hostad, t.ex. Neon/Supabase) – samma databas lokalt och
+  på Vercel, så det fungerar på serverless utan persistent filsystem.
 - **SMS bakom ett internt interface** (`sms.send({ to, from, message })`) så att
   leverantören kan bytas utan att resten av appen påverkas. Inbyggda
   leverantörer: `dummy` (loggar bara) och `elks` (46elks).
@@ -53,22 +53,25 @@ src/
     copy.ts             # ALL text (ändra branding/ton här)
     phone.ts            # E.164-validering
     vcard.ts            # vCard-generering (klient)
-    rateLimit.ts        # rate limiting (in-memory)
+    rateLimit.ts        # rate limiting (DB-backad, serverless-säker)
     db.ts               # Prisma-klient
 ```
 
 ## Kom igång lokalt
 
-Kräver Node 18+ (testat på Node 22).
+Kräver Node 18+ (testat på Node 22) och en Postgres-databas. Enklast: skapa en
+gratis databas hos [Neon](https://neon.tech/) eller
+[Supabase](https://supabase.com/) och använd den både lokalt och i produktion
+(Neon har dessutom "branches" om du vill skilja dev/prod åt).
 
 ```bash
 # 1. Installera beroenden
 npm install
 
-# 2. Skapa din lokala miljöfil och fyll i värden
+# 2. Skapa din lokala miljöfil och fyll i värden (bl.a. DATABASE_URL)
 cp .env.example .env.local
 
-# 3. Skapa databasen och seeda ursäkterna
+# 3. Skapa tabellerna och seeda ursäkterna
 npm run db:push      # skapar tabeller utifrån schema.prisma
 npm run db:seed      # lägger in start-ursäkterna
 
@@ -95,7 +98,7 @@ för fullständig lista med kommentarer. De viktigaste:
 
 | Variabel | Beskrivning |
 | --- | --- |
-| `DATABASE_URL` | SQLite-sökväg (`file:./dev.db`) eller Postgres-URL. |
+| `DATABASE_URL` | Postgres connection-string (Neon/Supabase). |
 | `SMS_PROVIDER` | `dummy` (default, skickar inget) eller `elks`. |
 | `SMS_FROM_NUMBER` | Plattformens fasta sändningsnummer i E.164. |
 | `NEXT_PUBLIC_SMS_FROM_NUMBER` | Samma nummer, exponerat för vCard i klienten. |
@@ -129,24 +132,23 @@ för fullständig lista med kommentarer. De viktigaste:
 Eftersom du är van vid React/GitHub är Vercel enklast:
 
 1. Pusha repot till GitHub och importera det i [Vercel](https://vercel.com/new).
-2. **Databas:** Vercels filsystem är inte persistent, så SQLite fungerar inte i
-   produktion där. Skapa en gratis Postgres hos
-   [Neon](https://neon.tech/) eller [Supabase](https://supabase.com/) och:
-   - i `prisma/schema.prisma`, byt `provider = "sqlite"` → `"postgresql"`,
-   - sätt `DATABASE_URL` till Postgres-connection-stringen i Vercels env-vars.
+2. **Databas:** skapa en gratis Postgres hos [Neon](https://neon.tech/) eller
+   [Supabase](https://supabase.com/). Ingen schemaändring behövs – appen är redan
+   inställd på Postgres.
 3. Lägg in alla env-variabler från `.env.example` i Vercel (Project →
-   Settings → Environment Variables). Använd `SMS_PROVIDER="dummy"` tills du
-   medvetet vill skicka skarpt.
-4. Kör seed mot produktionsdatabasen en gång:
+   Settings → Environment Variables), inkl. `DATABASE_URL`. Använd
+   `SMS_PROVIDER="dummy"` tills du medvetet vill skicka skarpt.
+4. Kör tabell-setup och seed mot databasen en gång (lokalt, mot prod-URL:en):
    ```bash
-   DATABASE_URL="<din-postgres-url>" npm run db:push
-   DATABASE_URL="<din-postgres-url>" npm run db:seed
+   DATABASE_URL="<din-postgres-url>" npx prisma db push
+   DATABASE_URL="<din-postgres-url>" npx prisma db seed
    ```
 5. Deploya. `npm run build` kör `prisma generate` automatiskt.
 
-> Rate limiting är in-memory i POC och delas inte mellan serverless-instanser
-> och nollställs vid omstart. Det räcker för POC; inför produktion flyttas det
-> till en delad store (t.ex. Upstash Redis) bakom samma interface.
+> Rate limiting är DB-backad (tabellen `RateBucket`) och fungerar därför över
+> flera serverless-instanser. Utgångna buckets städas bort löpande, så
+> nummer-hasharna auto-raderas efter fönstret. Inför hög trafik kan den flyttas
+> till t.ex. Upstash Redis bakom samma interface.
 
 ## Risk & GDPR
 
@@ -157,7 +159,9 @@ Tas på allvar redan i Fas 1 (det går inte att bolta på efteråt):
   aldrig till databasen och loggas aldrig i klartext.
 - **Inga personuppgifter i URL:er** eller query-parametrar.
 - **Rate limiting** redan i Fas 1: per IP, per nummer (via en kortlivad, saltad
-  **hash** som bara lever i minnet) samt ett globalt dygnstak som budget-skydd.
+  **hash** – numret lagras aldrig i klartext) samt ett globalt dygnstak som
+  budget-skydd. Buckets ligger i databasen (serverless-säkert) och utgångna
+  poster städas bort löpande, så hasharna auto-raderas efter fönstret.
 - **Endast kurerad pool i Fas 1:** bara godkända ursäkter kan skickas – ingen
   fri text till godtyckligt nummer.
 - **Missbruk kraftigt reducerat:** det valda namnet visas bara för den som själv
