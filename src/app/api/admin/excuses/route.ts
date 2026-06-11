@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  let body: { id?: unknown; status?: unknown };
+  let body: { id?: unknown; status?: unknown; text?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -58,12 +58,34 @@ export async function PATCH(req: Request) {
   }
 
   const id = typeof body.id === "string" ? body.id : "";
-  const status = typeof body.status === "string" ? body.status : "";
-  if (!id || !SETTABLE.has(status)) {
+  if (!id) {
     return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });
   }
 
-  const result = await prisma.excuse.updateMany({ where: { id }, data: { status } });
+  // Accept a status change, a text edit, or both.
+  const data: { status?: string; text?: string } = {};
+
+  if (body.status !== undefined) {
+    const status = typeof body.status === "string" ? body.status : "";
+    if (!SETTABLE.has(status)) {
+      return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });
+    }
+    data.status = status;
+  }
+
+  if (body.text !== undefined) {
+    const text = typeof body.text === "string" ? body.text.trim() : "";
+    if (text.length < MIN_LEN || text.length > MAX_LEN) {
+      return NextResponse.json({ ok: false, error: "invalid_text" }, { status: 422 });
+    }
+    data.text = text;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });
+  }
+
+  const result = await prisma.excuse.updateMany({ where: { id }, data });
   if (result.count === 0) {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   }

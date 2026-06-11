@@ -18,6 +18,8 @@ export default function AdminPage() {
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [newText, setNewText] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
   async function load() {
     try {
@@ -59,6 +61,33 @@ export default function AdminPage() {
         setExcuses((cur) =>
           cur ? cur.map((e) => (e.id === id ? { ...e, status } : e)) : cur,
         );
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function startEdit(id: string, text: string) {
+    setEditingId(id);
+    setEditText(text);
+  }
+
+  async function saveEdit(id: string) {
+    const text = editText.trim();
+    if (text.length < 5) return;
+    setBusy(id);
+    try {
+      const res = await fetch("/api/admin/excuses", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, text }),
+      });
+      if (res.ok) {
+        setExcuses((cur) =>
+          cur ? cur.map((e) => (e.id === id ? { ...e, text } : e)) : cur,
+        );
+        setEditingId(null);
+        setEditText("");
       }
     } finally {
       setBusy(null);
@@ -178,45 +207,86 @@ export default function AdminPage() {
             </h2>
             {pool.map((e) => (
               <Card key={e.id} className="gap-3">
-                <p
-                  className={
-                    "text-base font-medium leading-snug " +
-                    (e.status === "disabled" ? "text-muted line-through" : "")
-                  }
-                >
-                  {e.text}
-                </p>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-muted">
-                    {fill(COPY.admin.used, {
-                      count: e.sentCount.toLocaleString("sv-SE"),
-                    })}{" "}
-                    · {sourceLabel(e.source)}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Chip
-                      active={e.status === "approved"}
-                      disabled={busy === e.id}
-                      onClick={() =>
-                        patchStatus(
-                          e.id,
-                          e.status === "approved" ? "disabled" : "approved",
-                        )
+                {editingId === e.id ? (
+                  <>
+                    <textarea
+                      rows={2}
+                      maxLength={200}
+                      value={editText}
+                      onChange={(ev) => setEditText(ev.target.value)}
+                      className="w-full resize-none rounded-2xl border border-border bg-surface px-4 py-3 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        variant="secondary"
+                        disabled={busy === e.id}
+                        onClick={() => {
+                          setEditingId(null);
+                          setEditText("");
+                        }}
+                      >
+                        {COPY.admin.cancel}
+                      </Button>
+                      <Button
+                        disabled={busy === e.id || editText.trim().length < 5}
+                        onClick={() => saveEdit(e.id)}
+                      >
+                        {COPY.admin.save}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p
+                      className={
+                        "text-base font-medium leading-snug " +
+                        (e.status === "disabled" ? "text-muted line-through" : "")
                       }
                     >
-                      {e.status === "approved" ? COPY.admin.on : COPY.admin.off}
-                    </Chip>
-                    <button
-                      type="button"
-                      aria-label={COPY.admin.delete}
-                      disabled={busy === e.id}
-                      onClick={() => remove(e.id)}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-soft transition hover:text-danger active:scale-95 disabled:opacity-50"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
+                      {e.text}
+                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs text-muted">
+                        {fill(COPY.admin.used, {
+                          count: e.sentCount.toLocaleString("sv-SE"),
+                        })}{" "}
+                        · {sourceLabel(e.source)}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Chip
+                          active={e.status === "approved"}
+                          disabled={busy === e.id}
+                          onClick={() =>
+                            patchStatus(
+                              e.id,
+                              e.status === "approved" ? "disabled" : "approved",
+                            )
+                          }
+                        >
+                          {e.status === "approved" ? COPY.admin.on : COPY.admin.off}
+                        </Chip>
+                        <button
+                          type="button"
+                          aria-label={COPY.admin.edit}
+                          disabled={busy === e.id}
+                          onClick={() => startEdit(e.id, e.text)}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-soft transition hover:text-brand active:scale-95 disabled:opacity-50"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={COPY.admin.delete}
+                          disabled={busy === e.id}
+                          onClick={() => remove(e.id)}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-soft transition hover:text-danger active:scale-95 disabled:opacity-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </Card>
             ))}
           </section>
