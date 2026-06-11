@@ -57,6 +57,41 @@ export const COPY = {
     send: "Skicka till mig",
     sending: "Skickar …",
     empty: "Inga ursäkter tillgängliga just nu.",
+    // {count} fylls i med antal gånger ursäkten skickats. Visas inte vid 0.
+    sentCount: "Skickad {count} gånger",
+    sentCountOnce: "Skickad 1 gång",
+    suggestLink: "Saknar du en ursäkt? Föreslå en egen",
+  },
+
+  suggest: {
+    title: "Föreslå en ursäkt",
+    intro:
+      "Skriv ett förslag på en ursäkt. Det skickas inte som SMS – det går till oss för granskning och kan dyka upp i listan för andra om vi godkänner det.",
+    placeholder: "T.ex. “Grannen behöver hjälp med en vattenläcka.”",
+    submit: "Skicka in förslag",
+    submitting: "Skickar in …",
+    back: "Tillbaka",
+    successTitle: "Tack för ditt förslag! 🙌",
+    successBody:
+      "Vi tittar igenom det och lägger till det i listan om det passar. Det skickas inte som SMS.",
+    another: "Föreslå en till",
+    done: "Klar",
+    errors: {
+      invalid_text: "Skriv en ursäkt på mellan 5 och 200 tecken.",
+      rate_limited:
+        "Du har skickat in några förslag nyss. Vänta en stund innan du försöker igen.",
+      bad_request: "Något saknades. Försök igen.",
+      unknown: "Något oväntat gick fel. Försök igen.",
+    },
+  },
+
+  admin: {
+    title: "Moderering",
+    subtitle: "Inskickade förslag som väntar på granskning.",
+    empty: "Inga förslag väntar just nu. 🎉",
+    approve: "Godkänn",
+    reject: "Avslå",
+    loadError: "Kunde inte hämta förslagen. Ladda om sidan.",
   },
 
   result: {
@@ -85,4 +120,15 @@ export const COPY = {
 /** Liten hjälpare för att fylla i {name} i texterna. */
 export function fill(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? "");
+}
+
+/**
+ * "Skickad 1 248 gånger" – med svenskt tusentalsavgränsare. Returnerar null vid
+ * 0 så att räknaren göms helt för ursäkter som ännu inte skickats.
+ */
+export function formatSentCount(count: number): string | null {
+  if (count <= 0) return null;
+  if (count === 1) return COPY.browse.sentCountOnce;
+  const formatted = count.toLocaleString("sv-SE");
+  return fill(COPY.browse.sentCount, { count: formatted });
 }

@@ -5,8 +5,10 @@ skickad som **SMS till din egen telefon** – så den dyker upp som ett meddelan
 från t.ex. _Mamma_ eller _Älskling_. En smidig social "exit"-knapp för när du
 fått nog och inte orkar förklara dig.
 
-> **Status: Proof of Concept (Fas 1).** Fokus på ett fungerande, snyggt flöde –
-> men med GDPR och missbruksskydd på allvar från start (se nedan).
+> **Status: Proof of Concept (Fas 1 + Fas 2).** Fokus på ett fungerande, snyggt
+> flöde – men med GDPR och missbruksskydd på allvar från start (se nedan).
+> Fas 2 lägger till popularitetssortering, användarinskickade förslag och en
+> lösenordsskyddad admin-vy för moderering.
 
 ## Hur det fungerar (kort)
 
@@ -38,14 +40,20 @@ prisma/
   schema.prisma         # datamodell (Excuse)
   seed.ts               # seedar start-ursäkterna
 src/
+  middleware.ts         # Basic Auth-skydd framför /admin och /api/admin
   app/
     page.tsx            # renderar flödet
     layout.tsx
+    admin/page.tsx      # moderering: lista pending, godkänn/avslå
     api/
-      excuses/route.ts  # GET – godkända ursäkter, slumpad ordning
+      excuses/route.ts  # GET – godkända ursäkter, mest skickade först + sentCount
       send/route.ts     # POST – validerar, rate-limitar, skickar SMS
+      suggest/route.ts  # POST – tar emot förslag (pending), skickar ALDRIG SMS
+      admin/
+        pending/route.ts   # GET – förslag som väntar på moderering
+        moderate/route.ts  # POST – approve/reject
   components/
-    Flow.tsx            # hela klient-flödet (steg för steg)
+    Flow.tsx            # hela klient-flödet (steg för steg, inkl. föreslå egen)
     ui.tsx              # knappar/kort
   lib/
     sms/                # interface + dummy/46elks-leverantörer
@@ -103,7 +111,8 @@ för fullständig lista med kommentarer. De viktigaste:
 | `SMS_FROM_NUMBER` | Plattformens fasta sändningsnummer i E.164. |
 | `NEXT_PUBLIC_SMS_FROM_NUMBER` | Samma nummer, exponerat för vCard i klienten. |
 | `ELKS_API_USERNAME` / `ELKS_API_PASSWORD` | 46elks-nycklar (krävs bara för `elks`). |
-| `RATE_LIMIT_*` | Tak per IP/nummer/dygn + fönsterlängd + hash-salt. |
+| `RATE_LIMIT_*` | Tak per IP/nummer/dygn + förslag-per-IP + fönsterlängd + hash-salt. |
+| `ADMIN_USER` / `ADMIN_PASSWORD` | Inloggning till admin-vyn (`/admin`). Saknas de är vyn låst. |
 
 > **SMS-nyckeln får ALDRIG ligga i klienten.** All sändning sker i
 > server-routen `/api/send`. `NEXT_PUBLIC_SMS_FROM_NUMBER` är avsiktligt publik
@@ -162,28 +171,45 @@ Tas på allvar redan i Fas 1 (det går inte att bolta på efteråt):
   **hash** – numret lagras aldrig i klartext) samt ett globalt dygnstak som
   budget-skydd. Buckets ligger i databasen (serverless-säkert) och utgångna
   poster städas bort löpande, så hasharna auto-raderas efter fönstret.
-- **Endast kurerad pool i Fas 1:** bara godkända ursäkter kan skickas – ingen
-  fri text till godtyckligt nummer.
+- **Endast kurerad pool skickas (även i Fas 2):** bara godkända ursäkter kan
+  skickas som SMS – ingen fri text lämnar systemet. Användarinskickad fri text
+  hamnar enbart i modereringskön och visas/skickas aldrig förrän den godkänts.
 - **Missbruk kraftigt reducerat:** det valda namnet visas bara för den som själv
   sparat kontakten, så ingen trovärdig imitation kan skapas mot ett offer.
-- **OTP-verifiering** är medvetet uppskjutet (ej i POC), men arkitekturen är
-  byggd så att det kan slås på senare – särskilt inför Fas 2:s fria text.
+- **OTP-verifiering** är medvetet uppskjutet (ej i POC). Eftersom fri text aldrig
+  skickas som SMS (förslag går bara till modereringskön) finns ingen ny
+  sänd-vektor i Fas 2 – OTP kan fortsatt vänta. Arkitekturen är ändå byggd så att
+  det kan slås på senare.
 
 ## Datamodell
 
 `Excuse`: `id`, `text`, `source` (`seed` | `user`), `status`
 (`approved` | `pending` | `rejected`), `sentCount`, `createdAt`.
 
-`sentCount` räknas upp vid varje sändning – förbereder Fas 2:s
-popularitetssortering (visas inte i Fas 1). Statusfältet förbereder Fas 2:s
-modereringskö (`pending`/`rejected` visas aldrig för andra).
+`sentCount` räknas upp vid varje sändning och driver Fas 2:s
+popularitetssortering och räknaren i flödet. Statusfältet driver
+modereringskön: `pending`/`rejected` visas aldrig för andra, bara `approved`
+hamnar i den publika poolen.
 
-## Fas 2 (ej byggt än)
+## Fas 2 (byggt)
 
-- Popularitetssortering med räknare ("Skickad 1 248 gånger").
-- Eget förslag: smsas direkt till användaren själv och hamnar i en
-  modereringskö (`pending`).
-- Lösenordsskyddad admin-vy för `approve`/`reject`.
+- **Popularitet.** `/api/excuses` returnerar `sentCount` och sorterar de mest
+  skickade ursäkterna först. Flödet visar en räknare ("Skickad 1 248 gånger").
+  "Slumpa"-knappen ger variation så att även mindre använda ursäkter dyker upp.
+- **Eget förslag.** Användaren kan skriva ett förslag på en ursäkt. Det
+  **skickas aldrig som SMS** – det sparas som `source="user"`, `status="pending"`
+  och hamnar i modereringskön. Inskickade förslag visas aldrig för andra förrän
+  de godkänts. (Avviker medvetet från brief avsnitt 4: fri text lämnar aldrig
+  systemet som SMS, vilket stänger den värsta missbruks-/GDPR-vektorn och låter
+  OTP fortsatt vara uppskjutet.)
+- **Admin-vy (`/admin`).** Lösenordsskyddad (HTTP Basic Auth via
+  `src/middleware.ts`, med `ADMIN_USER`/`ADMIN_PASSWORD`). Listar väntande
+  förslag och låter oss `Godkänn` (→ `approved`, läggs i den publika poolen)
+  eller `Avslå` (→ `rejected`).
 
-Arkitekturen (status-fält, sentCount, SMS-interface, rate limiting) är byggd så
-att Fas 2 kan läggas på utan ombyggnad.
+### Admin
+
+Gå till `/admin` och logga in med `ADMIN_USER` / `ADMIN_PASSWORD`. Saknas de i
+miljön är vyn helt låst (fail closed). Bygg om till riktig auth senare utan att
+röra resten av appen – allt skydd sitter i middleware framför `/admin` och
+`/api/admin`.

@@ -113,6 +113,24 @@ export async function checkRateLimit(
   return { allowed: true };
 }
 
+/**
+ * Rate limiting för användarinskickade förslag (Fas 2). Begränsas per IP – inget
+ * nummer är inblandat eftersom förslag aldrig skickas som SMS, de hamnar bara i
+ * modereringskön. Skyddar mot spam i kön och i admin-vyn.
+ */
+export async function checkSuggestRateLimit(ip: string): Promise<RateLimitResult> {
+  const windowMs = envInt("RATE_LIMIT_WINDOW_SECONDS", 3600) * 1000;
+  const perIp = envInt("RATE_LIMIT_SUGGEST_PER_IP", 5);
+
+  await sweepExpired();
+
+  if (await hit("suggest:" + ip, perIp, windowMs)) {
+    return { allowed: false, reason: "per_ip" };
+  }
+
+  return { allowed: true };
+}
+
 /** Hämtar klientens IP ur request-headers (bakom proxy/edge). */
 export function getClientIp(headers: Headers): string {
   const fwd = headers.get("x-forwarded-for");

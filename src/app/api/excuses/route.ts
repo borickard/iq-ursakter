@@ -5,22 +5,21 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/excuses
- * Returnerar de godkända ursäkterna i slumpad ordning. Klienten bläddrar sedan
- * igenom listan utan upprepning förrän den tar slut (brief avsnitt 4).
+ * Returnerar de godkända ursäkterna med de mest skickade först (Fas 2:s
+ * popularitetssortering, brief avsnitt 4) tillsammans med sentCount så att
+ * klienten kan visa "Skickad X gånger".
  *
- * Endast status="approved" returneras – pending/rejected (Fas 2) visas aldrig.
+ * Endast status="approved" returneras – pending/rejected visas aldrig.
+ *
+ * Klienten bläddrar sedan igenom listan; "Slumpa"-knappen ger variation så att
+ * även mindre använda ursäkter dyker upp.
  */
 export async function GET() {
   const excuses = await prisma.excuse.findMany({
     where: { status: "approved" },
-    select: { id: true, text: true },
+    select: { id: true, text: true, sentCount: true },
+    orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
   });
-
-  // Fisher–Yates-shuffle på servern.
-  for (let i = excuses.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [excuses[i], excuses[j]] = [excuses[j]!, excuses[i]!];
-  }
 
   return NextResponse.json({ excuses });
 }

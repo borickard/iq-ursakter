@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { COPY, fill } from "@/lib/copy";
+import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { downloadVCard } from "@/lib/vcard";
 import { normalizeToE164 } from "@/lib/phone";
 import { Button, Card, Chip } from "@/components/ui";
 
-type Step = "landing" | "details" | "vcard" | "browse" | "result";
-type Excuse = { id: string; text: string };
+type Step = "landing" | "details" | "vcard" | "browse" | "result" | "suggest";
+type Excuse = { id: string; text: string; sentCount: number };
 type SendError = keyof typeof COPY.result.errors;
+type SuggestError = keyof typeof COPY.suggest.errors;
 
 const SENDER_NUMBER = process.env.NEXT_PUBLIC_SMS_FROM_NUMBER ?? "";
 
@@ -64,6 +65,7 @@ export default function Flow() {
           phone={phone}
           sender={sender}
           onBack={() => setStep("vcard")}
+          onSuggest={() => setStep("suggest")}
           onRestart={() => {
             setPhone("");
             setSender("");
@@ -71,6 +73,8 @@ export default function Flow() {
           }}
         />
       )}
+
+      {step === "suggest" && <Suggest onBack={() => setStep("browse")} />}
 
       <Footer />
     </main>
@@ -240,11 +244,13 @@ function Browse({
   phone,
   sender,
   onBack,
+  onSuggest,
   onRestart,
 }: {
   phone: string;
   sender: string;
   onBack: () => void;
+  onSuggest: () => void;
   onRestart: () => void;
 }) {
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
@@ -327,6 +333,11 @@ function Browse({
             <p className="flex min-h-[7rem] items-center justify-center text-xl font-semibold leading-snug">
               “{current.text}”
             </p>
+            {formatSentCount(current.sentCount) && (
+              <p className="text-xs text-muted">
+                {formatSentCount(current.sentCount)}
+              </p>
+            )}
           </Card>
         ) : (
           <Card className="text-center text-muted">{COPY.browse.empty}</Card>
@@ -354,6 +365,10 @@ function Browse({
           </Button>
         </div>
       )}
+
+      <Button block variant="ghost" onClick={onSuggest} className="text-sm">
+        {COPY.browse.suggestLink}
+      </Button>
     </div>
   );
 }
@@ -384,6 +399,88 @@ function Result({
         </Button>
         <Button block variant="ghost" onClick={onRestart}>
           {COPY.result.restart}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Steg: föreslå egen ursäkt (Fas 2) ──────────────────────────────────── */
+
+function Suggest({ onBack }: { onBack: () => void }) {
+  const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<SuggestError | null>(null);
+  const [done, setDone] = useState(false);
+
+  async function submit() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        setDone(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const err = (data?.error ?? "unknown") as string;
+        setError((err in COPY.suggest.errors ? err : "unknown") as SuggestError);
+      }
+    } catch {
+      setError("unknown");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <h1 className="text-2xl font-extrabold">{COPY.suggest.successTitle}</h1>
+          <p className="max-w-xs text-muted">{COPY.suggest.successBody}</p>
+        </div>
+        <div className="space-y-3 pt-4">
+          <Button
+            block
+            onClick={() => {
+              setText("");
+              setDone(false);
+            }}
+          >
+            {COPY.suggest.another}
+          </Button>
+          <Button block variant="ghost" onClick={onBack}>
+            {COPY.suggest.done}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-6">
+      <Header title={COPY.suggest.title} onBack={onBack} />
+
+      <p className="text-sm leading-relaxed text-muted">{COPY.suggest.intro}</p>
+
+      <textarea
+        rows={4}
+        maxLength={200}
+        placeholder={COPY.suggest.placeholder}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="w-full resize-none rounded-2xl border border-border bg-surface px-4 py-3.5 outline-none ring-brand/40 focus:ring-2"
+      />
+
+      {error && <p className="text-sm text-danger">{COPY.suggest.errors[error]}</p>}
+
+      <div className="mt-auto pt-4">
+        <Button block onClick={submit} disabled={submitting || text.trim().length < 5}>
+          {submitting ? COPY.suggest.submitting : COPY.suggest.submit}
         </Button>
       </div>
     </div>
