@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 /**
  * iOS Messages-mockup. Återanvändbar – används på testsidan /interface och kan
  * senare driva den "falska" meddelandevyn. Bubblornas svansar görs via CSS i
@@ -22,18 +26,30 @@ export function IosMessages({
 }: IosMessagesProps) {
   const initial = contactName.trim().charAt(0).toUpperCase() || "?";
 
+  // När appen körs som hemskärms-app (standalone) visar iOS sitt ÄKTA statusfält
+  // – då döljer vi vårt egna så att det inte blir dubbelt.
+  const [standalone, setStandalone] = useState(false);
+  useEffect(() => {
+    const mm = window.matchMedia?.("(display-mode: standalone)").matches;
+    const iosStandalone =
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    setStandalone(Boolean(mm || iosStandalone));
+  }, []);
+
   return (
     <div className="ios-screen flex h-full flex-col bg-white text-black">
-      {/* Statusfält */}
-      <div className="relative flex items-center justify-between px-7 pb-1 pt-3">
-        <span className="text-[15px] font-semibold tracking-tight">{statusTime}</span>
-        <div className="absolute left-1/2 top-2.5 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-black" />
-        <div className="flex items-center gap-1.5">
-          <SignalIcon />
-          <WifiIcon />
-          <BatteryIcon />
+      {/* Statusfält (döljs i helskärms-/hemskärmsläge) */}
+      {!standalone && (
+        <div className="relative flex items-center justify-between px-7 pb-1 pt-3">
+          <span className="text-[15px] font-semibold tracking-tight">{statusTime}</span>
+          <div className="absolute left-1/2 top-2.5 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-black" />
+          <div className="flex items-center gap-1.5">
+            <SignalIcon />
+            <WifiIcon />
+            <BatteryIcon />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-black/10 bg-[#f7f7f7]/90 px-3 py-1.5">

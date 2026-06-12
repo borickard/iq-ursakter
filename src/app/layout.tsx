@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   title: COPY.landing.title,
   description: COPY.landing.subtitle,
   robots: { index: false, follow: false }, // POC – håll den ur sökmotorer.
+  // Gör att hemskärms-appen körs i helskärm utan webbläsarchrome på iOS.
+  appleWebApp: { capable: true, title: "Ursäkten", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -13,6 +15,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
