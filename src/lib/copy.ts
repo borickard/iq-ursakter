@@ -66,7 +66,8 @@ export const COPY = {
     // {count} fylls i med antal gånger ursäkten skickats. Visas inte vid 0.
     sentCount: "Skickad {count} gånger",
     sentCountOnce: "Skickad 1 gång",
-    suggestLink: "Saknar du en ursäkt? Föreslå en egen",
+    suggestQuestion: "Saknar du en ursäkt?",
+    suggestCta: "Föreslå en egen",
   },
 
   suggest: {

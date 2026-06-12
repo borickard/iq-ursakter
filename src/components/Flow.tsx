@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
-import { downloadVCard } from "@/lib/vcard";
 import { normalizeToE164 } from "@/lib/phone";
 import { Button, Card, Chip } from "@/components/ui";
 
@@ -10,12 +9,6 @@ type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = { id: string; text: string; sentCount: number };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
-
-const SENDER_NUMBER = process.env.NEXT_PUBLIC_SMS_FROM_NUMBER ?? "";
-
-// "name" = det valda namnet används som SMS-avsändare (då behövs ingen vCard).
-// "number" (default) = fast nummer + sparad kontakt (vCard-modellen).
-const NAME_MODE = (process.env.NEXT_PUBLIC_SMS_SENDER_MODE ?? "number") === "name";
 
 export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
@@ -253,32 +246,17 @@ function Compose({
         {sending ? COPY.browse.sending : COPY.browse.send}
       </Button>
 
-      {/* Sändningsnummer + spara kontakt – bara i nummer-läget (vCard-modellen) */}
-      {!NAME_MODE && (
-        <div className="space-y-2 rounded-3xl border border-border bg-surface p-4 shadow-soft">
-          <p className="text-xs text-muted">{COPY.compose.fromLabel}</p>
-          <div className="flex items-center justify-between gap-3">
-            <span className="select-all font-mono text-sm font-semibold">
-              {SENDER_NUMBER}
-            </span>
-            <Button
-              variant="secondary"
-              onClick={() => downloadVCard(contactName, SENDER_NUMBER)}
-              disabled={!sender.trim()}
-              className="px-4 py-2 text-sm"
-            >
-              {COPY.compose.saveContact}
-            </Button>
-          </div>
-          <p className="text-[11px] leading-relaxed text-muted/80">
-            {COPY.compose.fromHelp}
-          </p>
-        </div>
-      )}
-
-      <Button block variant="ghost" onClick={onSuggest} className="text-sm">
-        {COPY.browse.suggestLink}
-      </Button>
+      {/* Sekundär åtgärd – föreslå en egen ursäkt */}
+      <div className="flex flex-col items-center gap-2 pt-3">
+        <p className="text-base text-muted">{COPY.browse.suggestQuestion}</p>
+        <Button
+          variant="secondary"
+          onClick={onSuggest}
+          className="px-7 py-2.5 text-sm"
+        >
+          {COPY.browse.suggestCta}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -535,9 +513,7 @@ function Result({
         </div>
         <h1 className="text-2xl font-extrabold">{COPY.result.successTitle}</h1>
         <p className="max-w-xs text-muted">
-          {fill(NAME_MODE ? COPY.result.successBodyName : COPY.result.successBody, {
-            name: sender,
-          })}
+          {fill(COPY.result.successBodyName, { name: sender })}
         </p>
       </div>
       <div className="space-y-3 pt-4">
