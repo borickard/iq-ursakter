@@ -17,7 +17,7 @@ export const COPY = {
     eyebrow: "Slut på socialt batteri?",
     title: "Ursäkten",
     subtitle:
-      "En trovärdig ursäkt, skickad som SMS till din egen telefon – så den ser ut att komma från t.ex. Mamma eller Älskling. För när kvällen drar ut på tiden, batteriet är slut och du bara vill hem – utan att behöva förklara dig.",
+      "En trovärdig ursäkt som SMS till din egen telefon – så den ser ut att komma från t.ex. Mamma eller Älskling. För när du bara vill hem, utan att förklara dig.",
     cta: "Skapa min ursäkt",
     points: [
       "Du väljer vem det ska se ut att komma från.",

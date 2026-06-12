@@ -62,42 +62,29 @@ export default function Flow() {
 function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col justify-center gap-7">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-b from-[#ef6a87] to-[#d83a5f] font-serif text-4xl font-bold text-white shadow-float ring-[6px] ring-white/70">
-            U
-          </div>
-          <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-wide text-brand">
-              {COPY.landing.eyebrow}
-            </p>
-            <h1 className="text-4xl font-extrabold leading-tight">
-              {COPY.landing.title}
-            </h1>
-            <p className="text-base leading-relaxed text-muted">
-              {COPY.landing.subtitle}
-            </p>
-          </div>
-        </div>
-
-        <ul className="space-y-2">
-          {COPY.landing.points.map((p) => (
-            <li key={p} className="flex items-start gap-2 text-sm text-muted">
-              <span aria-hidden className="mt-0.5 text-brand">
-                ✓
-              </span>
-              <span>{p}</span>
-            </li>
-          ))}
-        </ul>
+      {/* Hero – ett dominant ordmärke + en kort stödrad */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+          {COPY.landing.eyebrow}
+        </p>
+        <h1 className="text-6xl font-extrabold tracking-tight">{COPY.landing.title}</h1>
+        <p className="max-w-sm text-base leading-relaxed text-muted">
+          {COPY.landing.subtitle}
+        </p>
       </div>
 
-      <Button block onClick={onStart} className="mt-8">
-        {COPY.landing.cta}
-      </Button>
+      {/* Primär åtgärd – tydligt mest framträdande */}
+      <div className="space-y-3">
+        <Button block onClick={onStart} className="py-5 text-lg shadow-float">
+          {COPY.landing.cta}
+        </Button>
+        <p className="text-center text-xs text-muted/80">
+          {COPY.landing.points.join(" · ")}
+        </p>
+      </div>
 
-      {/* Grundningsblock – varför Ursäkten finns (sajtens röst) */}
-      <div className="mt-8 rounded-3xl border border-border bg-surface/70 p-5 shadow-soft">
+      {/* Sekundärt: varför Ursäkten finns */}
+      <div className="mt-8 rounded-3xl border border-border bg-surface/60 p-5">
         <p className="text-sm leading-relaxed text-muted">{COPY.landing.grounding}</p>
         {COPY.landing.groundingBy && (
           <p className="mt-3 text-xs font-medium text-muted/80">
