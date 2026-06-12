@@ -18,6 +18,8 @@ export type IosMessagesProps = {
   leadInLabel?: string;
   /** Klockan i statusfältet. */
   statusTime?: string;
+  /** Anropas när man trycker på bakåt-pilen (‹) i headern. */
+  onBack?: () => void;
 };
 
 export function IosMessages({
@@ -26,6 +28,7 @@ export function IosMessages({
   dateLabel = "Idag 17:36",
   leadInLabel = "Idag 16:48",
   statusTime = "9:41",
+  onBack,
 }: IosMessagesProps) {
   const initial = contactName.trim().charAt(0).toUpperCase() || "?";
 
@@ -56,12 +59,17 @@ export function IosMessages({
 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-black/10 bg-[#f7f7f7]/90 px-3 py-1.5">
-        <div className="flex w-14 items-center text-[#0a7cff]">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex w-14 items-center text-[#0a7cff]"
+          aria-label="Tillbaka"
+        >
           <span className="text-2xl leading-none">‹</span>
           <span className="ml-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0a7cff] px-1 text-[11px] font-semibold text-white">
             2
           </span>
-        </div>
+        </button>
         <div className="flex flex-col items-center gap-0.5">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-b from-[#b9b9c0] to-[#8a8a92] text-sm font-semibold text-white">
             {initial}

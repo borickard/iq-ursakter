@@ -284,15 +284,9 @@ function Compose({
               message={current.text}
               dateLabel={fakeTime(0)}
               leadInLabel={fakeTime(47)}
+              onBack={() => setShowFake(false)}
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setShowFake(false)}
-            className="fixed bottom-24 right-3 z-50 rounded-full bg-black/35 px-3 py-1.5 text-xs font-medium text-white backdrop-blur"
-          >
-            {COPY.compose.close}
-          </button>
         </div>
       )}
 
