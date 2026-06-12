@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
 import { Button, Card, Chip } from "@/components/ui";
+import { IosMessages } from "@/components/IosMessages";
 
 type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = { id: string; text: string; sentCount: number };
@@ -133,6 +134,7 @@ function Compose({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<SendError | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showFake, setShowFake] = useState(false);
 
   const count = excuses?.length ?? 0;
   const at = (i: number) =>
@@ -178,6 +180,16 @@ function Compose({
     } finally {
       setSending(false);
     }
+  }
+
+  function showMessage() {
+    if (!sender.trim()) {
+      setFormError(COPY.details.missingSender);
+      return;
+    }
+    if (!current) return;
+    setFormError(null);
+    setShowFake(true);
   }
 
   return (
@@ -250,6 +262,30 @@ function Compose({
       <Button block onClick={send} disabled={sending || !current}>
         {sending ? COPY.browse.sending : COPY.browse.send}
       </Button>
+
+      {/* Alternativ: visa som ett meddelande i helskärm (skickar inget SMS) */}
+      <Button block variant="secondary" onClick={showMessage} disabled={!current}>
+        {COPY.compose.showAsMessage}
+      </Button>
+
+      {showFake && current && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <div className="mx-auto h-full max-w-md">
+            <IosMessages
+              contactName={contactName}
+              message={current.text}
+              dateLabel="Idag"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowFake(false)}
+            className="fixed bottom-24 right-3 z-50 rounded-full bg-black/35 px-3 py-1.5 text-xs font-medium text-white backdrop-blur"
+          >
+            {COPY.compose.close}
+          </button>
+        </div>
+      )}
 
       {/* Sekundär åtgärd – föreslå en egen ursäkt */}
       <div className="flex flex-col items-center gap-2 pt-3">
