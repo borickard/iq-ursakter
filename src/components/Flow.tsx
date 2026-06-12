@@ -198,6 +198,12 @@ function Compose({
     if (!current) return;
     setFormError(null);
     setShowFake(true);
+    // Räkna som en användning av ursäkten (samma räknare som SMS). Fire-and-forget.
+    fetch("/api/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ excuseId: current.id }),
+    }).catch(() => {});
   }
 
   return (
