@@ -12,8 +12,10 @@ export type IosMessagesProps = {
   contactName: string;
   /** Inkommande meddelandetext (ursäkten). */
   message: string;
-  /** Datum/tid-separator ovanför meddelandet. */
+  /** Datum/tid-separator ovanför ursäkten. */
   dateLabel?: string;
+  /** Datum/tid-separator ovanför den inledande konversationen. */
+  leadInLabel?: string;
   /** Klockan i statusfältet. */
   statusTime?: string;
 };
@@ -22,6 +24,7 @@ export function IosMessages({
   contactName,
   message,
   dateLabel = "Idag 17:36",
+  leadInLabel = "Idag 16:48",
   statusTime = "9:41",
 }: IosMessagesProps) {
   const initial = contactName.trim().charAt(0).toUpperCase() || "?";
@@ -74,8 +77,12 @@ export function IosMessages({
       </div>
 
       {/* Konversation */}
-      <div className="ios-thread flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-4">
-        <p className="pb-1 pt-1 text-center text-[11px] text-black/45">{dateLabel}</p>
+      <div className="ios-thread flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4">
+        <p className="pb-1 pt-1 text-center text-[11px] text-black/45">{leadInLabel}</p>
+        <div className="ios-bubble ios-in">Kan du ringa mig när du har tid?</div>
+        <div className="ios-bubble ios-out">Om en stund</div>
+        <div className="ios-bubble ios-in">Ok, vi hörs sen</div>
+        <p className="pb-1 pt-3 text-center text-[11px] text-black/45">{dateLabel}</p>
         {message.trim() ? (
           <div className="ios-bubble ios-in">{message}</div>
         ) : null}

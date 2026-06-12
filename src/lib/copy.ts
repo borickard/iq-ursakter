@@ -39,7 +39,7 @@ export const COPY = {
     phoneHelp: "SMS:et skickas hit. Numret sparas inte – det används bara för att skicka.",
     senderLabel: "Vem ska det se ut att komma från?",
     senderPlaceholder: "Skriv eget namn …",
-    senderPresets: ["Mamma", "Pappa", "Sambo", "Chefen", "Älskling"],
+    senderPresets: ["Mamma", "Pappa", "Chefen", "Älskling"],
     next: "Fortsätt",
     invalidPhone: "Hmm, det där ser inte ut som ett mobilnummer. Försök igen.",
     missingSender: "Välj eller skriv ett avsändarnamn först.",

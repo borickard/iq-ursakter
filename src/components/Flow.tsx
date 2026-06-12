@@ -11,6 +11,14 @@ type Excuse = { id: string; text: string; sentCount: number };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
 
+/** "Idag HH:MM" för nu minus angivet antal minuter (för mockup-tidsstämplar). */
+function fakeTime(minutesAgo: number): string {
+  const d = new Date(Date.now() - minutesAgo * 60000);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `Idag ${hh}:${mm}`;
+}
+
 export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
   const [phone, setPhone] = useState("");
@@ -274,7 +282,8 @@ function Compose({
             <IosMessages
               contactName={contactName}
               message={current.text}
-              dateLabel="Idag"
+              dateLabel={fakeTime(0)}
+              leadInLabel={fakeTime(47)}
             />
           </div>
           <button
