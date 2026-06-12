@@ -8,6 +8,7 @@ import { IosMessages } from "@/components/IosMessages";
 
 type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = { id: string; text: string; sentCount: number };
+type LeadIn = { them1: string; me: string; them2: string };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
 
@@ -27,12 +28,15 @@ export default function Flow() {
   // Hämta ursäkterna redan när sidan laddas (på landningen), så de finns klara
   // när användaren går vidare – ingen fördröjning när man sveper/bläddrar.
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
+  const [leadIns, setLeadIns] = useState<LeadIn[]>([]);
   useEffect(() => {
     let active = true;
     fetch("/api/excuses")
       .then((r) => r.json())
       .then((data) => {
-        if (active) setExcuses(data.excuses ?? []);
+        if (!active) return;
+        setExcuses(data.excuses ?? []);
+        setLeadIns(data.leadIns ?? []);
       })
       .catch(() => {
         if (active) setExcuses([]);
@@ -51,6 +55,7 @@ export default function Flow() {
           phone={phone}
           sender={sender}
           excuses={excuses}
+          leadIns={leadIns}
           onPhone={setPhone}
           onSender={setSender}
           onBack={() => setStep("landing")}
@@ -123,6 +128,7 @@ function Compose({
   phone,
   sender,
   excuses,
+  leadIns,
   onPhone,
   onSender,
   onBack,
@@ -132,6 +138,7 @@ function Compose({
   phone: string;
   sender: string;
   excuses: Excuse[] | null;
+  leadIns: LeadIn[];
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
   onBack: () => void;
@@ -143,6 +150,7 @@ function Compose({
   const [error, setError] = useState<SendError | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [showFake, setShowFake] = useState(false);
+  const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
 
   const count = excuses?.length ?? 0;
   const at = (i: number) =>
@@ -197,6 +205,13 @@ function Compose({
     }
     if (!current) return;
     setFormError(null);
+    // Slumpa fram en inledande konversation (faller tillbaka på standard om
+    // listan är tom, t.ex. innan SQL:en körts).
+    setFakeLeadIn(
+      leadIns.length > 0
+        ? leadIns[Math.floor(Math.random() * leadIns.length)]
+        : undefined,
+    );
     setShowFake(true);
     // Räkna som en användning av ursäkten (samma räknare som SMS). Fire-and-forget.
     fetch("/api/view", {
@@ -288,6 +303,7 @@ function Compose({
             <IosMessages
               contactName={contactName}
               message={current.text}
+              leadIn={fakeLeadIn}
               dateLabel={fakeTime(0)}
               leadInLabel={fakeTime(47)}
               onBack={() => setShowFake(false)}

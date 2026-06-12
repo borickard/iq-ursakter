@@ -95,6 +95,12 @@ src/lib/clsx.ts            # tiny className helper
   (`approved`|`pending`|`rejected`|`disabled`), `sentCount`, `createdAt`.
   Index on `[status, source]`. Only `approved` is public; `disabled` = an
   admin-hidden excuse (toggled off, not deleted).
+- **LeadIn**: `id`, `them1`, `me`, `them2`, `createdAt`. A short prior
+  conversation shown BEFORE the excuse in the iOS mockup (them→you→them); one is
+  picked at random per "Visa som meddelande". `/api/excuses` returns them
+  alongside excuses, resiliently (try/catch → `[]` if the table doesn't exist
+  yet, so prod never breaks before the SQL is run; client falls back to a
+  built-in default conversation).
 - **RateBucket**: `key` (`ip:<ip>` | `num:<hash>` | `suggest:<ip>` |
   `global:<YYYY-MM-DD>`), `count`, `resetAt`.
 - **The recipient phone number is NEVER stored.** It is received, validated to
@@ -276,6 +282,24 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
   (PascalCase `"Excuse"`, camelCase columns) because that's what Prisma queries.
   `createdAt` has a DB default; `id` is provided by the app (cuid) for runtime
   inserts, so the manual tables work fine with Prisma at runtime.
+- **PENDING — `LeadIn` table** (lead-in conversations for the iOS mockup). The
+  app is resilient if it's missing (falls back to a built-in default), but run
+  this in Supabase to enable the randomised conversations:
+  ```sql
+  CREATE TABLE IF NOT EXISTS "LeadIn" (
+    "id" TEXT PRIMARY KEY,
+    "them1" TEXT NOT NULL,
+    "me" TEXT NOT NULL,
+    "them2" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  INSERT INTO "LeadIn" ("id","them1","me","them2") VALUES
+  ('leadin-01','Kan du ringa mig när du har tid?','Om en stund','Ok, vi hörs sen'),
+  ('leadin-02','Är du fortfarande ute?','Ja, ett tag till','Ok!'),
+  ('leadin-03','Vet du var laddaren tog vägen?','På bordet tror jag','Hittade den'),
+  ('leadin-04','Kommer du nästa vecka?','Ja absolut','Vad bra')
+  ON CONFLICT ("id") DO NOTHING;
+  ```
 
 ---
 

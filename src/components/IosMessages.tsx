@@ -16,10 +16,18 @@ export type IosMessagesProps = {
   dateLabel?: string;
   /** Datum/tid-separator ovanför den inledande konversationen. */
   leadInLabel?: string;
+  /** Inledande konversation (them1 = de, me = du, them2 = de). */
+  leadIn?: { them1: string; me: string; them2: string };
   /** Klockan i statusfältet. */
   statusTime?: string;
   /** Anropas när man trycker på bakåt-pilen (‹) i headern. */
   onBack?: () => void;
+};
+
+const DEFAULT_LEADIN = {
+  them1: "Kan du ringa mig när du har tid?",
+  me: "Om en stund",
+  them2: "Ok, vi hörs sen",
 };
 
 export function IosMessages({
@@ -27,6 +35,7 @@ export function IosMessages({
   message,
   dateLabel = "Idag 17:36",
   leadInLabel = "Idag 16:48",
+  leadIn = DEFAULT_LEADIN,
   statusTime = "9:41",
   onBack,
 }: IosMessagesProps) {
@@ -87,9 +96,9 @@ export function IosMessages({
       {/* Konversation */}
       <div className="ios-thread flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4">
         <p className="pb-1 pt-1 text-center text-[11px] text-black/45">{leadInLabel}</p>
-        <div className="ios-bubble ios-in">Kan du ringa mig när du har tid?</div>
-        <div className="ios-bubble ios-out">Om en stund</div>
-        <div className="ios-bubble ios-in">Ok, vi hörs sen</div>
+        <div className="ios-bubble ios-in">{leadIn.them1}</div>
+        <div className="ios-bubble ios-out">{leadIn.me}</div>
+        <div className="ios-bubble ios-in">{leadIn.them2}</div>
         <p className="pb-1 pt-3 text-center text-[11px] text-black/45">{dateLabel}</p>
         {message.trim() ? (
           <div className="ios-bubble ios-in">{message}</div>

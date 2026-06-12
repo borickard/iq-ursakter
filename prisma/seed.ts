@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { SEED_EXCUSES } from "../src/lib/excuses";
+import { SEED_LEADINS } from "../src/lib/leadins";
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,15 @@ async function main() {
 
   const count = await prisma.excuse.count({ where: { status: "approved" } });
   console.log(`Klart. ${count} godkända ursäkter i databasen.`);
+
+  // Inledande konversationer för meddelande-mockupen (idempotent på them1).
+  for (const lead of SEED_LEADINS) {
+    const existing = await prisma.leadIn.findFirst({ where: { them1: lead.them1 } });
+    if (existing) continue;
+    await prisma.leadIn.create({ data: lead });
+  }
+  const leadCount = await prisma.leadIn.count();
+  console.log(`Klart. ${leadCount} inledande konversationer i databasen.`);
 }
 
 main()

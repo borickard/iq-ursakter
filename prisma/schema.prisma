@@ -32,6 +32,17 @@ model Excuse {
   @@index([status, source])
 }
 
+// En kort inledande konversation som visas FÖRE ursäkten i meddelande-mockupen,
+// för att göra tråden trovärdig. Mönstret är inkommande → utgående → inkommande
+// (them1 = de, me = du, them2 = de). En slumpas fram varje gång.
+model LeadIn {
+  id        String   @id @default(cuid())
+  them1     String
+  me        String
+  them2     String
+  createdAt DateTime @default(now())
+}
+
 // Rate limiting-bucket. Fungerar över flera serverless-instanser (till skillnad
 // från in-memory). GDPR: mottagarnumret lagras ALDRIG i klartext – nyckeln för
 // nummer-buckets är en saltad HASH. Utgångna buckets städas bort löpande, så
