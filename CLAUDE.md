@@ -328,10 +328,20 @@ uses the non-public `SMS_SENDER_MODE` for the actual send (falls back to the
 public one, then `number`). If only `SMS_FROM_NUMBER` shows up as sender, the
 mode wasn't picked up server-side. Revert to free with `SMS_PROVIDER=dummy`.
 
+### Anti-abuse before public launch — DEFERRED (user decision: "decide later")
+Name mode lets a convincing sender name reach ANY number → impersonation vector.
+Fine for the internal demo (self-sends) but must be addressed before public
+launch. Options discussed (user hasn't picked yet):
+1. **OTP verify-once (recommended):** text a code on first use, then only allow
+   sending to the verified number. Keeps the real-SMS "buzz"; closes the vector.
+   Build GDPR-safe (no stored number — a signed "device verified" token + salted
+   hash). Costs 1 extra SMS per verify.
+2. **Fake on-screen message (no real SMS):** pixel-accurate iOS/Android skins the
+   user shows a friend. Totally safe + free + no number, but loses the real-buzz
+   magic (it's a screen you show, not a text that arrives).
+3. **Hybrid:** fake screen as free default + real SMS behind OTP.
+
 ### Planned / possible future work
-- **OTP before public launch** — name mode lets the sender name reach any
-  number, reopening the impersonation vector. Verify recipient == sender's own
-  phone before going public (brief §8, currently deferred).
 - **Contact-card model + rented number** — rent a 46elks numeric number and set
   `NEXT_PUBLIC_SMS_SENDER_MODE=number` for the safest per-name effect.
 - **IQ branding decision** (brief §9) — how visible the IQ connection should be.
