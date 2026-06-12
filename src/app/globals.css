@@ -48,3 +48,75 @@ button,
 textarea {
   font-size: 16px;
 }
+
+/* ───────────────────────────────────────────────────────────────────────
+ * iOS Messages-mockup (subsida /interface och chatt-förhandsvisningen).
+ * Bubbel-svansarna görs med pseudo-element (tekniken från AllThingsSmitty).
+ * .ios-thread måste ha vit bakgrund eftersom ::after "maskar" svansen med vitt.
+ * ─────────────────────────────────────────────────────────────────────── */
+.ios-screen {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
+    sans-serif;
+}
+
+.ios-thread {
+  background: #ffffff;
+}
+
+.ios-bubble {
+  position: relative;
+  max-width: 72%;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 17px;
+  line-height: 1.3;
+  word-wrap: break-word;
+}
+.ios-bubble::before,
+.ios-bubble::after {
+  bottom: -0.05rem;
+  content: "";
+  height: 1rem;
+  position: absolute;
+}
+
+/* Inkommande (grå, vänster) */
+.ios-in {
+  align-self: flex-start;
+  background: #e9e9eb;
+  color: #000;
+}
+.ios-in::before {
+  border-bottom-right-radius: 0.8rem 0.7rem;
+  border-left: 1rem solid #e9e9eb;
+  left: -0.35rem;
+  transform: translate(0, -0.1rem);
+}
+.ios-in::after {
+  background: #ffffff;
+  border-bottom-right-radius: 0.5rem;
+  left: 20px;
+  transform: translate(-30px, -2px);
+  width: 10px;
+}
+
+/* Utgående (blå, höger) */
+.ios-out {
+  align-self: flex-end;
+  background: linear-gradient(to bottom, #28a1ff, #007aff);
+  color: #ffffff;
+}
+.ios-out::before {
+  border-bottom-left-radius: 0.8rem 0.7rem;
+  border-right: 1rem solid #007aff;
+  right: -0.35rem;
+  transform: translate(0, -0.1rem);
+}
+.ios-out::after {
+  background: #ffffff;
+  border-bottom-left-radius: 0.5rem;
+  right: -40px;
+  transform: translate(-30px, -2px);
+  width: 10px;
+}

@@ -15,6 +15,24 @@ export default function Flow() {
   const [phone, setPhone] = useState("");
   const [sender, setSender] = useState("");
 
+  // Hämta ursäkterna redan när sidan laddas (på landningen), så de finns klara
+  // när användaren går vidare – ingen fördröjning när man sveper/bläddrar.
+  const [excuses, setExcuses] = useState<Excuse[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/excuses")
+      .then((r) => r.json())
+      .then((data) => {
+        if (active) setExcuses(data.excuses ?? []);
+      })
+      .catch(() => {
+        if (active) setExcuses([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <main className="flex flex-1 flex-col py-6">
       {step === "landing" && <Landing onStart={() => setStep("compose")} />}
@@ -23,6 +41,7 @@ export default function Flow() {
         <Compose
           phone={phone}
           sender={sender}
+          excuses={excuses}
           onPhone={setPhone}
           onSender={setSender}
           onBack={() => setStep("landing")}
@@ -94,6 +113,7 @@ function Landing({ onStart }: { onStart: () => void }) {
 function Compose({
   phone,
   sender,
+  excuses,
   onPhone,
   onSender,
   onBack,
@@ -102,32 +122,17 @@ function Compose({
 }: {
   phone: string;
   sender: string;
+  excuses: Excuse[] | null;
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
   onBack: () => void;
   onSuggest: () => void;
   onSent: () => void;
 }) {
-  const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [index, setIndex] = useState(0);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<SendError | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    fetch("/api/excuses")
-      .then((r) => r.json())
-      .then((data) => {
-        if (active) setExcuses(data.excuses ?? []);
-      })
-      .catch(() => {
-        if (active) setExcuses([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const count = excuses?.length ?? 0;
   const at = (i: number) =>

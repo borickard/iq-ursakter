@@ -72,6 +72,8 @@ src/app/page.tsx          # renders <Flow/>
 src/app/layout.tsx        # html shell, themeColor, metadata
 src/app/globals.css       # THEME (CSS variables) + body gradient
 src/app/admin/page.tsx    # admin UI: manage all excuses + moderate suggestions
+src/app/interface/page.tsx # /interface – iOS SMS mockup test page (Android TBD)
+src/components/IosMessages.tsx # reusable iOS Messages mockup (bubbles styled in globals.css)
 src/app/api/excuses/route.ts   # GET approved excuses, most-sent first + sentCount
 src/app/api/send/route.ts      # POST validate -> rate-limit -> send SMS -> bump sentCount
 src/app/api/suggest/route.ts   # POST user suggestion -> pending (NEVER sends SMS)
