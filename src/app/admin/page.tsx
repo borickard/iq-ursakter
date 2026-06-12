@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { COPY, fill } from "@/lib/copy";
 import { Button, Card, Chip } from "@/components/ui";
+import { LeadInManager } from "@/components/LeadInManager";
 
 type Excuse = {
   id: string;
@@ -290,6 +291,8 @@ export default function AdminPage() {
               </Card>
             ))}
           </section>
+
+          <LeadInManager />
         </div>
       )}
     </main>

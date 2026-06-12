@@ -74,10 +74,14 @@ src/app/globals.css       # THEME (CSS variables) + body gradient
 src/app/admin/page.tsx    # admin UI: manage all excuses + moderate suggestions
 src/app/interface/page.tsx # /interface – iOS SMS mockup test page (Android TBD)
 src/components/IosMessages.tsx # reusable iOS Messages mockup (bubbles styled in globals.css)
+src/components/LeadInManager.tsx # admin UI for lead-in conversations (CRUD)
+src/lib/leadins.ts         # SEED_LEADINS source list
 src/app/api/excuses/route.ts   # GET approved excuses, most-sent first + sentCount
 src/app/api/send/route.ts      # POST validate -> rate-limit -> send SMS -> bump sentCount
 src/app/api/suggest/route.ts   # POST user suggestion -> pending (NEVER sends SMS)
 src/app/api/admin/excuses/route.ts   # GET all | POST create | PATCH status | DELETE
+src/app/api/admin/leadins/route.ts   # GET all | POST | PATCH | DELETE (lead-in convos)
+src/app/api/view/route.ts            # POST bump sentCount ("Visa som meddelande")
 src/components/Flow.tsx    # client flow: landing -> compose (live iMessage preview) -> result
 src/components/ui.tsx      # Button / Card / Chip (the design primitives)
 src/lib/sms/{index,types,dummy,elks}.ts  # provider interface + impls

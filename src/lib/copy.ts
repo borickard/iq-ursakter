@@ -115,6 +115,14 @@ export const COPY = {
     sourceUser: "Förslag",
     sourceAdmin: "Tillagd",
     sourceSeed: "Standard",
+    leadins: {
+      title: "Inledande konversationer",
+      help: "Visas före ursäkten i meddelandevyn. En slumpas fram varje gång.",
+      them: "De skriver …",
+      me: "Du svarar …",
+      add: "Lägg till konversation",
+      empty: "Inga konversationer än.",
+    },
   },
 
   compose: {
