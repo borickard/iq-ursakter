@@ -14,20 +14,18 @@ export const COPY = {
   },
 
   landing: {
-    eyebrow: "Slut på socialt batteri?",
-    title: "Ursäkten",
+    // Rubriken bär huvudlöftet; ordmärket (brand.name) står litet ovanför.
+    title: "En utväg, ett sms bort.",
     subtitle:
-      "En trovärdig ursäkt som SMS till din egen telefon – så den ser ut att komma från t.ex. Mamma eller Älskling. För när du bara vill hem, utan att förklara dig.",
+      "Vattentäta ursäkter skickade till din egen telefon – så du kan gå när du vill, utan att förklara dig.",
     cta: "Skapa min ursäkt",
-    points: [
-      "Du väljer vem det ska se ut att komma från.",
-      "Vi sparar aldrig ditt nummer.",
-      "SMS:et landar bara hos dig – inte hos någon annan.",
-    ],
-    // Grundningsblock längre ner – sajtens röst, tillåtande ton (alkoholvinkeln
-    // finns i kontexten utan pekpinne). Lätt att justera här.
+    // Förhandsvisning på landningen (visar produkten direkt).
+    heroSender: "Mamma",
+    heroMessage: "Hunden har kräkts i hela sängen – kan du komma hem?",
+    heroMeta: "nyss",
+    // Lågmält, längre ner: tillåtande ton + alkoholvinkeln i sajtens röst.
     grounding:
-      "Att smita hem utan långa förklaringar – en ”Irish exit” – är ett av de vanligaste sätten att avsluta en kväll. Och mitt i en fest, när alla andra verkar vilja stanna och tempot är högt, kan det kännas knepigt att säga att man fått nog för ikväll. Det ska det inte behöva vara. Ursäkten finns för att göra det lite lättare att gå när du vill gå.",
+      "Du bestämmer själv när det räcker. Ingen ska tvinga dig att stanna – eller att dricka mer än du vill. Men ibland vill man bara hem. Då finns Ursäkten.",
     // IQ-avsändare läggs här om/när synligheten bestämts. Tom = avsändarneutral.
     groundingBy: "",
   },

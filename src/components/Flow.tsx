@@ -89,14 +89,31 @@ function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-1 flex-col">
       {/* Hero – ett dominant ordmärke + en kort stödrad */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
-          {COPY.landing.eyebrow}
+      <div className="flex flex-1 flex-col justify-center gap-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">
+          {COPY.brand.name}
         </p>
-        <h1 className="text-6xl font-extrabold tracking-tight">{COPY.landing.title}</h1>
-        <p className="max-w-sm text-base leading-relaxed text-muted">
-          {COPY.landing.subtitle}
-        </p>
+
+        <div className="space-y-2">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-b from-[#c7c7cc] to-[#9a9aa2] text-base font-semibold text-white shadow-soft">
+            {COPY.landing.heroSender.charAt(0)}
+          </div>
+          <div className="max-w-[18rem] rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-3 text-[15px] leading-snug text-black shadow-[0_12px_24px_-14px_rgba(0,0,0,0.45)]">
+            {COPY.landing.heroMessage}
+          </div>
+          <p className="pl-1 text-xs text-muted">
+            {COPY.landing.heroSender} · {COPY.landing.heroMeta}
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h1 className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
+            {COPY.landing.title}
+          </h1>
+          <p className="max-w-sm text-base leading-relaxed text-muted">
+            {COPY.landing.subtitle}
+          </p>
+        </div>
       </div>
 
       {/* Primär åtgärd – tydligt mest framträdande */}
@@ -104,9 +121,6 @@ function Landing({ onStart }: { onStart: () => void }) {
         <Button block onClick={onStart} className="py-5 text-lg shadow-float">
           {COPY.landing.cta}
         </Button>
-        <p className="text-center text-xs text-muted/80">
-          {COPY.landing.points.join(" · ")}
-        </p>
       </div>
 
       {/* Sekundärt: varför Ursäkten finns */}

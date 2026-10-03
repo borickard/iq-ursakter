@@ -3,7 +3,7 @@ import { COPY } from "@/lib/copy";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: COPY.landing.title,
+  title: COPY.brand.name,
   description: COPY.landing.subtitle,
   robots: { index: false, follow: false }, // POC – håll den ur sökmotorer.
   // Gör att hemskärms-appen körs i helskärm utan webbläsarchrome på iOS.
