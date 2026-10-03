@@ -12,8 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "En utväg, ett sms bort.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f6dadd",
-    theme_color: "#f8e2e4",
+    background_color: "#f2efe6",
+    theme_color: "#f2efe6",
     icons: [{ src: "/apple-icon", sizes: "180x180", type: "image/png" }],
   };
 }

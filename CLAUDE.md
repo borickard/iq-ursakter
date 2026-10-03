@@ -188,28 +188,34 @@ Excuses rewritten from the **sender's** point of view (see decision #2).
 
 ## 6. Design direction
 
-**Current (this session's overhaul): "Dagsljus" — flat, light, no pink, no
-gradients.** Theme tokens in `src/app/globals.css`: warm off-white bg
-(`244 244 241`), white surfaces, **deep-green brand** (`23 121 94` / #17795e),
-neutral text/borders. Flat neutral box-shadows in `tailwind.config.ts`
-(`soft`/`raised`/`inset`/`float` — no coloured gradient shadows). Font is
-**Schibsted Grotesk** (next/font, `--font-schibsted`). Buttons = flat green,
-`rounded-2xl` (not pills); active chips = flat green. `layout.tsx` themeColor
-`#f4f4f1`. apple-icon = flat green tile.
+**Current: "Brutal / Livlinan" — flat paper, black outlines, lime accent, hard
+offset shadows.** Chosen after exploring Natt/Rubrik/Tejp/Brutal mockups
+(design iteration happened in claude.ai artifacts, not the repo). Theme tokens in
+`src/app/globals.css`: paper bg (`242 239 230` / #f2efe6), white surfaces, **ink**
+text/borders (`11 11 11` / #0b0b0b), **lime brand/accent** (`215 255 62` /
+#d7ff3e) with ink `brand-fg`. Hard offset box-shadows in `tailwind.config.ts`
+(`soft` 3px, `raised` 4px, `float` 6px, `inset` none — all `0 0 #0b0b0b`). Fonts
+(next/font vars): **Archivo** (`font-display`, headlines), **Hanken Grotesk**
+(`font-sans`, body), **Space Mono** (`font-mono`, labels/meta), **Syne**
+(`font-wordmark`). Buttons = 2px ink border, `rounded-2xl`, lime fill, offset
+shadow, press-down on `:active`. `layout.tsx` themeColor `#f2efe6`.
 
-- **Landing = Direction B** (preview-forward): small wordmark, a real grey
-  message bubble ("Mamma · nyss"), headline "Behöver du en livlina? Nu slipper
-  du förklara dig.", one green CTA "Skicka mig ett sms". No grounding block
-  (empowerment moved into the subtitle).
-- **Excuse screen** shows the excuse as a **lock-screen notification**
-  (`LockScreen` in `Flow.tsx` — dark wallpaper, big clock, white Messages
-  notification). Browse via **"Föregående" / "Nästa ursäkt"** buttons (no swipe).
-  Usage count shown under it. "Visa som meddelande" still opens the fullscreen
-  `IosMessages` conversation (with random lead-in).
-- Chosen over "Midnatt" (dark) and "Signal" (bold blue); since the theme is
-  token-based, switching palettes later is a quick edit to `globals.css`.
-- *Old look (pre-overhaul): soft pink, pill shapes, neumorphic depth shadows,
-  circular badge — fully removed.*
+- **Wordmark** (`src/components/Wordmark.tsx`): stacked **♥ LIV / LINAN** (Syne),
+  heart filled lime with thick ink outline (left of LIV; "LIV" = life, heart =
+  extra life). apple-icon = lime tile + ink heart.
+- **Landing**: Wordmark → `HeroCarousel` (a speech bubble that cross-fades
+  through `COPY.landing.carousel` with easeInOutQuad, clipped at the outline,
+  tail outside the clip, unified drop-shadow, dynamic sender under the tail,
+  ordered so no sender repeats) → headline "Slipp förklara dig. / En **livlina**
+  levererad via sms." (the lime "livlina" chip is a second entry into the flow)
+  → CTA "Skicka mig ett sms".
+- **Excuse screen** (`Compose`): `ExcuseBubble` (brutalist speech bubble, chosen
+  sender under the tail) + **"Föregående" / "Nästa ursäkt"** + usage count +
+  phone input + send + "Visa som meddelande". The lock-screen idea was dropped
+  for this bubble style. "Visa som meddelande" still opens the fullscreen
+  `IosMessages` conversation (kept deliberately realistic, not brutal).
+- Flow never depends on number verification (OTP still deferred).
+- *Earlier looks (pink neumorphic; flat green "Dagsljus") fully removed.*
 
 ---
 

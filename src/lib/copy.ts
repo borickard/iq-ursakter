@@ -14,20 +14,23 @@ export const COPY = {
   },
 
   landing: {
-    // Rubriken bär huvudlöftet; ordmärket (brand.name) står litet ovanför.
-    title: "Behöver du en livlina? Nu slipper du förklara dig.",
+    // Rubrik i två delar; "livlina" är en klickbar lime-chip (går till flödet).
+    headline1: "Slipp förklara dig.",
+    headline2a: "En ",
+    headlineLink: "livlina",
+    headline2b: " levererad via sms.",
     subtitle:
-      "En trovärdig ursäkt, redo när du behöver den. Du bestämmer själv när kvällen är slut – ingen annan ska tvinga dig att stanna.",
+      "En trovärdig ursäkt, redo när du behöver den. Du bestämmer själv när kvällen är slut.",
     cta: "Skicka mig ett sms",
-    // Förhandsvisning på landningen (visar produkten direkt).
-    heroSender: "Mamma",
-    heroMessage: "Hunden har kräkts i hela sängen – kan du komma hem?",
-    heroMeta: "nyss",
-    // (Grundningsblocket togs bort från landningen; empowerment ligger nu i
-    // underrubriken.) Kvar som nyckel ifall det behövs igen.
-    grounding:
-      "Du bestämmer själv när det räcker. Ingen ska tvinga dig att stanna – eller att dricka mer än du vill. Men ibland vill man bara hem. Då finns Livlinan.",
-    groundingBy: "",
+    // Karusell på landningen – roterar och visar produkten direkt. Ordnad så att
+    // samma avsändare aldrig visas två gånger i rad (även vid loop).
+    carousel: [
+      { text: "Jag mår inte bra, kan du komma hit?", sender: "Mamma" },
+      { text: "Barnvakten måste gå nu, du behöver komma hem.", sender: "Älskling" },
+      { text: "Billarmet har gått igång på gatan, kan du komma och kolla?", sender: "Pappa" },
+      { text: "Hunden har kräkts i hela sängen – kan du komma hem?", sender: "Älskling" },
+      { text: "Du behöver komma in tidigt imorgon bitti.", sender: "Chefen" },
+    ],
   },
 
   details: {

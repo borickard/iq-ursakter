@@ -3,20 +3,19 @@
 @tailwind utilities;
 
 /*
- * Tema via CSS-variabler. Ljust, platt uttryck (ingen rosa, inga gradienter) –
- * "Dagsljus": varmt off-white, djupgrön accent. Justera färgerna här för att
- * tematisera utan kodändring.
+ * Tema via CSS-variabler — "Brutal/Livlinan": platt papper, svart kontur (ink),
+ * limegrön accent, hårda offset-skuggor. Justera färgerna här.
  */
 :root {
-  --color-bg: 244 244 241;
-  --color-surface: 255 255 255;
-  --color-surface-2: 236 237 233;
-  --color-text: 22 24 29;
-  --color-muted: 108 114 128;
-  --color-brand: 23 121 94;
-  --color-brand-fg: 255 255 255;
-  --color-border: 226 227 222;
-  --color-danger: 192 54 47;
+  --color-bg: 242 239 230;       /* paper #f2efe6 */
+  --color-surface: 255 255 255;  /* vit (bubblor/kort) */
+  --color-surface-2: 236 233 224;
+  --color-text: 11 11 11;        /* ink */
+  --color-muted: 108 106 98;
+  --color-brand: 215 255 62;     /* lime accent #d7ff3e */
+  --color-brand-fg: 11 11 11;    /* ink-text på lime */
+  --color-border: 11 11 11;      /* svarta konturer */
+  --color-danger: 190 40 40;
 }
 
 html,
@@ -31,7 +30,7 @@ body {
   color: rgb(var(--color-text));
   -webkit-font-smoothing: antialiased;
   font-family:
-    var(--font-schibsted), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -43,9 +42,8 @@ textarea {
 }
 
 /* ───────────────────────────────────────────────────────────────────────
- * iOS Messages-mockup (subsida /interface och "Visa som meddelande").
- * Bubbel-svansarna görs med pseudo-element (tekniken från AllThingsSmitty).
- * .ios-thread måste ha vit bakgrund eftersom ::after "maskar" svansen med vitt.
+ * iOS Messages-mockup ("Visa som meddelande" + /interface). Avsiktligt
+ * realistisk iMessage-look (inte brutal). Svansar via pseudo-element.
  * ─────────────────────────────────────────────────────────────────────── */
 .ios-screen {
   font-family:
@@ -73,8 +71,6 @@ textarea {
   height: 1rem;
   position: absolute;
 }
-
-/* Inkommande (grå, vänster) */
 .ios-in {
   align-self: flex-start;
   background: #e9e9eb;
@@ -93,8 +89,6 @@ textarea {
   transform: translate(-30px, -2px);
   width: 10px;
 }
-
-/* Utgående (blå, höger) */
 .ios-out {
   align-self: flex-end;
   background: #007aff;

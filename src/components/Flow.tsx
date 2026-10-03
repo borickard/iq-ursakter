@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
 import { Button, Chip } from "@/components/ui";
 import { IosMessages } from "@/components/IosMessages";
+import { Wordmark } from "@/components/Wordmark";
 
 type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = { id: string; text: string; sentCount: number };
@@ -12,7 +13,9 @@ type LeadIn = { them1: string; me: string; them2: string };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
 
-/** "Idag HH:MM" för nu minus angivet antal minuter (för mockup-tidsstämplar). */
+const SHADOW = "drop-shadow(5px 5px 0 #0b0b0b)";
+
+/** "Idag HH:MM" för nu minus angivet antal minuter (mockup-tidsstämplar). */
 function fakeTime(minutesAgo: number): string {
   const d = new Date(Date.now() - minutesAgo * 60000);
   const hh = String(d.getHours()).padStart(2, "0");
@@ -25,8 +28,6 @@ export default function Flow() {
   const [phone, setPhone] = useState("");
   const [sender, setSender] = useState("");
 
-  // Hämta ursäkterna redan när sidan laddas (på landningen), så de finns klara
-  // när användaren går vidare – ingen fördröjning när man bläddrar.
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [leadIns, setLeadIns] = useState<LeadIn[]>([]);
   useEffect(() => {
@@ -89,28 +90,28 @@ function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col justify-center gap-7">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">
-          {COPY.brand.name}
-        </p>
+        <Wordmark className="text-[26px]" />
 
-        {/* Förhandsvisning – ett riktigt meddelande gör konceptet tydligt direkt */}
-        <div className="space-y-2">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c7c7cc] text-base font-semibold text-white">
-            {COPY.landing.heroSender.charAt(0)}
-          </div>
-          <div className="max-w-[18rem] rounded-2xl rounded-bl-md bg-[#e9e9eb] px-4 py-3 text-[15px] leading-snug text-black">
-            {COPY.landing.heroMessage}
-          </div>
-          <p className="pl-1 text-xs text-muted">
-            {COPY.landing.heroSender} · {COPY.landing.heroMeta}
-          </p>
-        </div>
+        <HeroCarousel />
 
         <div className="space-y-3">
-          <h1 className="text-[2.2rem] font-extrabold leading-[1.08] tracking-tight">
-            {COPY.landing.title}
+          <h1
+            className="font-display text-[26px] font-black leading-[1.14] tracking-tight"
+            style={{ textWrap: "balance" }}
+          >
+            {COPY.landing.headline1}
+            <br />
+            {COPY.landing.headline2a}
+            <button
+              type="button"
+              onClick={onStart}
+              className="inline-block rounded-lg border-2 border-border bg-brand px-1.5 align-baseline text-brand-fg shadow-[3px_3px_0_#0b0b0b] transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_#0b0b0b]"
+            >
+              {COPY.landing.headlineLink}
+            </button>
+            {COPY.landing.headline2b}
           </h1>
-          <p className="max-w-sm text-base leading-relaxed text-muted">
+          <p className="max-w-sm text-sm font-medium leading-relaxed text-[#34312b]">
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -119,6 +120,138 @@ function Landing({ onStart }: { onStart: () => void }) {
       <Button block onClick={onStart} className="py-5 text-lg">
         {COPY.landing.cta}
       </Button>
+    </div>
+  );
+}
+
+/* ── Landningens roterande pratbubbla ───────────────────────────────────── */
+
+function HeroCarousel() {
+  const items = COPY.landing.carousel;
+  const exRef = useRef<HTMLParagraphElement>(null);
+  const outRef = useRef<HTMLParagraphElement>(null);
+  const metaRef = useRef<HTMLParagraphElement>(null);
+  const idx = useRef(0);
+
+  useEffect(() => {
+    const ex = exRef.current;
+    const out = outRef.current;
+    const meta = metaRef.current;
+    if (!ex || !out) return;
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const EASE = "cubic-bezier(.455,.03,.515,.955)";
+    const DUR = "opacity .45s " + EASE + ", transform .45s " + EASE;
+    const setMeta = (n: number) => {
+      if (meta) meta.textContent = items[n].sender + " · nyss";
+    };
+    const id = window.setInterval(() => {
+      const oldText = ex.textContent || "";
+      idx.current = (idx.current + 1) % items.length;
+      const n = idx.current;
+      if (reduce) {
+        ex.textContent = items[n].text;
+        setMeta(n);
+        return;
+      }
+      out.textContent = oldText;
+      out.style.transition = "none";
+      out.style.opacity = "1";
+      out.style.transform = "translateY(0)";
+      ex.textContent = items[n].text;
+      ex.style.transition = "none";
+      ex.style.opacity = "0";
+      ex.style.transform = "translateY(110%)";
+      if (meta) meta.style.opacity = "0";
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          out.style.transition = DUR;
+          out.style.opacity = "0";
+          out.style.transform = "translateY(-110%)";
+          ex.style.transition = DUR;
+          ex.style.opacity = "1";
+          ex.style.transform = "translateY(0)";
+          setMeta(n);
+          if (meta) meta.style.opacity = "1";
+        }),
+      );
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [items]);
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      <div
+        className="relative w-max max-w-[92%] self-start"
+        style={{ filter: SHADOW }}
+      >
+        <div className="relative flex min-h-[44px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 py-3">
+          <div className="relative w-full">
+            <p ref={exRef} className="m-0 text-[15px] font-medium leading-snug">
+              {items[0].text}
+            </p>
+            <p
+              ref={outRef}
+              aria-hidden
+              className="absolute left-0 right-0 top-0 m-0 text-[15px] font-medium leading-snug opacity-0"
+            />
+          </div>
+        </div>
+        <span
+          aria-hidden
+          className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+          style={{ bottom: "-9px", transform: "rotate(45deg)" }}
+        />
+      </div>
+      <p
+        ref={metaRef}
+        className="pl-[22px] font-mono text-[11px] text-muted transition-opacity duration-300"
+      >
+        {items[0].sender} · nyss
+      </p>
+    </div>
+  );
+}
+
+/* ── Pratbubbla för ursäkten (statisk, på skapa-skärmen) ────────────────── */
+
+function ExcuseBubble({
+  text,
+  sender,
+  loading,
+  empty,
+}: {
+  text?: string;
+  sender: string;
+  loading: boolean;
+  empty: boolean;
+}) {
+  const showSender = !loading && !empty && !!text;
+  return (
+    <div className="flex flex-col gap-3.5">
+      <div
+        className="relative w-max max-w-[92%] self-start"
+        style={{ filter: SHADOW }}
+      >
+        <div className="relative flex min-h-[56px] items-center rounded-2xl border-2 border-border bg-surface px-4 py-3">
+          {loading ? (
+            <p className="m-0 text-[15px] text-muted">…</p>
+          ) : empty || !text ? (
+            <p className="m-0 text-[15px] text-muted">{COPY.compose.empty}</p>
+          ) : (
+            <p className="m-0 text-[15px] font-medium leading-snug">{text}</p>
+          )}
+        </div>
+        <span
+          aria-hidden
+          className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+          style={{ bottom: "-9px", transform: "rotate(45deg)" }}
+        />
+      </div>
+      {showSender && (
+        <p className="pl-[22px] font-mono text-[11px] text-muted">{sender} · nyss</p>
+      )}
     </div>
   );
 }
@@ -162,6 +295,7 @@ function Compose({
   const prev = useCallback(() => setIndex((i) => i - 1), []);
 
   const contactName = sender.trim() || COPY.compose.senderFallback;
+  const countLabel = current ? formatSentCount(current.sentCount) : null;
 
   async function send() {
     if (!normalizeToE164(phone)) {
@@ -173,7 +307,6 @@ function Compose({
       return;
     }
     if (!current) return;
-
     setFormError(null);
     setError(null);
     setSending(true);
@@ -210,7 +343,6 @@ function Compose({
         : undefined,
     );
     setShowFake(true);
-    // Räkna som en användning av ursäkten (samma räknare som SMS). Fire-and-forget.
     fetch("/api/view", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -218,27 +350,20 @@ function Compose({
     }).catch(() => {});
   }
 
-  const countLabel = current ? formatSentCount(current.sentCount) : null;
-
   return (
     <div className="flex flex-1 flex-col gap-5">
       <Header title={COPY.compose.title} onBack={onBack} />
 
-      {/* Avsändare (dropdown) – styr namnet i aviseringen */}
       <SenderField value={sender} onChange={onSender} />
 
-      {/* Förhandsvisning: ursäkten som en avisering på låsskärmen */}
-      <LockScreen
-        name={contactName}
-        excuse={current}
+      <ExcuseBubble
+        text={current?.text}
+        sender={contactName}
         loading={excuses === null}
         empty={excuses !== null && count === 0}
       />
-      {countLabel && (
-        <p className="text-center text-xs text-muted">{countLabel}</p>
-      )}
+      {countLabel && <p className="text-center text-xs text-muted">{countLabel}</p>}
 
-      {/* Bläddra bland ursäkter */}
       <div className="grid grid-cols-2 gap-3">
         <Button variant="secondary" onClick={prev} disabled={!current}>
           {COPY.compose.prev}
@@ -248,9 +373,8 @@ function Compose({
         </Button>
       </div>
 
-      {/* Mobilnummer – precis före skicka */}
       <div className="space-y-2 pt-1">
-        <label htmlFor="phone" className="block text-sm font-medium">
+        <label htmlFor="phone" className="block text-sm font-semibold">
           {COPY.details.phoneLabel}
         </label>
         <input
@@ -261,12 +385,12 @@ function Compose({
           placeholder={COPY.details.phonePlaceholder}
           value={phone}
           onChange={(e) => onPhone(e.target.value)}
-          className="w-full rounded-2xl border border-border bg-surface px-5 py-3.5 outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
+          className="w-full rounded-2xl border-2 border-border bg-surface px-5 py-3.5 outline-none ring-brand/50 transition focus:ring-2"
         />
       </div>
 
       {(formError || error) && (
-        <p className="text-center text-sm text-danger">
+        <p className="text-center text-sm font-medium text-danger">
           {formError ?? COPY.result.errors[error!]}
         </p>
       )}
@@ -275,7 +399,6 @@ function Compose({
         {sending ? COPY.browse.sending : COPY.browse.send}
       </Button>
 
-      {/* Alternativ: visa som ett meddelande i helskärm (skickar inget SMS) */}
       <Button block variant="secondary" onClick={showMessage} disabled={!current}>
         {COPY.compose.showAsMessage}
       </Button>
@@ -295,9 +418,8 @@ function Compose({
         </div>
       )}
 
-      {/* Sekundär åtgärd – föreslå en egen ursäkt */}
       <div className="flex flex-col items-center gap-2 pt-3">
-        <p className="text-base text-muted">{COPY.browse.suggestQuestion}</p>
+        <p className="text-base font-medium">{COPY.browse.suggestQuestion}</p>
         <Button
           variant="secondary"
           onClick={onSuggest}
@@ -305,66 +427,6 @@ function Compose({
         >
           {COPY.browse.suggestCta}
         </Button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Låsskärms-förhandsvisning (ursäkten som en avisering) ───────────────── */
-
-function LockScreen({
-  name,
-  excuse,
-  loading,
-  empty,
-}: {
-  name: string;
-  excuse: Excuse | null;
-  loading: boolean;
-  empty: boolean;
-}) {
-  const now = new Date();
-  const time = `${String(now.getHours()).padStart(2, "0")}:${String(
-    now.getMinutes(),
-  ).padStart(2, "0")}`;
-  const rawDate = now.toLocaleDateString("sv-SE", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  const date = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
-
-  return (
-    <div className="overflow-hidden rounded-[2rem] bg-[#11161d] px-5 pb-6 pt-8 text-white shadow-float">
-      {/* Klocka */}
-      <div className="text-center">
-        <div className="text-[13px] font-medium text-white/70">{date}</div>
-        <div className="text-6xl font-semibold tracking-tight">{time}</div>
-      </div>
-
-      {/* Avisering */}
-      <div className="mt-9">
-        {loading ? (
-          <div className="rounded-2xl bg-white/90 px-4 py-4 text-black/40">…</div>
-        ) : empty || !excuse ? (
-          <div className="rounded-2xl bg-white/90 px-4 py-4 text-center text-sm text-black/50">
-            {COPY.compose.empty}
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-white/95 px-4 py-3 text-black">
-            <div className="mb-1.5 flex items-center gap-2">
-              <span className="h-[18px] w-[18px] rounded-[5px] bg-[#34c759]" aria-hidden />
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-black/45">
-                Meddelanden
-              </span>
-              <span className="ml-auto text-[11px] text-black/40">nu</span>
-            </div>
-            <div className="text-[15px] font-semibold leading-tight">{name}</div>
-            <div className="mt-0.5 text-[15px] leading-snug text-black/80">
-              {excuse.text}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -385,25 +447,24 @@ function SenderField({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium">
+      <label className="block text-sm font-semibold">
         {COPY.compose.senderLabel}
       </label>
 
-      {/* Trigger + alternativ i EN sammanhängande behållare (ingen lös panel). */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="overflow-hidden rounded-2xl border-2 border-border bg-surface shadow-soft">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           className="flex w-full items-center justify-between px-5 py-3.5 text-left"
         >
-          <span className={value ? "font-medium" : "text-muted"}>
+          <span className={value ? "font-semibold" : "text-muted"}>
             {value || COPY.compose.choose}
           </span>
           <span className="text-sm text-muted">{open ? "▴" : "▾"}</span>
         </button>
 
         {open && (
-          <div className="space-y-3 border-t border-border px-4 pb-4 pt-3">
+          <div className="space-y-3 border-t-2 border-border px-4 pb-4 pt-3">
             <div className="flex flex-wrap gap-2">
               {presets.map((name) => (
                 <Chip
@@ -423,7 +484,7 @@ function SenderField({
               placeholder={COPY.details.senderPlaceholder}
               value={isCustom ? value : ""}
               onChange={(e) => onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none ring-brand/30 transition focus:ring-2"
+              className="w-full rounded-xl border-2 border-border bg-surface px-4 py-2.5 outline-none ring-brand/50 transition focus:ring-2"
             />
           </div>
         )}
@@ -445,13 +506,13 @@ function Result({
 }) {
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand shadow-soft">
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-border bg-brand shadow-raised">
           <svg
             viewBox="0 0 24 24"
             className="h-9 w-9"
             fill="none"
-            stroke="white"
+            stroke="#0b0b0b"
             strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -460,8 +521,8 @@ function Result({
             <path d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="text-2xl font-extrabold">{COPY.result.successTitle}</h1>
-        <p className="max-w-xs text-muted">
+        <h1 className="font-display text-2xl font-black">{COPY.result.successTitle}</h1>
+        <p className="max-w-xs font-medium text-[#34312b]">
           {fill(COPY.result.successBodyName, { name: sender })}
         </p>
       </div>
@@ -512,8 +573,8 @@ function Suggest({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <h1 className="text-2xl font-extrabold">{COPY.suggest.successTitle}</h1>
-          <p className="max-w-xs text-muted">{COPY.suggest.successBody}</p>
+          <h1 className="font-display text-2xl font-black">{COPY.suggest.successTitle}</h1>
+          <p className="max-w-xs font-medium text-[#34312b]">{COPY.suggest.successBody}</p>
         </div>
         <div className="space-y-3 pt-4">
           <Button
@@ -537,7 +598,9 @@ function Suggest({ onBack }: { onBack: () => void }) {
     <div className="flex flex-1 flex-col gap-6">
       <Header title={COPY.suggest.title} onBack={onBack} />
 
-      <p className="text-sm leading-relaxed text-muted">{COPY.suggest.intro}</p>
+      <p className="text-sm font-medium leading-relaxed text-[#34312b]">
+        {COPY.suggest.intro}
+      </p>
 
       <textarea
         rows={4}
@@ -545,7 +608,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
         placeholder={COPY.suggest.placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="w-full resize-none rounded-2xl border border-border bg-surface px-5 py-4 outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
+        className="w-full resize-none rounded-2xl border-2 border-border bg-surface px-5 py-4 outline-none ring-brand/50 transition focus:ring-2"
       />
 
       {error && <p className="text-sm text-danger">{COPY.suggest.errors[error]}</p>}
@@ -568,11 +631,11 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
         type="button"
         onClick={onBack}
         aria-label="Tillbaka"
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-lg text-muted transition hover:text-brand active:scale-95"
+        className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-border bg-surface text-lg shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
       >
         ←
       </button>
-      <h1 className="text-xl font-bold">{title}</h1>
+      <h1 className="font-display text-xl font-black">{title}</h1>
     </div>
   );
 }
@@ -580,11 +643,9 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
 function Footer() {
   return (
     <footer className="pt-8 text-center">
-      <p className="text-[11px] leading-relaxed text-muted/80">
-        {COPY.privacy.short}
-      </p>
+      <p className="text-[11px] leading-relaxed text-muted">{COPY.privacy.short}</p>
       {COPY.brand.byline && (
-        <p className="mt-2 text-[11px] text-muted/60">
+        <p className="mt-2 font-mono text-[11px] text-muted">
           {COPY.brand.name} · {COPY.brand.byline}
         </p>
       )}

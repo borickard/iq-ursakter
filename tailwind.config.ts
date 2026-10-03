@@ -20,17 +20,23 @@ const config: Config = {
         border: "rgb(var(--color-border) / <alpha-value>)",
         danger: "rgb(var(--color-danger) / <alpha-value>)",
       },
+      fontFamily: {
+        sans: ["var(--font-hanken)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-archivo)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-space-mono)", "ui-monospace", "monospace"],
+        wordmark: ["var(--font-syne)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
       borderRadius: {
         xl: "1rem",
         "2xl": "1.25rem",
         "3xl": "1.75rem",
       },
       boxShadow: {
-        // Platta, neutrala skuggor (inga färgade gradient-skuggor längre).
-        soft: "0 1px 2px rgba(17,24,39,0.06), 0 6px 16px -8px rgba(17,24,39,0.10)",
-        raised: "0 1px 2px rgba(17,24,39,0.08), 0 8px 20px -8px rgba(17,24,39,0.14)",
-        inset: "inset 0 1px 2px rgba(17,24,39,0.06)",
-        float: "0 12px 32px -10px rgba(17,24,39,0.22)",
+        // Hårda offset-skuggor (brutalist). Inget suddigt.
+        soft: "3px 3px 0 #0b0b0b",
+        raised: "4px 4px 0 #0b0b0b",
+        float: "6px 6px 0 #0b0b0b",
+        inset: "none",
       },
     },
   },
