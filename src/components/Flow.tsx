@@ -102,13 +102,20 @@ function Landing({ onStart }: { onStart: () => void }) {
             {COPY.landing.headline1}
             <br />
             {COPY.landing.headline2a}
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               onClick={onStart}
-              className="inline-block rounded-lg border-2 border-border bg-brand px-1.5 align-baseline text-brand-fg shadow-[3px_3px_0_#0b0b0b] transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_#0b0b0b]"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onStart();
+                }
+              }}
+              className="cursor-pointer rounded-lg border-2 border-border bg-brand px-1.5 text-brand-fg shadow-[3px_3px_0_#0b0b0b]"
             >
               {COPY.landing.headlineLink}
-            </button>
+            </span>
             {COPY.landing.headline2b}
           </h1>
           <p className="max-w-sm text-sm font-medium leading-relaxed text-[#34312b]">
@@ -128,8 +135,8 @@ function Landing({ onStart }: { onStart: () => void }) {
 
 function HeroCarousel() {
   const items = COPY.landing.carousel;
-  const exRef = useRef<HTMLParagraphElement>(null);
-  const outRef = useRef<HTMLParagraphElement>(null);
+  const exRef = useRef<HTMLDivElement>(null);
+  const outRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLParagraphElement>(null);
   const idx = useRef(0);
 
@@ -138,6 +145,9 @@ function HeroCarousel() {
     const out = outRef.current;
     const meta = metaRef.current;
     if (!ex || !out) return;
+    const exP = ex.querySelector("p");
+    const outP = out.querySelector("p");
+    if (!exP || !outP) return;
     const reduce =
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -147,28 +157,30 @@ function HeroCarousel() {
       if (meta) meta.textContent = items[n].sender + " · nyss";
     };
     const id = window.setInterval(() => {
-      const oldText = ex.textContent || "";
+      const oldText = exP.textContent || "";
       idx.current = (idx.current + 1) % items.length;
       const n = idx.current;
       if (reduce) {
-        ex.textContent = items[n].text;
+        exP.textContent = items[n].text;
         setMeta(n);
         return;
       }
-      out.textContent = oldText;
+      outP.textContent = oldText;
       out.style.transition = "none";
       out.style.opacity = "1";
       out.style.transform = "translateY(0)";
-      ex.textContent = items[n].text;
+      exP.textContent = items[n].text;
       ex.style.transition = "none";
       ex.style.opacity = "0";
-      ex.style.transform = "translateY(110%)";
+      ex.style.transform = "translateY(100%)";
       if (meta) meta.style.opacity = "0";
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
+          // Flyttar hela lagret en hel bubbelhöjd → texten lämnar helt och
+          // klipps av konturen (overflow-hidden), oberoende av textens längd.
           out.style.transition = DUR;
           out.style.opacity = "0";
-          out.style.transform = "translateY(-110%)";
+          out.style.transform = "translateY(-100%)";
           ex.style.transition = DUR;
           ex.style.opacity = "1";
           ex.style.transform = "translateY(0)";
@@ -182,20 +194,19 @@ function HeroCarousel() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div
-        className="relative w-max max-w-[92%] self-start"
-        style={{ filter: SHADOW }}
-      >
-        <div className="relative flex min-h-[44px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 py-3">
-          <div className="relative w-full">
-            <p ref={exRef} className="m-0 text-[15px] font-medium leading-snug">
+      <div className="relative w-full self-start" style={{ filter: SHADOW }}>
+        <div className="relative h-[72px] overflow-hidden rounded-2xl border-2 border-border bg-surface">
+          <div
+            ref={outRef}
+            aria-hidden
+            className="absolute inset-0 flex items-center px-4 opacity-0"
+          >
+            <p className="m-0 text-[15px] font-medium leading-snug" />
+          </div>
+          <div ref={exRef} className="absolute inset-0 flex items-center px-4">
+            <p className="m-0 text-[15px] font-medium leading-snug">
               {items[0].text}
             </p>
-            <p
-              ref={outRef}
-              aria-hidden
-              className="absolute left-0 right-0 top-0 m-0 text-[15px] font-medium leading-snug opacity-0"
-            />
           </div>
         </div>
         <span
@@ -228,20 +239,20 @@ function ExcuseBubble({
   empty: boolean;
 }) {
   const showSender = !loading && !empty && !!text;
+  const muted = loading || empty || !text;
+  const body = loading ? "…" : empty || !text ? COPY.compose.empty : text;
   return (
     <div className="flex flex-col gap-3.5">
-      <div
-        className="relative w-max max-w-[92%] self-start"
-        style={{ filter: SHADOW }}
-      >
-        <div className="relative flex min-h-[56px] items-center rounded-2xl border-2 border-border bg-surface px-4 py-3">
-          {loading ? (
-            <p className="m-0 text-[15px] text-muted">…</p>
-          ) : empty || !text ? (
-            <p className="m-0 text-[15px] text-muted">{COPY.compose.empty}</p>
-          ) : (
-            <p className="m-0 text-[15px] font-medium leading-snug">{text}</p>
-          )}
+      <div className="relative w-full self-start" style={{ filter: SHADOW }}>
+        <div className="flex h-[72px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4">
+          <p
+            className={
+              "m-0 text-[15px] leading-snug " +
+              (muted ? "text-muted" : "font-medium")
+            }
+          >
+            {body}
+          </p>
         </div>
         <span
           aria-hidden
