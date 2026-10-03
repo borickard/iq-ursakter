@@ -15,7 +15,7 @@ export default function AppleIcon() {
           height: "100%",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(160deg, #ef6a87, #d83a5f)",
+          background: "#17795e",
         }}
       >
         <div

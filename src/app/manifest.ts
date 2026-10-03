@@ -7,9 +7,9 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Ursäkten",
-    short_name: "Ursäkten",
-    description: "En social exit-knapp.",
+    name: "Livlinan",
+    short_name: "Livlinan",
+    description: "En utväg, ett sms bort.",
     start_url: "/",
     display: "standalone",
     background_color: "#f6dadd",

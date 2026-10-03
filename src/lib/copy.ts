@@ -8,25 +8,25 @@
 export const COPY = {
   brand: {
     // Sätt till t.ex. "IQ" när beslut om synlighet är taget. Tom sträng = neutral.
-    name: "Ursäkten",
+    name: "Livlinan",
     // Liten byline i sidfoten. Töm för att helt tona ner avsändaren.
-    byline: "En social exit-knapp.",
+    byline: "En utväg, ett sms bort.",
   },
 
   landing: {
     // Rubriken bär huvudlöftet; ordmärket (brand.name) står litet ovanför.
-    title: "En utväg, ett sms bort.",
+    title: "Behöver du en livlina? Nu slipper du förklara dig.",
     subtitle:
-      "Vattentäta ursäkter skickade till din egen telefon – så du kan gå när du vill, utan att förklara dig.",
-    cta: "Skapa min ursäkt",
+      "En trovärdig ursäkt, redo när du behöver den. Du bestämmer själv när kvällen är slut – ingen annan ska tvinga dig att stanna.",
+    cta: "Skicka mig ett sms",
     // Förhandsvisning på landningen (visar produkten direkt).
     heroSender: "Mamma",
     heroMessage: "Hunden har kräkts i hela sängen – kan du komma hem?",
     heroMeta: "nyss",
-    // Lågmält, längre ner: tillåtande ton + alkoholvinkeln i sajtens röst.
+    // (Grundningsblocket togs bort från landningen; empowerment ligger nu i
+    // underrubriken.) Kvar som nyckel ifall det behövs igen.
     grounding:
-      "Du bestämmer själv när det räcker. Ingen ska tvinga dig att stanna – eller att dricka mer än du vill. Men ibland vill man bara hem. Då finns Ursäkten.",
-    // IQ-avsändare läggs här om/när synligheten bestämts. Tom = avsändarneutral.
+      "Du bestämmer själv när det räcker. Ingen ska tvinga dig att stanna – eller att dricka mer än du vill. Men ibland vill man bara hem. Då finns Livlinan.",
     groundingBy: "",
   },
 
@@ -129,7 +129,8 @@ export const COPY = {
     choose: "Välj avsändare",
     senderFallback: "Avsändare",
     empty: "Inga ursäkter tillgängliga just nu.",
-    swipeHint: "Svep eller använd pilarna för att byta ursäkt",
+    next: "Nästa ursäkt",
+    prev: "Föregående",
     showAsMessage: "Visa som meddelande",
     close: "Stäng",
     fromLabel: "SMS:et kommer från det här numret:",

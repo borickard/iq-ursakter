@@ -26,17 +26,11 @@ const config: Config = {
         "3xl": "1.75rem",
       },
       boxShadow: {
-        // Djup mjuk skugga under kort/fält + en svag ljus topp-kant (upphöjt).
-        soft: "0 24px 48px -16px rgba(186, 50, 95, 0.48), 0 8px 18px -10px rgba(186, 50, 95, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.85)",
-        // Extruderad knapp/badge: djup skugga + tät kontaktskugga + inre highlight.
-        raised:
-          "0 18px 36px -10px rgba(186, 50, 95, 0.58), 0 5px 12px -4px rgba(170, 40, 80, 0.45), inset 0 2px 1px rgba(255, 255, 255, 0.55), inset 0 -4px 8px rgba(150, 30, 70, 0.28)",
-        // Insänkt (recessed) fält – tydlig inre skugga.
-        inset:
-          "inset 0 3px 8px rgba(186, 50, 95, 0.22), inset 0 -1px 1px rgba(255, 255, 255, 0.7)",
-        // Stor svävande badge.
-        float:
-          "0 30px 55px -12px rgba(170, 40, 80, 0.6), 0 12px 22px -8px rgba(186, 50, 95, 0.45)",
+        // Platta, neutrala skuggor (inga färgade gradient-skuggor längre).
+        soft: "0 1px 2px rgba(17,24,39,0.06), 0 6px 16px -8px rgba(17,24,39,0.10)",
+        raised: "0 1px 2px rgba(17,24,39,0.08), 0 8px 20px -8px rgba(17,24,39,0.14)",
+        inset: "inset 0 1px 2px rgba(17,24,39,0.06)",
+        float: "0 12px 32px -10px rgba(17,24,39,0.22)",
       },
     },
   },

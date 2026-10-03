@@ -7,7 +7,9 @@ pending, the key decisions, design direction, and how the user wants to work.
 
 ## 1. What this is
 
-**Ursäkten** — a Proof of Concept for **IQ** (owned by Systembolaget). A
+**Livlinan** (renamed from *Ursäkten* this session; livlinan.se is free — "livlina"
+= lifeline, and "lina" also reads as a phone line/number) — a Proof of Concept
+for **IQ** (owned by Systembolaget). A
 mobile-first web app: the user generates a believable excuse and has it sent as
 an **SMS to their own phone**, so it shows up looking like it came from a saved
 contact (e.g. "Mamma", "Älskling", "Chefen"). A friction-free social "exit
@@ -186,21 +188,28 @@ Excuses rewritten from the **sender's** point of view (see decision #2).
 
 ## 6. Design direction
 
-- **Reference:** soft pastel **pink**, **rounded pill** shapes, **soft depth
-  shadows** (a light neumorphic feel), a floating **circular badge**, minimal /
-  sleek / modern. (User supplied a reference image of a pink pill-shaped search
-  bar with a circular logo badge.)
-- **Theme is driven by CSS variables** in `src/app/globals.css`. Current
-  palette (RGB triplets): bg pink gradient, surface near-white warm, brand rose
-  `224 78 110` (#e04e6e), border soft rose, danger deeper red. `layout.tsx`
-  `themeColor` is pink (#f8e2e4).
-- **Custom Tailwind tokens** (`tailwind.config.ts`): box-shadows `soft`,
-  `raised`, `inset`; radius `3xl`; pills use `rounded-full`.
-- **Components** (`src/components/ui.tsx`): primary Button = brand pill with
-  `shadow-raised`; secondary = white pill + border + `shadow-soft`; Card =
-  `rounded-3xl` + border + `shadow-soft`; inputs = pill-shaped with
-  `shadow-inset` (recessed). Landing has a 🤫 circular badge.
-- Mobile-first, dark-room-friendly readability, large tap targets.
+**Current (this session's overhaul): "Dagsljus" — flat, light, no pink, no
+gradients.** Theme tokens in `src/app/globals.css`: warm off-white bg
+(`244 244 241`), white surfaces, **deep-green brand** (`23 121 94` / #17795e),
+neutral text/borders. Flat neutral box-shadows in `tailwind.config.ts`
+(`soft`/`raised`/`inset`/`float` — no coloured gradient shadows). Font is
+**Schibsted Grotesk** (next/font, `--font-schibsted`). Buttons = flat green,
+`rounded-2xl` (not pills); active chips = flat green. `layout.tsx` themeColor
+`#f4f4f1`. apple-icon = flat green tile.
+
+- **Landing = Direction B** (preview-forward): small wordmark, a real grey
+  message bubble ("Mamma · nyss"), headline "Behöver du en livlina? Nu slipper
+  du förklara dig.", one green CTA "Skicka mig ett sms". No grounding block
+  (empowerment moved into the subtitle).
+- **Excuse screen** shows the excuse as a **lock-screen notification**
+  (`LockScreen` in `Flow.tsx` — dark wallpaper, big clock, white Messages
+  notification). Browse via **"Föregående" / "Nästa ursäkt"** buttons (no swipe).
+  Usage count shown under it. "Visa som meddelande" still opens the fullscreen
+  `IosMessages` conversation (with random lead-in).
+- Chosen over "Midnatt" (dark) and "Signal" (bold blue); since the theme is
+  token-based, switching palettes later is a quick edit to `globals.css`.
+- *Old look (pre-overhaul): soft pink, pill shapes, neumorphic depth shadows,
+  circular badge — fully removed.*
 
 ---
 

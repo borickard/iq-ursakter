@@ -33,7 +33,7 @@ export function middleware(req: NextRequest) {
 
   return new NextResponse("Autentisering krävs.", {
     status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Ursäkten admin", charset="UTF-8"' },
+    headers: { "WWW-Authenticate": 'Basic realm="Livlinan admin", charset="UTF-8"' },
   });
 }
 
