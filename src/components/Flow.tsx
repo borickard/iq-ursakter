@@ -87,9 +87,9 @@ export default function Flow() {
 function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col justify-center gap-7">
-        <Wordmark className="text-[26px]" />
+      <Wordmark className="text-[26px]" />
 
+      <div className="flex flex-1 flex-col justify-center gap-7">
         <HeroCarousel />
 
         <div className="space-y-3">
