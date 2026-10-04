@@ -93,7 +93,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         <HeroCarousel />
 
         <div className="space-y-3.5">
-          <h1 className="font-display text-[23px] font-black leading-[1.14] tracking-tight">
+          <h1 className="font-display text-[clamp(24px,7.2vw,28px)] font-black leading-[1.1] tracking-tight">
             {COPY.landing.headline1}
             <br />
             {COPY.landing.headline2a}
@@ -112,6 +112,8 @@ function Landing({ onStart }: { onStart: () => void }) {
               {COPY.landing.headlineLink}
             </span>
             {COPY.landing.headline2b}
+            <br />
+            {COPY.landing.headline3}
           </h1>
           <p className="max-w-sm text-sm font-medium leading-relaxed text-[#34312b]">
             {COPY.landing.subtitle}
@@ -191,10 +193,10 @@ function HeroCarousel() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      {/* Bubblan hugger texten (max-content) → ser ut som en riktig pratbubbla. */}
-      <div className="relative w-max max-w-[92%] self-start">
-        {/* Hård offset-skugga (bubbla + svans) som egna lager bakom – inte en
-            filter, så den klipps aldrig när texten animeras. */}
+      {/* Fast storlek: bredd satt så texten radbryts över ~tre rader, och fast
+          trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
+      <div className="relative w-[250px] max-w-full self-start">
+        {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
@@ -202,15 +204,13 @@ function HeroCarousel() {
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
-          style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
+          className="pointer-events-none absolute left-[26px] h-4 w-4 bg-border"
+          style={{ bottom: "-6px", transform: "translate(5px, 5px) rotate(45deg)" }}
         />
-        <div className="relative flex min-h-[48px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 py-2.5">
+        {/* pb ger luft så svansen aldrig täcker texten. */}
+        <div className="relative h-[94px] overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 pb-6 pt-3">
           <div className="relative w-full">
-            <p
-              ref={exRef}
-              className="m-0 text-[15px] font-medium leading-snug"
-            >
+            <p ref={exRef} className="m-0 text-[15px] font-medium leading-snug">
               {items[0].text}
             </p>
             <p
@@ -220,15 +220,17 @@ function HeroCarousel() {
             />
           </div>
         </div>
+        {/* Svansen överlappar bubblans underkant → vit fyllning döljer bubblans
+            nederkantslinje så spetsen sitter ihop med bubblan. */}
         <span
           aria-hidden
-          className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
-          style={{ bottom: "-9px", transform: "rotate(45deg)" }}
+          className="absolute left-[26px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+          style={{ bottom: "-6px", transform: "rotate(45deg)" }}
         />
       </div>
       <p
         ref={metaRef}
-        className="pl-[22px] font-mono text-[11px] text-muted transition-opacity duration-300"
+        className="pl-[26px] font-mono text-[11px] text-muted transition-opacity duration-300"
       >
         {items[0].sender} · nyss
       </p>

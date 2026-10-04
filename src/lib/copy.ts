@@ -18,7 +18,8 @@ export const COPY = {
     headline1: "Slipp förklara dig.",
     headline2a: "En ",
     headlineLink: "livlina",
-    headline2b: " levererad via sms.",
+    headline2b: " levererad",
+    headline3: "via sms.",
     subtitle:
       "En trovärdig ursäkt, redo när du behöver den. Du bestämmer själv när kvällen är slut.",
     cta: "Skicka mig ett sms",
