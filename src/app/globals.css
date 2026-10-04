@@ -108,8 +108,9 @@ textarea {
   width: 10px;
 }
 
-/* Skrivindikator ("typing…") för landningens pratbubbla. */
+/* Skrivindikator ("typing…"). "Vågen": varje prick lyfts i tur och ordning
+   (jämnt fasförskjutna delays) så att en puckel vandrar från vänster till höger. */
 @keyframes livlinaTyping {
-  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
-  30% { opacity: 1; transform: translateY(-3px); }
+  0%, 44%, 100% { opacity: 0.4; transform: translateY(0); }
+  22% { opacity: 1; transform: translateY(-6px); }
 }

@@ -154,9 +154,9 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
           className="absolute inset-0 flex items-center justify-center"
         >
           <span className="flex gap-[3px]">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1s_infinite]" />
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1s_infinite] [animation-delay:.2s]" />
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1s_infinite] [animation-delay:.4s]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1.2s_infinite]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1.2s_infinite] [animation-delay:.4s]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1.2s_infinite] [animation-delay:.8s]" />
           </span>
         </span>
       )}
@@ -255,9 +255,9 @@ function HeroCarousel() {
             className="absolute inset-0 hidden items-center justify-center"
           >
             <span className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1s_infinite]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1s_infinite] [animation-delay:.2s]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1s_infinite] [animation-delay:.4s]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.2s_infinite]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.2s_infinite] [animation-delay:.4s]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.2s_infinite] [animation-delay:.8s]" />
             </span>
           </div>
         </div>
