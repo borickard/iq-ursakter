@@ -107,3 +107,9 @@ textarea {
   transform: translate(-30px, -2px);
   width: 10px;
 }
+
+/* Skrivindikator ("typing…") för landningens pratbubbla. */
+@keyframes livlinaTyping {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}

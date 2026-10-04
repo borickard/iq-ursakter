@@ -97,20 +97,7 @@ function Landing({ onStart }: { onStart: () => void }) {
             {COPY.landing.headline1}
             <br />
             {COPY.landing.headline2a}
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={onStart}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onStart();
-                }
-              }}
-              className="cursor-pointer rounded-lg border-2 border-border bg-brand px-1.5 text-brand-fg shadow-[3px_3px_0_#0b0b0b]"
-            >
-              {COPY.landing.headlineLink}
-            </span>
+            <LivlinaChip onStart={onStart} />
             {COPY.landing.headline2b}
             <br />
             {COPY.landing.headline3}
@@ -132,63 +119,106 @@ function Landing({ onStart }: { onStart: () => void }) {
   );
 }
 
+/* ── Lime-chippet "livlina" som "skrivs in" en gång vid sidladdning ───────── */
+
+function LivlinaChip({ onStart }: { onStart: () => void }) {
+  const [typed, setTyped] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setTyped(true), 2000);
+    return () => window.clearTimeout(t);
+  }, []);
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      onClick={onStart}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onStart();
+        }
+      }}
+      className="relative inline-flex cursor-pointer items-center justify-center rounded-lg border-2 border-border bg-brand px-1.5 text-brand-fg shadow-[3px_3px_0_#0b0b0b]"
+    >
+      {/* Ordet håller alltid bredden; prickarna ligger ovanpå tills det "skrivits". */}
+      <span className={typed ? "" : "invisible"}>{COPY.landing.headlineLink}</span>
+      {!typed && (
+        <span
+          aria-hidden
+          className="absolute inset-0 flex items-center justify-center"
+        >
+          <span className="flex gap-[3px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1s_infinite]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1s_infinite] [animation-delay:.2s]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1s_infinite] [animation-delay:.4s]" />
+          </span>
+        </span>
+      )}
+    </span>
+  );
+}
+
 /* ── Landningens roterande pratbubbla ───────────────────────────────────── */
 
 function HeroCarousel() {
   const items = COPY.landing.carousel;
   const exRef = useRef<HTMLParagraphElement>(null);
-  const outRef = useRef<HTMLParagraphElement>(null);
+  const typingRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLParagraphElement>(null);
   const idx = useRef(0);
 
   useEffect(() => {
     const exP = exRef.current;
-    const outP = outRef.current;
+    const typing = typingRef.current;
     const meta = metaRef.current;
-    if (!exP || !outP) return;
+    if (!exP) return;
     const reduce =
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const EASE = "cubic-bezier(.455,.03,.515,.955)";
-    const DUR = "opacity .45s " + EASE + ", transform .45s " + EASE;
-    const setMeta = (n: number) => {
-      if (meta) meta.textContent = items[n].sender + " · nyss";
-    };
+    let t1 = 0;
+    let t2 = 0;
     const id = window.setInterval(() => {
-      const oldText = exP.textContent || "";
       idx.current = (idx.current + 1) % items.length;
-      const n = idx.current;
+      const it = items[idx.current];
       if (reduce) {
-        exP.textContent = items[n].text;
-        setMeta(n);
+        exP.textContent = it.text;
+        if (meta) meta.textContent = it.sender + " · nyss";
         return;
       }
-      // Den synliga texten (exP) är i flödet och styr bubblans storlek – den
-      // krymper/växer till varje meddelande, precis som i mockupen. Den utgående
-      // kopian (outP) ligger absolut ovanpå och påverkar inte storleken.
-      outP.textContent = oldText;
-      outP.style.transition = "none";
-      outP.style.opacity = "1";
-      outP.style.transform = "translateY(0)";
-      exP.textContent = items[n].text;
-      exP.style.transition = "none";
+      // Tona ut texten → visa skrivindikator en stund → "skriv in" nästa ursäkt.
+      // Ett enda textlager, vertikalt centrerat, så varje byte ser likadant ut.
+      exP.style.transition = "opacity .2s ease";
       exP.style.opacity = "0";
-      exP.style.transform = "translateY(110%)";
       if (meta) meta.style.opacity = "0";
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          outP.style.transition = DUR;
-          outP.style.opacity = "0";
-          outP.style.transform = "translateY(-110%)";
-          exP.style.transition = DUR;
-          exP.style.opacity = "1";
-          exP.style.transform = "translateY(0)";
-          setMeta(n);
-          if (meta) meta.style.opacity = "1";
-        }),
-      );
+      t1 = window.setTimeout(() => {
+        if (typing) typing.style.display = "flex";
+      }, 220);
+      t2 = window.setTimeout(() => {
+        if (typing) typing.style.display = "none";
+        exP.textContent = it.text;
+        exP.style.transition = "none";
+        exP.style.opacity = "0";
+        exP.style.transform = "translateY(6px)";
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            exP.style.transition =
+              "opacity .3s " + EASE + ", transform .3s " + EASE;
+            exP.style.opacity = "1";
+            exP.style.transform = "translateY(0)";
+          }),
+        );
+        if (meta) {
+          meta.textContent = it.sender + " · nyss";
+          meta.style.opacity = "1";
+        }
+      }, 900);
     }, 3000);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
   }, [items]);
 
   return (
@@ -209,15 +239,20 @@ function HeroCarousel() {
         />
         {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
         <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 pb-5 pt-3">
-          <div className="relative w-full">
-            <p ref={exRef} className="m-0 text-[17px] font-medium leading-snug">
-              {items[0].text}
-            </p>
-            <p
-              ref={outRef}
-              aria-hidden
-              className="absolute inset-x-0 top-0 m-0 text-[17px] font-medium leading-snug opacity-0"
-            />
+          <p ref={exRef} className="m-0 w-full text-[17px] font-medium leading-snug">
+            {items[0].text}
+          </p>
+          {/* Skrivindikator – centrerad i bubblan, visas mellan ursäkterna. */}
+          <div
+            ref={typingRef}
+            aria-hidden
+            className="absolute inset-0 hidden items-center justify-center"
+          >
+            <span className="flex gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1s_infinite]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1s_infinite] [animation-delay:.2s]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1s_infinite] [animation-delay:.4s]" />
+            </span>
           </div>
         </div>
         {/* Svansen överlappar bubblans underkant → vit fyllning döljer bubblans
@@ -403,6 +438,7 @@ function Compose({
 
   return (
     <div className="flex flex-1 flex-col gap-5">
+      <Wordmark className="text-[20px]" />
       <Header title={COPY.compose.title} onBack={onBack} />
 
       <div className="flex flex-col gap-3.5">
