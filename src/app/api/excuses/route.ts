@@ -36,7 +36,9 @@ export async function GET() {
       select: { id: true, text: true, sentCount: true },
       orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
     });
-    excuses = rows.map((r) => ({ ...r, category: "home" }));
+    // Tom kategori → klienten filtrerar inte (visar ursäkten för alla
+    // avsändare), så inget blir tomt innan kategori-kolumnen finns.
+    excuses = rows.map((r) => ({ ...r, category: "" }));
   }
 
   // Inledande konversationer för meddelande-mockupen. Resilient: om tabellen

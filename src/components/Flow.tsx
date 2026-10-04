@@ -366,7 +366,8 @@ function Compose({
   const pool = useMemo(() => {
     if (!excuses || senderCat === null) return [];
     if (senderCat === undefined) return excuses;
-    return excuses.filter((e) => e.category === senderCat);
+    // Tom kategori (före DB-migreringen) matchar alla avsändare.
+    return excuses.filter((e) => !e.category || e.category === senderCat);
   }, [excuses, senderCat]);
 
   const poolCount = pool.length;
