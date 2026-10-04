@@ -319,6 +319,28 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
   ('leadin-04','Kommer du nästa vecka?','Ja absolut','Vad bra')
   ON CONFLICT ("id") DO NOTHING;
   ```
+- **PENDING — `category` column + sender filtering.** The compose flow is now
+  **sender-first**: the user picks the sender, then only excuses that fit that
+  sender are shown. Each excuse has a `category` (`home` = Mamma/Pappa/Älskling,
+  `work` = Chefen; mapping in `src/lib/senders.ts`). The code
+  is resilient (falls back to `home` if the column is missing), but run this in
+  Supabase to enable real filtering + add the extra work excuses:
+  ```sql
+  ALTER TABLE "Excuse" ADD COLUMN IF NOT EXISTS "category" TEXT NOT NULL DEFAULT 'home';
+  UPDATE "Excuse" SET "category" = 'work'
+  WHERE "source" = 'seed' AND "text" IN (
+    'Du behöver komma in tidigt imorgon bitti, något har dykt upp på jobbet.',
+    'Vi behöver dig på jobbet nu, kan du rycka in?'
+  );
+  INSERT INTO "Excuse" ("id","text","source","status","sentCount","category") VALUES
+    ('seed-16','Kan du ta ett extrapass ikväll? Vi är underbemannade.','seed','approved',0,'work'),
+    ('seed-17','Det är kris i systemet, vi behöver dig på kontoret.','seed','approved',0,'work'),
+    ('seed-18','Mötet med kunden flyttades till imorgon bitti – du måste vara med.','seed','approved',0,'work'),
+    ('seed-19','Någon har sjukanmält sig, kan du hoppa in ikväll?','seed','approved',0,'work')
+  ON CONFLICT ("id") DO NOTHING;
+  ```
+  Note: admin-added and user-suggested excuses default to `category='home'`
+  (no category picker in admin yet — a possible future improvement).
 
 ---
 
