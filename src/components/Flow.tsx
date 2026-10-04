@@ -239,51 +239,44 @@ function HeroCarousel() {
 
 function ExcuseBubble({
   text,
-  sender,
   loading,
   empty,
 }: {
   text?: string;
-  sender: string;
   loading: boolean;
   empty: boolean;
 }) {
-  const showSender = !loading && !empty && !!text;
   const muted = loading || empty || !text;
   const body = loading ? "…" : empty || !text ? COPY.compose.empty : text;
   return (
-    <div className="flex flex-col gap-3.5">
-      <div className="relative w-full self-start">
-        {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
-          style={{ transform: "translate(5px, 5px)" }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
-          style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
-        />
-        <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4">
-          <p
-            className={
-              "m-0 text-[15px] leading-snug " +
-              (muted ? "text-muted" : "font-medium")
-            }
-          >
-            {body}
-          </p>
-        </div>
-        <span
-          aria-hidden
-          className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
-          style={{ bottom: "-9px", transform: "rotate(45deg)" }}
-        />
+    <div className="relative w-full self-start">
+      {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
+        style={{ transform: "translate(5px, 5px)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
+        style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
+      />
+      {/* Fast höjd → sidan hoppar inte beroende på ursäktens längd. */}
+      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4">
+        <p
+          className={
+            "m-0 line-clamp-3 text-[15px] leading-snug " +
+            (muted ? "text-muted" : "font-medium")
+          }
+        >
+          {body}
+        </p>
       </div>
-      {showSender && (
-        <p className="pl-[22px] font-mono text-[11px] text-muted">{sender} · nyss</p>
-      )}
+      <span
+        aria-hidden
+        className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+        style={{ bottom: "-9px", transform: "rotate(45deg)" }}
+      />
     </div>
   );
 }
@@ -350,6 +343,7 @@ function Compose({
   const contactName = sender.trim() || COPY.compose.senderFallback;
   const countLabel = current ? formatSentCount(current.sentCount) : null;
   const phoneValid = !!normalizeToE164(phone);
+  const senderChosen = sender.trim() !== "";
 
   async function send() {
     if (!normalizeToE164(phone)) {
@@ -408,37 +402,43 @@ function Compose({
     <div className="flex flex-1 flex-col gap-5">
       <Header title={COPY.compose.title} onBack={onBack} />
 
-      <ExcuseBubble
-        text={current?.text}
-        sender={contactName}
-        loading={excuses === null}
-        empty={excuses !== null && count === 0}
-      />
+      <div className="flex flex-col gap-3.5">
+        <ExcuseBubble
+          text={current?.text}
+          loading={excuses === null}
+          empty={excuses !== null && count === 0}
+        />
+        {/* Bildtext under bubblan: avsändare till vänster, antal skickningar
+            till höger. Alltid monterad (fast höjd) så sidan inte hoppar. */}
+        <div className="flex h-4 items-baseline justify-between gap-3 pl-[22px] pr-1 font-mono text-[11px] text-muted">
+          <span className="truncate">{current ? contactName : ""}</span>
+          <span className="shrink-0">{countLabel ?? ""}</span>
+        </div>
+      </div>
 
-      {/* Kompakt rad: slumpa fram en ny ursäkt. "Föregående" dyker upp först
-          när man slumpat minst en gång. */}
+      {/* Kompakt rad: slumpa fram en ny ursäkt. Bakåtknappen finns alltid men
+          är avstängd tills man slumpat minst en gång. */}
       <div className="flex items-center justify-center gap-3">
-        {canGoBack && (
-          <button
-            type="button"
-            onClick={goBack}
-            className="inline-flex items-center gap-1.5 rounded-xl border-2 border-border bg-surface px-3.5 py-2 text-sm font-semibold shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+        <button
+          type="button"
+          onClick={goBack}
+          disabled={!canGoBack}
+          aria-label={COPY.compose.prev}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-border bg-surface shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            {COPY.compose.prev}
-          </button>
-        )}
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={shuffle}
@@ -465,43 +465,46 @@ function Compose({
         </button>
       </div>
 
-      {countLabel && <p className="text-center text-xs text-muted">{countLabel}</p>}
-
       <SenderField value={sender} onChange={onSender} />
 
-      <div className="space-y-2">
-        <label htmlFor="phone" className="block text-sm font-semibold">
-          {COPY.details.phoneLabel}
-        </label>
-        <input
-          id="phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder={COPY.details.phonePlaceholder}
-          value={phone}
-          onChange={(e) => onPhone(e.target.value)}
-          className="w-full rounded-2xl border-2 border-border bg-surface px-5 py-3.5 outline-none ring-brand/50 transition focus:ring-2"
-        />
-      </div>
+      {/* Nummerfält + skicka visas först när en avsändare är vald. */}
+      {senderChosen && (
+        <>
+          <div className="space-y-2">
+            <label htmlFor="phone" className="block text-sm font-semibold">
+              {COPY.details.phoneLabel}
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder={COPY.details.phonePlaceholder}
+              value={phone}
+              onChange={(e) => onPhone(e.target.value)}
+              className="w-full rounded-2xl border-2 border-border bg-surface px-5 py-3.5 outline-none ring-brand/50 transition focus:ring-2"
+            />
+          </div>
 
-      {(formError || error) && (
-        <p className="text-center text-sm font-medium text-danger">
-          {formError ?? COPY.result.errors[error!]}
-        </p>
+          {(formError || error) && (
+            <p className="text-center text-sm font-medium text-danger">
+              {formError ?? COPY.result.errors[error!]}
+            </p>
+          )}
+
+          <Button
+            block
+            onClick={send}
+            disabled={sending || !current || !phoneValid}
+          >
+            {sending ? COPY.browse.sending : COPY.browse.send}
+          </Button>
+
+          <Button block variant="secondary" onClick={showMessage} disabled={!current}>
+            {COPY.compose.showAsMessage}
+          </Button>
+        </>
       )}
-
-      <Button
-        block
-        onClick={send}
-        disabled={sending || !current || !phoneValid}
-      >
-        {sending ? COPY.browse.sending : COPY.browse.send}
-      </Button>
-
-      <Button block variant="secondary" onClick={showMessage} disabled={!current}>
-        {COPY.compose.showAsMessage}
-      </Button>
 
       {showFake && current && (
         <div className="fixed inset-0 z-50 bg-white">
@@ -525,7 +528,7 @@ function Compose({
   );
 }
 
-/* ── Avsändar-dropdown ──────────────────────────────────────────────────── */
+/* ── Avsändar-väljare (förval som chips) ────────────────────────────────── */
 
 function SenderField({
   value,
@@ -535,10 +538,6 @@ function SenderField({
   onChange: (v: string) => void;
 }) {
   const presets: readonly string[] = COPY.details.senderPresets;
-  const isCustom = value.trim() !== "" && !presets.includes(value);
-  const [showCustom, setShowCustom] = useState(isCustom);
-
-  const customActive = showCustom || isCustom;
 
   return (
     <div className="space-y-2.5">
@@ -548,42 +547,11 @@ function SenderField({
 
       <div className="flex flex-wrap gap-2">
         {presets.map((name) => (
-          <Chip
-            key={name}
-            active={value === name}
-            onClick={() => {
-              onChange(name);
-              setShowCustom(false);
-            }}
-          >
+          <Chip key={name} active={value === name} onClick={() => onChange(name)}>
             {name}
           </Chip>
         ))}
-        <Chip
-          active={customActive}
-          onClick={() => {
-            if (customActive) {
-              setShowCustom(false);
-              if (isCustom) onChange("");
-            } else {
-              setShowCustom(true);
-            }
-          }}
-        >
-          {COPY.compose.customChip}
-        </Chip>
       </div>
-
-      {customActive && (
-        <input
-          autoFocus
-          type="text"
-          placeholder={COPY.details.senderPlaceholder}
-          value={isCustom ? value : ""}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-xl border-2 border-border bg-surface px-4 py-2.5 outline-none ring-brand/50 transition focus:ring-2"
-        />
-      )}
     </div>
   );
 }
