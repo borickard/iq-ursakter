@@ -13,8 +13,6 @@ type LeadIn = { them1: string; me: string; them2: string };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
 
-const SHADOW = "drop-shadow(5px 5px 0 #0b0b0b)";
-
 /** "Idag HH:MM" för nu minus angivet antal minuter (mockup-tidsstämplar). */
 function fakeTime(minutesAgo: number): string {
   const d = new Date(Date.now() - minutesAgo * 60000);
@@ -79,7 +77,7 @@ export default function Flow() {
 
       {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
-      <Footer />
+      {step !== "landing" && <Footer />}
     </main>
   );
 }
@@ -194,7 +192,19 @@ function HeroCarousel() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="relative w-full self-start" style={{ filter: SHADOW }}>
+      <div className="relative w-full self-start">
+        {/* Hård offset-skugga (bubbla + svans) som egna lager bakom – inte en
+            filter, så den klipps aldrig när texten animeras. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
+          style={{ transform: "translate(5px, 5px)" }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
+          style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
+        />
         <div className="relative h-[72px] overflow-hidden rounded-2xl border-2 border-border bg-surface">
           <div
             ref={outRef}
@@ -243,8 +253,19 @@ function ExcuseBubble({
   const body = loading ? "…" : empty || !text ? COPY.compose.empty : text;
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="relative w-full self-start" style={{ filter: SHADOW }}>
-        <div className="flex h-[72px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4">
+      <div className="relative w-full self-start">
+        {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
+          style={{ transform: "translate(5px, 5px)" }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
+          style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
+        />
+        <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4">
           <p
             className={
               "m-0 text-[15px] leading-snug " +
