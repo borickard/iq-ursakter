@@ -89,14 +89,11 @@ function Landing({ onStart }: { onStart: () => void }) {
     <div className="flex flex-1 flex-col">
       <Wordmark className="text-[26px]" />
 
-      <div className="flex flex-1 flex-col justify-center gap-7">
+      <div className="mt-9 flex flex-col gap-8">
         <HeroCarousel />
 
-        <div className="space-y-3">
-          <h1
-            className="font-display text-[26px] font-black leading-[1.14] tracking-tight"
-            style={{ textWrap: "balance" }}
-          >
+        <div className="space-y-3.5">
+          <h1 className="font-display text-[23px] font-black leading-[1.14] tracking-tight">
             {COPY.landing.headline1}
             <br />
             {COPY.landing.headline2a}
@@ -122,7 +119,11 @@ function Landing({ onStart }: { onStart: () => void }) {
         </div>
       </div>
 
-      <Button block onClick={onStart} className="py-5 text-lg">
+      <Button
+        block
+        onClick={onStart}
+        className="mt-auto !rounded-full py-6 text-xl"
+      >
         {COPY.landing.cta}
       </Button>
     </div>
@@ -133,18 +134,15 @@ function Landing({ onStart }: { onStart: () => void }) {
 
 function HeroCarousel() {
   const items = COPY.landing.carousel;
-  const exRef = useRef<HTMLDivElement>(null);
-  const outRef = useRef<HTMLDivElement>(null);
+  const exRef = useRef<HTMLParagraphElement>(null);
+  const outRef = useRef<HTMLParagraphElement>(null);
   const metaRef = useRef<HTMLParagraphElement>(null);
   const idx = useRef(0);
 
   useEffect(() => {
-    const ex = exRef.current;
-    const out = outRef.current;
+    const exP = exRef.current;
+    const outP = outRef.current;
     const meta = metaRef.current;
-    if (!ex || !out) return;
-    const exP = ex.querySelector("p");
-    const outP = out.querySelector("p");
     if (!exP || !outP) return;
     const reduce =
       window.matchMedia &&
@@ -163,25 +161,26 @@ function HeroCarousel() {
         setMeta(n);
         return;
       }
+      // Den synliga texten (exP) är i flödet och styr bubblans storlek – den
+      // krymper/växer till varje meddelande, precis som i mockupen. Den utgående
+      // kopian (outP) ligger absolut ovanpå och påverkar inte storleken.
       outP.textContent = oldText;
-      out.style.transition = "none";
-      out.style.opacity = "1";
-      out.style.transform = "translateY(0)";
+      outP.style.transition = "none";
+      outP.style.opacity = "1";
+      outP.style.transform = "translateY(0)";
       exP.textContent = items[n].text;
-      ex.style.transition = "none";
-      ex.style.opacity = "0";
-      ex.style.transform = "translateY(100%)";
+      exP.style.transition = "none";
+      exP.style.opacity = "0";
+      exP.style.transform = "translateY(110%)";
       if (meta) meta.style.opacity = "0";
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
-          // Flyttar hela lagret en hel bubbelhöjd → texten lämnar helt och
-          // klipps av konturen (overflow-hidden), oberoende av textens längd.
-          out.style.transition = DUR;
-          out.style.opacity = "0";
-          out.style.transform = "translateY(-100%)";
-          ex.style.transition = DUR;
-          ex.style.opacity = "1";
-          ex.style.transform = "translateY(0)";
+          outP.style.transition = DUR;
+          outP.style.opacity = "0";
+          outP.style.transform = "translateY(-110%)";
+          exP.style.transition = DUR;
+          exP.style.opacity = "1";
+          exP.style.transform = "translateY(0)";
           setMeta(n);
           if (meta) meta.style.opacity = "1";
         }),
@@ -192,7 +191,8 @@ function HeroCarousel() {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="relative w-full self-start">
+      {/* Bubblan hugger texten (max-content) → ser ut som en riktig pratbubbla. */}
+      <div className="relative w-max max-w-[92%] self-start">
         {/* Hård offset-skugga (bubbla + svans) som egna lager bakom – inte en
             filter, så den klipps aldrig när texten animeras. */}
         <div
@@ -205,18 +205,19 @@ function HeroCarousel() {
           className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
           style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
         />
-        <div className="relative h-[72px] overflow-hidden rounded-2xl border-2 border-border bg-surface">
-          <div
-            ref={outRef}
-            aria-hidden
-            className="absolute inset-0 flex items-center px-4 opacity-0"
-          >
-            <p className="m-0 text-[15px] font-medium leading-snug" />
-          </div>
-          <div ref={exRef} className="absolute inset-0 flex items-center px-4">
-            <p className="m-0 text-[15px] font-medium leading-snug">
+        <div className="relative flex min-h-[48px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 py-2.5">
+          <div className="relative w-full">
+            <p
+              ref={exRef}
+              className="m-0 text-[15px] font-medium leading-snug"
+            >
               {items[0].text}
             </p>
+            <p
+              ref={outRef}
+              aria-hidden
+              className="absolute inset-x-0 top-0 m-0 text-[15px] font-medium leading-snug opacity-0"
+            />
           </div>
         </div>
         <span
