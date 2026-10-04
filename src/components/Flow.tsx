@@ -195,7 +195,7 @@ function HeroCarousel() {
     <div className="flex flex-col gap-3.5">
       {/* Fast storlek: bredd satt så texten radbryts över ~tre rader, och fast
           trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
-      <div className="relative w-[250px] max-w-full self-start">
+      <div className="relative w-[272px] max-w-full self-start">
         {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
         <div
           aria-hidden
@@ -207,16 +207,16 @@ function HeroCarousel() {
           className="pointer-events-none absolute left-[26px] h-4 w-4 bg-border"
           style={{ bottom: "-6px", transform: "translate(5px, 5px) rotate(45deg)" }}
         />
-        {/* pb ger luft så svansen aldrig täcker texten. */}
-        <div className="relative h-[94px] overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 pb-6 pt-3">
+        {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
+        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 pb-5 pt-3">
           <div className="relative w-full">
-            <p ref={exRef} className="m-0 text-[15px] font-medium leading-snug">
+            <p ref={exRef} className="m-0 text-[17px] font-medium leading-snug">
               {items[0].text}
             </p>
             <p
               ref={outRef}
               aria-hidden
-              className="absolute inset-x-0 top-0 m-0 text-[15px] font-medium leading-snug opacity-0"
+              className="absolute inset-x-0 top-0 m-0 text-[17px] font-medium leading-snug opacity-0"
             />
           </div>
         </div>
