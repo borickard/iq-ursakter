@@ -134,6 +134,8 @@ export const COPY = {
     empty: "Inga ursäkter tillgängliga just nu.",
     next: "Nästa ursäkt",
     prev: "Föregående",
+    shuffle: "Slumpa fram",
+    customChip: "Egen…",
     showAsMessage: "Visa som meddelande",
     close: "Stäng",
     fromLabel: "SMS:et kommer från det här numret:",

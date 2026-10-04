@@ -311,7 +311,10 @@ function Compose({
   onSuggest: () => void;
   onSent: () => void;
 }) {
-  const [index, setIndex] = useState(0);
+  const [browse, setBrowse] = useState<{ hist: number[]; cur: number }>({
+    hist: [0],
+    cur: 0,
+  });
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<SendError | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -319,15 +322,34 @@ function Compose({
   const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
 
   const count = excuses?.length ?? 0;
-  const at = (i: number) =>
-    excuses && count > 0 ? excuses[((i % count) + count) % count] : null;
-  const current = at(index);
+  const current =
+    count > 0 ? excuses![(browse.hist[browse.cur] ?? 0) % count] : null;
+  const canGoBack = browse.cur > 0;
 
-  const next = useCallback(() => setIndex((i) => i + 1), []);
-  const prev = useCallback(() => setIndex((i) => i - 1), []);
+  // Slumpa fram en ny ursäkt (aldrig samma som den nuvarande). Historiken låter
+  // "Föregående" kliva tillbaka – och den visas först när man slumpat en gång.
+  const shuffle = useCallback(() => {
+    setBrowse(({ hist, cur }) => {
+      if (count === 0) return { hist, cur };
+      const curIdx = hist[cur] ?? 0;
+      let n = curIdx;
+      if (count > 1) {
+        while (n === curIdx) n = Math.floor(Math.random() * count);
+      } else {
+        n = 0;
+      }
+      return { hist: [...hist.slice(0, cur + 1), n], cur: cur + 1 };
+    });
+  }, [count]);
+
+  const goBack = useCallback(
+    () => setBrowse(({ hist, cur }) => ({ hist, cur: Math.max(0, cur - 1) })),
+    [],
+  );
 
   const contactName = sender.trim() || COPY.compose.senderFallback;
   const countLabel = current ? formatSentCount(current.sentCount) : null;
+  const phoneValid = !!normalizeToE164(phone);
 
   async function send() {
     if (!normalizeToE164(phone)) {
@@ -386,26 +408,68 @@ function Compose({
     <div className="flex flex-1 flex-col gap-5">
       <Header title={COPY.compose.title} onBack={onBack} />
 
-      <SenderField value={sender} onChange={onSender} />
-
       <ExcuseBubble
         text={current?.text}
         sender={contactName}
         loading={excuses === null}
         empty={excuses !== null && count === 0}
       />
-      {countLabel && <p className="text-center text-xs text-muted">{countLabel}</p>}
 
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="secondary" onClick={prev} disabled={!current}>
-          {COPY.compose.prev}
-        </Button>
-        <Button variant="secondary" onClick={next} disabled={!current}>
-          {COPY.compose.next}
-        </Button>
+      {/* Kompakt rad: slumpa fram en ny ursäkt. "Föregående" dyker upp först
+          när man slumpat minst en gång. */}
+      <div className="flex items-center justify-center gap-3">
+        {canGoBack && (
+          <button
+            type="button"
+            onClick={goBack}
+            className="inline-flex items-center gap-1.5 rounded-xl border-2 border-border bg-surface px-3.5 py-2 text-sm font-semibold shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            {COPY.compose.prev}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={shuffle}
+          disabled={!current}
+          className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-surface px-5 py-2.5 font-bold shadow-raised transition active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-[18px] w-[18px]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M16 3h5v5" />
+            <path d="M4 20 21 3" />
+            <path d="M21 16v5h-5" />
+            <path d="M15 15l6 6" />
+            <path d="M4 4l5 5" />
+          </svg>
+          {COPY.compose.shuffle}
+        </button>
       </div>
 
-      <div className="space-y-2 pt-1">
+      {countLabel && <p className="text-center text-xs text-muted">{countLabel}</p>}
+
+      <SenderField value={sender} onChange={onSender} />
+
+      <div className="space-y-2">
         <label htmlFor="phone" className="block text-sm font-semibold">
           {COPY.details.phoneLabel}
         </label>
@@ -427,7 +491,11 @@ function Compose({
         </p>
       )}
 
-      <Button block onClick={send} disabled={sending || !current}>
+      <Button
+        block
+        onClick={send}
+        disabled={sending || !current || !phoneValid}
+      >
         {sending ? COPY.browse.sending : COPY.browse.send}
       </Button>
 
@@ -450,16 +518,9 @@ function Compose({
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-2 pt-3">
-        <p className="text-base font-medium">{COPY.browse.suggestQuestion}</p>
-        <Button
-          variant="secondary"
-          onClick={onSuggest}
-          className="px-7 py-2.5 text-sm"
-        >
-          {COPY.browse.suggestCta}
-        </Button>
-      </div>
+      <Button variant="ghost" block onClick={onSuggest} className="text-sm">
+        {COPY.browse.suggestQuestion} {COPY.browse.suggestCta}
+      </Button>
     </div>
   );
 }
@@ -473,54 +534,56 @@ function SenderField({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const presets: readonly string[] = COPY.details.senderPresets;
   const isCustom = value.trim() !== "" && !presets.includes(value);
+  const [showCustom, setShowCustom] = useState(isCustom);
+
+  const customActive = showCustom || isCustom;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <label className="block text-sm font-semibold">
         {COPY.compose.senderLabel}
       </label>
 
-      <div className="overflow-hidden rounded-2xl border-2 border-border bg-surface shadow-soft">
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-5 py-3.5 text-left"
+      <div className="flex flex-wrap gap-2">
+        {presets.map((name) => (
+          <Chip
+            key={name}
+            active={value === name}
+            onClick={() => {
+              onChange(name);
+              setShowCustom(false);
+            }}
+          >
+            {name}
+          </Chip>
+        ))}
+        <Chip
+          active={customActive}
+          onClick={() => {
+            if (customActive) {
+              setShowCustom(false);
+              if (isCustom) onChange("");
+            } else {
+              setShowCustom(true);
+            }
+          }}
         >
-          <span className={value ? "font-semibold" : "text-muted"}>
-            {value || COPY.compose.choose}
-          </span>
-          <span className="text-sm text-muted">{open ? "▴" : "▾"}</span>
-        </button>
-
-        {open && (
-          <div className="space-y-3 border-t-2 border-border px-4 pb-4 pt-3">
-            <div className="flex flex-wrap gap-2">
-              {presets.map((name) => (
-                <Chip
-                  key={name}
-                  active={value === name}
-                  onClick={() => {
-                    onChange(name);
-                    setOpen(false);
-                  }}
-                >
-                  {name}
-                </Chip>
-              ))}
-            </div>
-            <input
-              type="text"
-              placeholder={COPY.details.senderPlaceholder}
-              value={isCustom ? value : ""}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full rounded-xl border-2 border-border bg-surface px-4 py-2.5 outline-none ring-brand/50 transition focus:ring-2"
-            />
-          </div>
-        )}
+          {COPY.compose.customChip}
+        </Chip>
       </div>
+
+      {customActive && (
+        <input
+          autoFocus
+          type="text"
+          placeholder={COPY.details.senderPlaceholder}
+          value={isCustom ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-xl border-2 border-border bg-surface px-4 py-2.5 outline-none ring-brand/50 transition focus:ring-2"
+        />
+      )}
     </div>
   );
 }
