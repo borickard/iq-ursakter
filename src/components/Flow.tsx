@@ -1,14 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
+import { categoryForSender } from "@/lib/senders";
 import { Button, Chip } from "@/components/ui";
 import { IosMessages } from "@/components/IosMessages";
 import { Wordmark } from "@/components/Wordmark";
 
 type Step = "landing" | "compose" | "result" | "suggest";
-type Excuse = { id: string; text: string; sentCount: number };
+type Excuse = {
+  id: string;
+  text: string;
+  sentCount: number;
+  category: string;
+};
 type LeadIn = { them1: string; me: string; them2: string };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
@@ -352,26 +358,45 @@ function Compose({
   const [showFake, setShowFake] = useState(false);
   const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
 
-  const count = excuses?.length ?? 0;
+  const senderChosen = sender.trim() !== "";
+  const senderCat = categoryForSender(sender);
+
+  // Ursäkter som passar den valda avsändaren (jobb → Chefen, privat → övriga).
+  // Okänd avsändare (senderCat === undefined) → visa alla.
+  const pool = useMemo(() => {
+    if (!excuses || senderCat === null) return [];
+    if (senderCat === undefined) return excuses;
+    return excuses.filter((e) => e.category === senderCat);
+  }, [excuses, senderCat]);
+
+  const poolCount = pool.length;
   const current =
-    count > 0 ? excuses![(browse.hist[browse.cur] ?? 0) % count] : null;
+    poolCount > 0 ? pool[(browse.hist[browse.cur] ?? 0) % poolCount] : null;
   const canGoBack = browse.cur > 0;
+
+  // När avsändaren ändras (nytt urval) → börja om med en slumpad ursäkt ur det.
+  useEffect(() => {
+    setBrowse({
+      hist: [poolCount > 0 ? Math.floor(Math.random() * poolCount) : 0],
+      cur: 0,
+    });
+  }, [senderCat, poolCount]);
 
   // Slumpa fram en ny ursäkt (aldrig samma som den nuvarande). Historiken låter
   // "Föregående" kliva tillbaka – och den visas först när man slumpat en gång.
   const shuffle = useCallback(() => {
     setBrowse(({ hist, cur }) => {
-      if (count === 0) return { hist, cur };
+      if (poolCount === 0) return { hist, cur };
       const curIdx = hist[cur] ?? 0;
       let n = curIdx;
-      if (count > 1) {
-        while (n === curIdx) n = Math.floor(Math.random() * count);
+      if (poolCount > 1) {
+        while (n === curIdx) n = Math.floor(Math.random() * poolCount);
       } else {
         n = 0;
       }
       return { hist: [...hist.slice(0, cur + 1), n], cur: cur + 1 };
     });
-  }, [count]);
+  }, [poolCount]);
 
   const goBack = useCallback(
     () => setBrowse(({ hist, cur }) => ({ hist, cur: Math.max(0, cur - 1) })),
@@ -381,7 +406,6 @@ function Compose({
   const contactName = sender.trim() || COPY.compose.senderFallback;
   const countLabel = current ? formatSentCount(current.sentCount) : null;
   const phoneValid = !!normalizeToE164(phone);
-  const senderChosen = sender.trim() !== "";
 
   async function send() {
     if (!normalizeToE164(phone)) {
@@ -441,12 +465,18 @@ function Compose({
       <Wordmark className="text-[20px]" />
       <Header title={COPY.compose.title} onBack={onBack} />
 
-      <div className="flex flex-col gap-3.5">
-        <ExcuseBubble
-          text={current?.text}
-          loading={excuses === null}
-          empty={excuses !== null && count === 0}
-        />
+      <SenderField value={sender} onChange={onSender} />
+
+      {/* Avsändare-först: allt nedan visas när en avsändare valts, och ursäkterna
+          är filtrerade till dem som passar personen. */}
+      {senderChosen && (
+        <>
+          <div className="flex flex-col gap-3.5">
+            <ExcuseBubble
+              text={current?.text}
+              loading={excuses === null}
+              empty={excuses !== null && poolCount === 0}
+            />
         {/* Bildtext under bubblan: avsändare till vänster, antal skickningar
             till höger. Alltid monterad (fast höjd) så sidan inte hoppar. */}
         <div className="flex h-4 items-baseline justify-between gap-3 pl-[22px] pr-1 font-mono text-[11px] text-muted">
@@ -504,11 +534,6 @@ function Compose({
         </button>
       </div>
 
-      <SenderField value={sender} onChange={onSender} />
-
-      {/* Nummerfält + skicka visas först när en avsändare är vald. */}
-      {senderChosen && (
-        <>
           <div className="space-y-2">
             <label htmlFor="phone" className="block text-sm font-semibold">
               {COPY.details.phoneLabel}

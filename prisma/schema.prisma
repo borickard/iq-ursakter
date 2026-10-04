@@ -27,6 +27,9 @@ model Excuse {
   // Räknare för hur många gånger ursäkten skickats. Förbereder Fas 2:s
   // popularitetssortering. Visas inte i Fas 1.
   sentCount Int      @default(0)
+  // Vilken sorts avsändare ursäkten passar: "home" (Mamma/Pappa/Älskling) eller
+  // "work" (Chefen). Används för att filtrera ursäkter efter vald avsändare.
+  category  String   @default("home")
   createdAt DateTime @default(now())
 
   @@index([status, source])

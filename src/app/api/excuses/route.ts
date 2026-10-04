@@ -15,11 +15,29 @@ export const dynamic = "force-dynamic";
  * även mindre använda ursäkter dyker upp.
  */
 export async function GET() {
-  const excuses = await prisma.excuse.findMany({
-    where: { status: "approved" },
-    select: { id: true, text: true, sentCount: true },
-    orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
-  });
+  // Resilient: om "category"-kolumnen ännu inte finns (innan SQL:en körts)
+  // faller vi tillbaka utan den och defaultar till "home", så appen aldrig går
+  // sönder före migreringen.
+  let excuses: {
+    id: string;
+    text: string;
+    sentCount: number;
+    category: string;
+  }[];
+  try {
+    excuses = await prisma.excuse.findMany({
+      where: { status: "approved" },
+      select: { id: true, text: true, sentCount: true, category: true },
+      orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
+    });
+  } catch {
+    const rows = await prisma.excuse.findMany({
+      where: { status: "approved" },
+      select: { id: true, text: true, sentCount: true },
+      orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
+    });
+    excuses = rows.map((r) => ({ ...r, category: "home" }));
+  }
 
   // Inledande konversationer för meddelande-mockupen. Resilient: om tabellen
   // inte finns ännu (innan SQL:en körts) returneras en tom lista istället för
