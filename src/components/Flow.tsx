@@ -144,7 +144,7 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
           onStart();
         }
       }}
-      className="relative inline-flex cursor-pointer items-center justify-center rounded-lg border-2 border-border bg-brand px-1.5 text-brand-fg shadow-[3px_3px_0_#0b0b0b]"
+      className="livlina-mark relative inline-block cursor-pointer"
     >
       {/* Ordet håller alltid bredden; prickarna ligger ovanpå tills det "skrivits". */}
       <span className={typed ? "" : "invisible"}>{COPY.landing.headlineLink}</span>
