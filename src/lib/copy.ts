@@ -34,7 +34,7 @@ export const COPY = {
     ],
     // Desktop-hjälte: en telefon som får flera notiser i rad från samma person –
     // en ursäkt som följs upp med fler meddelanden på samma tema.
-    phoneSender: "Gullet",
+    phoneSender: "Mamma",
     phoneThread: [
       "Hunden har kräkts i sängen. 🤢",
       "Kan du komma hem? 🙏",

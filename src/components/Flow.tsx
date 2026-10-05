@@ -65,7 +65,6 @@ export default function Flow() {
           onPhone={setPhone}
           onSender={setSender}
           onBack={() => setStep("landing")}
-          onSuggest={() => setStep("suggest")}
           onSent={() => setStep("result")}
         />
       )}
@@ -127,7 +126,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         </Button>
       </div>
 
-      {/* Desktop-hjälte: telefon med flera notiser i rad från "Gullet". */}
+      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". */}
       <div className="hidden lg:flex lg:justify-center">
         <LandingPhone />
       </div>
@@ -490,7 +489,6 @@ function Compose({
   onPhone,
   onSender,
   onBack,
-  onSuggest,
   onSent,
 }: {
   phone: string;
@@ -500,7 +498,6 @@ function Compose({
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
   onBack: () => void;
-  onSuggest: () => void;
   onSent: () => void;
 }) {
   const [browse, setBrowse] = useState<{ hist: number[]; cur: number }>({
@@ -512,8 +509,6 @@ function Compose({
   const [formError, setFormError] = useState<string | null>(null);
   const [showFake, setShowFake] = useState(false);
   const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
-  // Schemaläggning (endast desktop, UI-only tills backend är beslutad).
-  const [delayMin, setDelayMin] = useState(0);
 
   const senderChosen = sender.trim() !== "";
 
@@ -702,27 +697,6 @@ function Compose({
               <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
             )}
 
-            {/* Schemaläggning – endast desktop. */}
-            <div className="hidden lg:block">
-              <p className="mb-2.5 text-sm font-semibold">
-                {COPY.compose.sendWhen}{" "}
-                <span className="font-normal text-muted">
-                  ({COPY.compose.sendWhenNote})
-                </span>
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {COPY.compose.delayOptions.map((o) => (
-                  <Chip
-                    key={o.min}
-                    active={delayMin === o.min}
-                    onClick={() => setDelayMin(o.min)}
-                  >
-                    {o.label}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-
             <div className="space-y-2">
               <label htmlFor="phone" className="block text-sm font-semibold">
                 {COPY.details.phoneLabel}
@@ -763,20 +737,12 @@ function Compose({
             </Button>
           </>
         )}
-
-        <Button variant="ghost" block onClick={onSuggest} className="text-sm">
-          {COPY.browse.suggestQuestion} {COPY.browse.suggestCta}
-        </Button>
       </div>
 
       {/* Höger: live telefon-förhandsvisning (endast desktop). */}
       <div className="hidden lg:sticky lg:top-6 lg:flex lg:justify-center">
         {senderChosen && (
-          <PhonePreview
-            sender={contactName}
-            message={current?.text}
-            delayMin={delayMin}
-          />
+          <PhonePreview sender={contactName} message={current?.text} delayMin={0} />
         )}
       </div>
 
