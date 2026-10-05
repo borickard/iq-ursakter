@@ -17,7 +17,7 @@
  *
  * Den här listan är källan för databas-seeden (se prisma/seed.ts).
  */
-const HOME = ["Mamma", "Pappa", "Gullet"];
+const HOME = ["Mamma", "Pappa", "Gullet", "Bestie", "Brorsan", "Syrran", "Baby"];
 const WORK = ["Chefen"];
 
 export type SeedExcuse = { text: string; senders: string[] };
@@ -35,7 +35,7 @@ export const SEED_EXCUSES: SeedExcuse[] = [
   { text: "Jag är jättedålig i magen, kan du komma hem?", senders: HOME },
   { text: "Det har hänt något hemma – du behöver komma hem nu.", senders: HOME },
   { text: "Larmet hemma har gått, du måste komma och kolla.", senders: HOME },
-  { text: "Kan du komma hem? Jag vill inte vara ensam ikväll.", senders: ["Gullet"] },
+  { text: "Kan du komma hem? Jag vill inte vara ensam ikväll.", senders: ["Gullet", "Baby"] },
   // Jobb-ursäkter (Chefen).
   { text: "Du behöver komma in tidigt imorgon bitti, något har dykt upp på jobbet.", senders: WORK },
   { text: "Vi behöver dig på jobbet nu, kan du rycka in?", senders: WORK },
