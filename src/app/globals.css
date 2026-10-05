@@ -134,3 +134,10 @@ textarea {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+
+/* Landningens desktop-telefon: notiser som "dyker in" en i taget och loopar. */
+@keyframes notifPop {
+  0% { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  8%, 80% { opacity: 1; transform: translateY(0) scale(1); }
+  92%, 100% { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}

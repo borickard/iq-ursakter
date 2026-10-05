@@ -32,6 +32,14 @@ export const COPY = {
       { text: "Hunden har kräkts i hela sängen – kan du komma hem?", sender: "Älskling" },
       { text: "Du behöver komma in tidigt imorgon bitti.", sender: "Chefen" },
     ],
+    // Desktop-hjälte: en telefon som får flera notiser i rad från samma person –
+    // en ursäkt som följs upp med fler meddelanden på samma tema.
+    phoneSender: "Älskling",
+    phoneThread: [
+      "Hunden har kräkts i hela sängen 🤢",
+      "Kan du komma hem? Jag fixar inte det här själv",
+      "Snälla ❤️",
+    ],
   },
 
   details: {

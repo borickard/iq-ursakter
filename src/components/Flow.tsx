@@ -92,14 +92,18 @@ export default function Flow() {
 
 function Landing({ onStart }: { onStart: () => void }) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-      <Wordmark className="text-[26px]" />
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+      {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
+      <div className="flex flex-1 flex-col lg:flex-none">
+        <Wordmark className="text-[26px] lg:text-[32px]" />
 
-      <div className="mt-9 flex flex-col gap-8">
-        <HeroCarousel />
+        {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
+        <div className="mt-9 lg:hidden">
+          <HeroCarousel />
+        </div>
 
-        <div className="space-y-3.5">
-          <h1 className="font-display text-[clamp(24px,7.2vw,28px)] font-black leading-[1.1] tracking-tight">
+        <div className="mt-9 space-y-3.5 lg:mt-10">
+          <h1 className="font-display text-[clamp(24px,7.2vw,28px)] font-black leading-[1.1] tracking-tight lg:text-[40px]">
             {COPY.landing.headline1}
             <br />
             {COPY.landing.headline2a}
@@ -108,19 +112,24 @@ function Landing({ onStart }: { onStart: () => void }) {
             <br />
             {COPY.landing.headline3}
           </h1>
-          <p className="max-w-sm text-sm font-medium leading-relaxed text-[#34312b]">
+          <p className="max-w-sm text-sm font-medium leading-relaxed text-[#34312b] lg:text-base">
             {COPY.landing.subtitle}
           </p>
         </div>
+
+        <Button
+          block
+          onClick={onStart}
+          className="mt-auto !rounded-full py-6 text-xl lg:mt-9 lg:w-auto lg:self-start lg:px-10"
+        >
+          {COPY.landing.cta}
+        </Button>
       </div>
 
-      <Button
-        block
-        onClick={onStart}
-        className="mt-auto !rounded-full py-6 text-xl"
-      >
-        {COPY.landing.cta}
-      </Button>
+      {/* Desktop-hjälte: telefon med flera notiser i rad från "Älskling". */}
+      <div className="hidden lg:flex lg:justify-center">
+        <LandingPhone />
+      </div>
     </div>
   );
 }
@@ -307,6 +316,106 @@ function ExcuseBubble({
   );
 }
 
+/* ── En notis (iOS Messages-stil) – delad av telefon-vyerna ───────────────── */
+
+function Notif({
+  sender,
+  text,
+  time,
+}: {
+  sender: string;
+  text?: string;
+  time: string;
+}) {
+  return (
+    <div
+      className="flex gap-2.5 rounded-[18px] bg-white/[0.86] p-3 text-[#111] backdrop-blur"
+      style={{ boxShadow: "0 8px 20px rgba(0,0,0,.25)" }}
+    >
+      <div
+        className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px]"
+        style={{ background: "linear-gradient(180deg,#5df27a,#15cf41)" }}
+      >
+        <svg viewBox="0 0 24 24" className="h-[23px] w-[23px]" fill="#fff" aria-hidden>
+          <path d="M12 3C6.5 3 2 6.6 2 11c0 2.5 1.3 4.7 3.4 6.2-.2 1.1-.8 2.4-1.7 3.4 1.7-.2 3.5-.9 4.8-1.8 1.1.3 2.3.5 3.5.5 5.5 0 10-3.6 10-8S17.5 3 12 3z" />
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex justify-between gap-2 whitespace-nowrap text-[11px] font-semibold text-[#6b6b70]">
+          <span>MEDDELANDEN</span>
+          <span>{time}</span>
+        </div>
+        <div className="mt-px text-[15px] font-bold">{sender}</div>
+        <div className="mt-px text-[14px] leading-snug text-[#1c1c1e]">{text}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Lås-skärms-ram med klocka + datum – delad av telefon-vyerna ───────────── */
+
+function PhoneFrame({ children }: { children: React.ReactNode }) {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(id);
+  }, []);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const clock = now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : "––:––";
+  const dateLabel = now
+    ? now.toLocaleDateString("sv-SE", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      })
+    : "";
+  return (
+    <div className="w-[300px] rounded-[46px] border-2 border-border bg-[#0b0c0f] p-[11px] shadow-[10px_14px_0_#0b0b0b]">
+      <div
+        className="relative flex aspect-[9/19.3] flex-col items-center overflow-hidden rounded-[36px] text-white"
+        style={{ background: "linear-gradient(170deg,#3a4a63,#20262f 55%,#14181f)" }}
+      >
+        <div className="absolute left-1/2 top-[10px] z-10 h-[21px] w-[84px] -translate-x-1/2 rounded-full bg-black" />
+        <div className="flex w-full justify-between px-[22px] pt-3 text-xs font-semibold">
+          <span>{clock}</span>
+          <span>100%</span>
+        </div>
+        <div className="mt-5 text-[62px] font-semibold leading-none tracking-tight">
+          {clock}
+        </div>
+        <div className="mt-0.5 text-[15px] opacity-90 first-letter:uppercase">
+          {dateLabel}
+        </div>
+        <div className="mt-6 flex w-[calc(100%-24px)] flex-col gap-2.5">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Landningens telefon (desktop): flera notiser i rad från samma person ──── */
+
+function LandingPhone() {
+  const thread = COPY.landing.phoneThread;
+  const sender = COPY.landing.phoneSender;
+  const times = ["för 2 min", "för 1 min", "nu"];
+  return (
+    <PhoneFrame>
+      {thread.map((text, i) => (
+        <div
+          key={i}
+          className="opacity-0 [animation:notifPop_6s_ease-in-out_infinite]"
+          style={{ animationDelay: `${i * 0.6}s` }}
+        >
+          <Notif sender={sender} text={text} time={times[i] ?? "nu"} />
+        </div>
+      ))}
+    </PhoneFrame>
+  );
+}
+
 /* ── Telefon-förhandsvisning (desktop) – lås-skärm med notis ──────────────── */
 
 function PhonePreview({
@@ -356,28 +465,8 @@ function PhonePreview({
         </div>
 
         {/* Notis – ser ut som ett vanligt sms från kontakten. */}
-        <div
-          className="mt-6 flex w-[calc(100%-24px)] gap-2.5 rounded-[18px] bg-white/[0.86] p-3 text-[#111] backdrop-blur"
-          style={{ boxShadow: "0 8px 20px rgba(0,0,0,.25)" }}
-        >
-          <div
-            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px]"
-            style={{ background: "linear-gradient(180deg,#5df27a,#15cf41)" }}
-          >
-            <svg viewBox="0 0 24 24" className="h-[23px] w-[23px]" fill="#fff" aria-hidden>
-              <path d="M12 3C6.5 3 2 6.6 2 11c0 2.5 1.3 4.7 3.4 6.2-.2 1.1-.8 2.4-1.7 3.4 1.7-.2 3.5-.9 4.8-1.8 1.1.3 2.3.5 3.5.5 5.5 0 10-3.6 10-8S17.5 3 12 3z" />
-            </svg>
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex justify-between gap-2 whitespace-nowrap text-[11px] font-semibold text-[#6b6b70]">
-              <span>MEDDELANDEN</span>
-              <span>{scheduled ?? "nu"}</span>
-            </div>
-            <div className="mt-px text-[15px] font-bold">{sender}</div>
-            <div className="mt-px text-[14px] leading-snug text-[#1c1c1e]">
-              {message}
-            </div>
-          </div>
+        <div className="mt-6 w-[calc(100%-24px)]">
+          <Notif sender={sender} text={message} time={scheduled ?? "nu"} />
         </div>
 
         {scheduled && (
