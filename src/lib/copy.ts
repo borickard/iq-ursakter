@@ -36,9 +36,9 @@ export const COPY = {
     // en ursäkt som följs upp med fler meddelanden på samma tema.
     phoneSender: "Älskling",
     phoneThread: [
-      "Hunden har kräkts i hela sängen 🤢",
-      "Kan du komma hem? Jag fixar inte det här själv",
-      "Snälla ❤️",
+      "Hunden har kräkts i sängen. 🤢",
+      "Kan du komma hem? 🙏",
+      "Det är verkligen överallt...",
     ],
   },
 
