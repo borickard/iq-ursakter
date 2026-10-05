@@ -979,11 +979,6 @@ function Footer() {
   return (
     <footer className="pt-8 text-center">
       <p className="text-[11px] leading-relaxed text-muted">{COPY.privacy.short}</p>
-      {COPY.brand.byline && (
-        <p className="mt-2 font-mono text-[11px] text-muted">
-          {COPY.brand.name} · {COPY.brand.byline}
-        </p>
-      )}
     </footer>
   );
 }
