@@ -339,8 +339,24 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
     ('seed-19','Någon har sjukanmält sig, kan du hoppa in ikväll?','seed','approved',0,'work')
   ON CONFLICT ("id") DO NOTHING;
   ```
-  Note: admin-added and user-suggested excuses default to `category='home'`
-  (no category picker in admin yet — a possible future improvement).
+- **PENDING — `senders` column (per-excuse sender picker).** The home/work
+  `category` is replaced by a per-excuse **`senders`** list (comma-separated
+  sender names the excuse fits; empty = fits all). Admin now has a "Passar
+  avsändare" chip row per excuse (and on the add form); the compose flow filters
+  by it (`excuseFitsSender` in `src/lib/senders.ts`). Code is resilient (falls
+  back to `""` = fits all if the column is missing). Run this in Supabase to add
+  the column and backfill from the old `category`:
+  ```sql
+  ALTER TABLE "Excuse" ADD COLUMN IF NOT EXISTS "senders" TEXT NOT NULL DEFAULT '';
+  UPDATE "Excuse" SET "senders" = 'Chefen' WHERE "category" = 'work';
+  UPDATE "Excuse" SET "senders" = 'Mamma,Pappa,Älskling'
+    WHERE ("category" = 'home' OR "category" IS NULL) AND ("senders" IS NULL OR "senders" = '');
+  UPDATE "Excuse" SET "senders" = 'Älskling'
+    WHERE "text" = 'Kan du komma hem? Jag vill inte vara ensam ikväll.';
+  ```
+  `category` stays in the schema for back-compat but is no longer used for
+  filtering. Admin-added/user-suggested excuses default to `senders=''` (fits
+  all) until the admin picks senders.
 
 ---
 
