@@ -121,6 +121,8 @@ export const COPY = {
     addTitle: "Lägg till ny ursäkt",
     addPlaceholder: "Skriv en ny ursäkt …",
     add: "Lägg till",
+    sendersLabel: "Passar avsändare",
+    sendersAll: "passar alla",
     loadError: "Kunde inte hämta ursäkterna. Ladda om sidan.",
     sourceUser: "Förslag",
     sourceAdmin: "Tillagd",

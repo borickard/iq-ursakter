@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { COPY, fill } from "@/lib/copy";
 import { Button, Card, Chip } from "@/components/ui";
 import { LeadInManager } from "@/components/LeadInManager";
+import { SENDER_PRESETS, parseSenders } from "@/lib/senders";
 
 type Excuse = {
   id: string;
@@ -11,6 +12,7 @@ type Excuse = {
   source: string;
   status: string;
   sentCount: number;
+  senders: string;
   createdAt: string;
 };
 
@@ -19,6 +21,7 @@ export default function AdminPage() {
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [newText, setNewText] = useState("");
+  const [newSenders, setNewSenders] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
@@ -66,6 +69,33 @@ export default function AdminPage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  async function patchSenders(id: string, senders: string[]) {
+    setBusy(id);
+    try {
+      const res = await fetch("/api/admin/excuses", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, senders }),
+      });
+      if (res.ok) {
+        const joined = senders.join(",");
+        setExcuses((cur) =>
+          cur ? cur.map((e) => (e.id === id ? { ...e, senders: joined } : e)) : cur,
+        );
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function toggleSender(e: Excuse, name: string) {
+    const list = parseSenders(e.senders);
+    const next = list.includes(name)
+      ? list.filter((x) => x !== name)
+      : [...list, name];
+    void patchSenders(e.id, next);
   }
 
   function startEdit(id: string, text: string) {
@@ -120,12 +150,13 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/excuses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, senders: newSenders }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.excuse) setExcuses((cur) => (cur ? [data.excuse, ...cur] : [data.excuse]));
         setNewText("");
+        setNewSenders([]);
       }
     } finally {
       setBusy(null);
@@ -162,6 +193,27 @@ export default function AdminPage() {
               onChange={(e) => setNewText(e.target.value)}
               className="w-full resize-none rounded-3xl border border-border bg-surface px-5 py-3.5 shadow-inset outline-none ring-brand/30 transition focus:border-brand/40 focus:ring-2"
             />
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted">{COPY.admin.sendersLabel}:</span>
+              {SENDER_PRESETS.map((name) => (
+                <Chip
+                  key={name}
+                  active={newSenders.includes(name)}
+                  onClick={() =>
+                    setNewSenders((cur) =>
+                      cur.includes(name)
+                        ? cur.filter((x) => x !== name)
+                        : [...cur, name],
+                    )
+                  }
+                >
+                  {name}
+                </Chip>
+              ))}
+              {newSenders.length === 0 && (
+                <span className="text-xs text-muted">({COPY.admin.sendersAll})</span>
+              )}
+            </div>
             <Button
               onClick={add}
               disabled={busy === "new" || newText.trim().length < 5}
@@ -285,6 +337,27 @@ export default function AdminPage() {
                           ✕
                         </button>
                       </div>
+                    </div>
+                    {/* Vilka avsändare passar ursäkten. Inga = passar alla. */}
+                    <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-3">
+                      <span className="text-xs text-muted">
+                        {COPY.admin.sendersLabel}:
+                      </span>
+                      {SENDER_PRESETS.map((name) => (
+                        <Chip
+                          key={name}
+                          active={parseSenders(e.senders).includes(name)}
+                          disabled={busy === e.id}
+                          onClick={() => toggleSender(e, name)}
+                        >
+                          {name}
+                        </Chip>
+                      ))}
+                      {parseSenders(e.senders).length === 0 && (
+                        <span className="text-xs text-muted">
+                          ({COPY.admin.sendersAll})
+                        </span>
+                      )}
                     </div>
                   </>
                 )}

@@ -7,17 +7,18 @@ const prisma = new PrismaClient();
 async function main() {
   console.log(`Seedar ${SEED_EXCUSES.length} ursäkter ...`);
 
-  for (const { text, category } of SEED_EXCUSES) {
+  for (const { text, senders } of SEED_EXCUSES) {
+    const sendersStr = senders.join(",");
     // Idempotent: skapa bara om en seed-ursäkt med samma text inte redan finns.
     const existing = await prisma.excuse.findFirst({
       where: { text, source: "seed" },
     });
     if (existing) {
-      // Håll kategorin uppdaterad även för redan seedade ursäkter.
-      if (existing.category !== category) {
+      // Håll avsändar-listan uppdaterad även för redan seedade ursäkter.
+      if (existing.senders !== sendersStr) {
         await prisma.excuse.update({
           where: { id: existing.id },
-          data: { category },
+          data: { senders: sendersStr },
         });
       }
       continue;
@@ -28,7 +29,7 @@ async function main() {
         text,
         source: "seed",
         status: "approved",
-        category,
+        senders: sendersStr,
       },
     });
   }

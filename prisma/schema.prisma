@@ -28,8 +28,13 @@ model Excuse {
   // popularitetssortering. Visas inte i Fas 1.
   sentCount Int      @default(0)
   // Vilken sorts avsändare ursäkten passar: "home" (Mamma/Pappa/Älskling) eller
-  // "work" (Chefen). Används för att filtrera ursäkter efter vald avsändare.
+  // "work" (Chefen). Kvar för bakåtkompatibilitet; filtreringen använder nu
+  // `senders` nedan.
   category  String   @default("home")
+  // Kommaseparerad lista med avsändarnamn ursäkten passar ihop med, t.ex.
+  // "Mamma,Pappa,Älskling". Tom sträng = passar alla avsändare. Redigeras i
+  // admin per ursäkt.
+  senders   String   @default("")
   createdAt DateTime @default(now())
 
   @@index([status, source])

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
-import { categoryForSender } from "@/lib/senders";
+import { excuseFitsSender } from "@/lib/senders";
 import { Button, Chip } from "@/components/ui";
 import { IosMessages } from "@/components/IosMessages";
 import { Wordmark } from "@/components/Wordmark";
@@ -13,7 +13,7 @@ type Excuse = {
   id: string;
   text: string;
   sentCount: number;
-  category: string;
+  senders: string;
 };
 type LeadIn = { them1: string; me: string; them2: string };
 type SendError = keyof typeof COPY.result.errors;
@@ -515,16 +515,13 @@ function Compose({
   const [delayMin, setDelayMin] = useState(0);
 
   const senderChosen = sender.trim() !== "";
-  const senderCat = categoryForSender(sender);
 
-  // Ursäkter som passar den valda avsändaren (jobb → Chefen, privat → övriga).
-  // Okänd avsändare (senderCat === undefined) → visa alla.
+  // Ursäkter som passar den valda avsändaren (admin väljer per ursäkt vilka
+  // avsändare den passar; tom lista = passar alla).
   const pool = useMemo(() => {
-    if (!excuses || senderCat === null) return [];
-    if (senderCat === undefined) return excuses;
-    // Tom kategori (före DB-migreringen) matchar alla avsändare.
-    return excuses.filter((e) => !e.category || e.category === senderCat);
-  }, [excuses, senderCat]);
+    if (!excuses || !senderChosen) return [];
+    return excuses.filter((e) => excuseFitsSender(e.senders, sender));
+  }, [excuses, sender, senderChosen]);
 
   const poolCount = pool.length;
   const current =
@@ -537,7 +534,7 @@ function Compose({
       hist: [poolCount > 0 ? Math.floor(Math.random() * poolCount) : 0],
       cur: 0,
     });
-  }, [senderCat, poolCount]);
+  }, [sender, poolCount]);
 
   // Slumpa fram en ny ursäkt (aldrig samma som den nuvarande). Historiken låter
   // "Föregående" kliva tillbaka – och den visas först när man slumpat en gång.

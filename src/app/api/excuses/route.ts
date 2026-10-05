@@ -15,19 +15,19 @@ export const dynamic = "force-dynamic";
  * även mindre använda ursäkter dyker upp.
  */
 export async function GET() {
-  // Resilient: om "category"-kolumnen ännu inte finns (innan SQL:en körts)
-  // faller vi tillbaka utan den och defaultar till "home", så appen aldrig går
-  // sönder före migreringen.
+  // Resilient: om "senders"-kolumnen ännu inte finns (innan SQL:en körts) faller
+  // vi tillbaka utan den och defaultar till "" (passar alla avsändare), så appen
+  // aldrig går sönder före migreringen.
   let excuses: {
     id: string;
     text: string;
     sentCount: number;
-    category: string;
+    senders: string;
   }[];
   try {
     excuses = await prisma.excuse.findMany({
       where: { status: "approved" },
-      select: { id: true, text: true, sentCount: true, category: true },
+      select: { id: true, text: true, sentCount: true, senders: true },
       orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
     });
   } catch {
@@ -36,9 +36,7 @@ export async function GET() {
       select: { id: true, text: true, sentCount: true },
       orderBy: [{ sentCount: "desc" }, { createdAt: "desc" }],
     });
-    // Tom kategori → klienten filtrerar inte (visar ursäkten för alla
-    // avsändare), så inget blir tomt innan kategori-kolumnen finns.
-    excuses = rows.map((r) => ({ ...r, category: "" }));
+    excuses = rows.map((r) => ({ ...r, senders: "" }));
   }
 
   // Inledande konversationer för meddelande-mockupen. Resilient: om tabellen

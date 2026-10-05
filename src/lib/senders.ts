@@ -1,30 +1,36 @@
-import type { ExcuseCategory } from "@/lib/excuses";
+import { COPY } from "@/lib/copy";
 
 /**
- * Vilken sorts ursäkter varje avsändare ska visa.
- *   "home" = privat (Mamma / Pappa / Älskling)
- *   "work" = jobb (Chefen)
+ * Avsändar-val per ursäkt.
  *
- * Flödet är avsändare-först: användaren väljer vem det ska se ut att komma från,
- * och får sedan ursäkter som passar den personen.
+ * Varje ursäkt har en kommaseparerad lista med avsändarnamn den passar ihop med
+ * (`senders` i databasen), t.ex. "Mamma,Pappa,Älskling". Tom lista = passar alla
+ * avsändare. Admin väljer detta per ursäkt.
  */
-export const SENDER_CATEGORY: Record<string, ExcuseCategory> = {
-  Mamma: "home",
-  Pappa: "home",
-  Älskling: "home",
-  Chefen: "work",
-};
+export const SENDER_PRESETS: readonly string[] = COPY.details.senderPresets;
+
+/** Parsar en kommaseparerad avsändarsträng till en lista. */
+export function parseSenders(s: string | null | undefined): string[] {
+  if (!s) return [];
+  return s
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+/** Serialiserar en lista till den kommaseparerade formen som lagras i DB. */
+export function serializeSenders(list: string[]): string {
+  return list.map((x) => x.trim()).filter(Boolean).join(",");
+}
 
 /**
- * Kategorin för en vald avsändare.
- *  - tom sträng  → null (ingen avsändare vald ännu)
- *  - okänt namn  → undefined (visa alla ursäkter, ingen filtrering)
- *  - känt namn   → "home" | "work"
+ * Passar ursäkten den valda avsändaren? Tom lista (inga valda) = passar alla.
  */
-export function categoryForSender(
+export function excuseFitsSender(
+  sendersStr: string | null | undefined,
   sender: string,
-): ExcuseCategory | null | undefined {
-  const s = sender.trim();
-  if (!s) return null;
-  return SENDER_CATEGORY[s];
+): boolean {
+  const list = parseSenders(sendersStr);
+  if (list.length === 0) return true;
+  return list.includes(sender.trim());
 }
