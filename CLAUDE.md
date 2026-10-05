@@ -349,14 +349,21 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
   ```sql
   ALTER TABLE "Excuse" ADD COLUMN IF NOT EXISTS "senders" TEXT NOT NULL DEFAULT '';
   UPDATE "Excuse" SET "senders" = 'Chefen' WHERE "category" = 'work';
-  UPDATE "Excuse" SET "senders" = 'Mamma,Pappa,Älskling'
+  UPDATE "Excuse" SET "senders" = 'Mamma,Pappa,Gullet'
     WHERE ("category" = 'home' OR "category" IS NULL) AND ("senders" IS NULL OR "senders" = '');
-  UPDATE "Excuse" SET "senders" = 'Älskling'
+  UPDATE "Excuse" SET "senders" = 'Gullet'
     WHERE "text" = 'Kan du komma hem? Jag vill inte vara ensam ikväll.';
   ```
   `category` stays in the schema for back-compat but is no longer used for
   filtering. Admin-added/user-suggested excuses default to `senders=''` (fits
   all) until the admin picks senders.
+- **PENDING — rename sender preset `Älskling` → `Gullet`.** The 4th preset was
+  renamed (name-mode sender IDs strip å/ä/ö, so "Älskling"→"Alskling"; "Gullet"
+  has none). Code is done; if the senders column was already filled with the old
+  name, run this in Supabase so filtering matches:
+  ```sql
+  UPDATE "Excuse" SET "senders" = REPLACE("senders", 'Älskling', 'Gullet');
+  ```
 
 ---
 
