@@ -27,9 +27,9 @@ export const COPY = {
     // samma avsändare aldrig visas två gånger i rad (även vid loop).
     carousel: [
       { text: "Jag mår inte bra, kan du komma hit?", sender: "Mamma" },
-      { text: "Barnvakten måste gå nu, du behöver komma hem.", sender: "Gullet" },
+      { text: "Barnvakten måste gå nu, du behöver komma hem.", sender: "Baby" },
       { text: "Billarmet har gått igång på gatan, kan du komma och kolla?", sender: "Pappa" },
-      { text: "Hunden har kräkts i hela sängen – kan du komma hem?", sender: "Gullet" },
+      { text: "Hunden har kräkts i hela sängen – kan du komma hem?", sender: "Syrran" },
       { text: "Du behöver komma in tidigt imorgon bitti.", sender: "Chefen" },
     ],
     // Desktop-hjälte: en telefon som får flera notiser i rad från samma person –
@@ -53,7 +53,6 @@ export const COPY = {
       "Mamma",
       "Pappa",
       "Chefen",
-      "Gullet",
       "Bestie",
       "Brorsan",
       "Syrran",

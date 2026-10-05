@@ -458,16 +458,22 @@ launch. Options discussed (user hasn't picked yet):
   but are unlinked (unreachable). Intent: re-enable later as a "skicka in den
   bästa ursäkten"-competition/activation for the target group. Admin's "Väntar på
   granskning" section stays (just gets no new items).
-- **Sender presets** are now **Mamma / Pappa / Chefen / Gullet / Bestie /
-  Brorsan / Syrran / Baby** (all å/ä/ö-free for name mode; Älskling→Gullet
-  earlier). All except Chefen are personal → wired to the home seed excuses. The
-  desktop landing hero fronts a notification thread from **"Mamma"**
-  (`COPY.landing.phoneSender`). **PENDING SQL** to give the new senders matching
-  excuses in the live DB (append-only, preserves admin edits):
+- **Sender presets** are now **Mamma / Pappa / Chefen / Bestie / Brorsan /
+  Syrran / Baby** (all å/ä/ö-free for name mode; Gullet was removed this
+  session, Älskling→Gullet before that). All except Chefen are personal → wired
+  to the home seed excuses. The desktop landing hero fronts a notification
+  thread from **"Mamma"** (`COPY.landing.phoneSender`). **PENDING SQL** to sync
+  the live DB with the current preset list (append the new personal senders,
+  drop Gullet):
   ```sql
+  -- add the newer personal senders to the home excuses
   UPDATE "Excuse" SET "senders" = "senders" || ',Bestie,Brorsan,Syrran,Baby'
   WHERE "senders" LIKE '%Mamma%' AND "senders" NOT LIKE '%Bestie%';
   UPDATE "Excuse" SET "senders" = "senders" || ',Baby'
   WHERE "text" = 'Kan du komma hem? Jag vill inte vara ensam ikväll.'
     AND "senders" NOT LIKE '%Baby%';
+  -- remove Gullet everywhere (handles leading/trailing/middle positions)
+  UPDATE "Excuse" SET "senders" =
+    trim(both ',' from replace(replace(',' || "senders" || ',', ',Gullet,', ','), ',,', ','))
+  WHERE "senders" LIKE '%Gullet%';
   ```
