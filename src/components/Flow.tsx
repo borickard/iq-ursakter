@@ -400,7 +400,7 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 function LandingPhone() {
   const thread = COPY.landing.phoneThread;
   const sender = COPY.landing.phoneSender;
-  const times = ["för 2 min", "för 1 min", "nu"];
+  const times = ["nu", "nu", "nu"];
   return (
     <PhoneFrame>
       {thread.map((text, i) => (
