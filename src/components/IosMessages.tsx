@@ -41,20 +41,25 @@ export function IosMessages({
 }: IosMessagesProps) {
   const initial = contactName.trim().charAt(0).toUpperCase() || "?";
 
-  // När appen körs som hemskärms-app (standalone) visar iOS sitt ÄKTA statusfält
-  // – då döljer vi vårt egna så att det inte blir dubbelt.
-  const [standalone, setStandalone] = useState(false);
+  // Telefonen visar alltid ett ÄKTA statusfält (klocka/batteri) – på hemskärms-
+  // app och i vanlig mobil-webbläsare. Dölj därför vårt egna på pekskärmar så det
+  // inte blir dubbla statusfält. (Behålls på desktop där inget äkta finns.)
+  const [hideStatus, setHideStatus] = useState(false);
   useEffect(() => {
-    const mm = window.matchMedia?.("(display-mode: standalone)").matches;
-    const iosStandalone =
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-    setStandalone(Boolean(mm || iosStandalone));
+    const coarse = window.matchMedia?.("(pointer: coarse)").matches;
+    setHideStatus(Boolean(standalone || coarse));
   }, []);
 
   return (
-    <div className="ios-screen flex h-full flex-col bg-white text-black">
-      {/* Statusfält (döljs i helskärms-/hemskärmsläge) */}
-      {!standalone && (
+    <div
+      className="ios-screen flex h-full flex-col bg-white text-black"
+      style={hideStatus ? { paddingTop: "env(safe-area-inset-top)" } : undefined}
+    >
+      {/* Vårt egna statusfält – döljs när enheten redan visar ett äkta. */}
+      {!hideStatus && (
         <div className="relative flex items-center justify-between px-7 pb-1 pt-3">
           <span className="text-[15px] font-semibold tracking-tight">{statusTime}</span>
           <div className="absolute left-1/2 top-2.5 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-black" />
