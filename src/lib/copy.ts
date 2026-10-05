@@ -200,12 +200,12 @@ export function fill(template: string, vars: Record<string, string>): string {
 }
 
 /**
- * "Skickad 1 248 gånger" – med svenskt tusentalsavgränsare. Returnerar null vid
- * 0 så att räknaren göms helt för ursäkter som ännu inte skickats.
+ * "Skickad 1 248 gånger" – med svenskt tusentalsavgränsare. Visar även
+ * "Skickad 0 gånger" för ursäkter som aldrig använts.
  */
-export function formatSentCount(count: number): string | null {
-  if (count <= 0) return null;
-  if (count === 1) return COPY.browse.sentCountOnce;
-  const formatted = count.toLocaleString("sv-SE");
+export function formatSentCount(count: number): string {
+  const n = Math.max(0, count);
+  if (n === 1) return COPY.browse.sentCountOnce;
+  const formatted = n.toLocaleString("sv-SE");
   return fill(COPY.browse.sentCount, { count: formatted });
 }
