@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
 import { excuseFitsSender } from "@/lib/senders";
@@ -779,20 +780,26 @@ function Compose({
         )}
       </div>
 
-      {showFake && current && (
-        <div className="fixed inset-0 z-50 bg-white">
-          <div className="mx-auto h-full max-w-md">
-            <IosMessages
-              contactName={contactName}
-              message={current.text}
-              leadIn={fakeLeadIn}
-              dateLabel={fakeTime(0)}
-              leadInLabel={fakeTime(47)}
-              onBack={() => setShowFake(false)}
-            />
-          </div>
-        </div>
-      )}
+      {showFake &&
+        current &&
+        typeof document !== "undefined" &&
+        createPortal(
+          /* Via en portal till <body> → riktig helskärm över allt annat (inkl.
+             sidfoten), så meddelandevyn ser ut som en äkta Meddelanden-app. */
+          <div className="fixed inset-0 z-[100] bg-white">
+            <div className="mx-auto h-full max-w-md">
+              <IosMessages
+                contactName={contactName}
+                message={current.text}
+                leadIn={fakeLeadIn}
+                dateLabel={fakeTime(0)}
+                leadInLabel={fakeTime(47)}
+                onBack={() => setShowFake(false)}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
