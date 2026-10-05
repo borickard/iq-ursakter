@@ -127,7 +127,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         </Button>
       </div>
 
-      {/* Desktop-hjälte: telefon med flera notiser i rad från "Älskling". */}
+      {/* Desktop-hjälte: telefon med flera notiser i rad från "Gullet". */}
       <div className="hidden lg:flex lg:justify-center">
         <LandingPhone />
       </div>

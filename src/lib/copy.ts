@@ -27,14 +27,14 @@ export const COPY = {
     // samma avsändare aldrig visas två gånger i rad (även vid loop).
     carousel: [
       { text: "Jag mår inte bra, kan du komma hit?", sender: "Mamma" },
-      { text: "Barnvakten måste gå nu, du behöver komma hem.", sender: "Älskling" },
+      { text: "Barnvakten måste gå nu, du behöver komma hem.", sender: "Gullet" },
       { text: "Billarmet har gått igång på gatan, kan du komma och kolla?", sender: "Pappa" },
-      { text: "Hunden har kräkts i hela sängen – kan du komma hem?", sender: "Älskling" },
+      { text: "Hunden har kräkts i hela sängen – kan du komma hem?", sender: "Gullet" },
       { text: "Du behöver komma in tidigt imorgon bitti.", sender: "Chefen" },
     ],
     // Desktop-hjälte: en telefon som får flera notiser i rad från samma person –
     // en ursäkt som följs upp med fler meddelanden på samma tema.
-    phoneSender: "Älskling",
+    phoneSender: "Gullet",
     phoneThread: [
       "Hunden har kräkts i sängen. 🤢",
       "Kan du komma hem? 🙏",
@@ -49,7 +49,7 @@ export const COPY = {
     phoneHelp: "SMS:et skickas hit. Numret sparas inte – det används bara för att skicka.",
     senderLabel: "Vem ska det se ut att komma från?",
     senderPlaceholder: "Skriv eget namn …",
-    senderPresets: ["Mamma", "Pappa", "Chefen", "Älskling"],
+    senderPresets: ["Mamma", "Pappa", "Chefen", "Gullet"],
     next: "Fortsätt",
     invalidPhone: "Hmm, det där ser inte ut som ett mobilnummer. Försök igen.",
     missingSender: "Välj eller skriv ett avsändarnamn först.",

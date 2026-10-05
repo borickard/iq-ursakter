@@ -4,7 +4,7 @@ import { COPY } from "@/lib/copy";
  * Avsändar-val per ursäkt.
  *
  * Varje ursäkt har en kommaseparerad lista med avsändarnamn den passar ihop med
- * (`senders` i databasen), t.ex. "Mamma,Pappa,Älskling". Tom lista = passar alla
+ * (`senders` i databasen), t.ex. "Mamma,Pappa,Gullet". Tom lista = passar alla
  * avsändare. Admin väljer detta per ursäkt.
  */
 export const SENDER_PRESETS: readonly string[] = COPY.details.senderPresets;
