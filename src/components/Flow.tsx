@@ -125,14 +125,9 @@ function Landing({ onStart }: { onStart: () => void }) {
   );
 }
 
-/* ── Lime-chippet "livlina" som "skrivs in" en gång vid sidladdning ───────── */
+/* ── Lime-överstruket "livlina" i sloganen (klickbart, går till flödet) ────── */
 
 function LivlinaChip({ onStart }: { onStart: () => void }) {
-  const [typed, setTyped] = useState(false);
-  useEffect(() => {
-    const t = window.setTimeout(() => setTyped(true), 2000);
-    return () => window.clearTimeout(t);
-  }, []);
   return (
     <span
       role="button"
@@ -144,22 +139,9 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
           onStart();
         }
       }}
-      className="livlina-mark relative inline-block cursor-pointer"
+      className="livlina-mark cursor-pointer"
     >
-      {/* Ordet håller alltid bredden; prickarna ligger ovanpå tills det "skrivits". */}
-      <span className={typed ? "" : "invisible"}>{COPY.landing.headlineLink}</span>
-      {!typed && (
-        <span
-          aria-hidden
-          className="absolute inset-0 flex items-center justify-center"
-        >
-          <span className="flex gap-[3px]">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1.2s_infinite]" />
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1.2s_infinite] [animation-delay:.4s]" />
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-fg [animation:livlinaTyping_1.2s_infinite] [animation-delay:.8s]" />
-          </span>
-        </span>
-      )}
+      {COPY.landing.headlineLink}
     </span>
   );
 }
@@ -199,7 +181,7 @@ function HeroCarousel() {
       if (meta) meta.style.opacity = "0";
       t1 = window.setTimeout(() => {
         if (typing) typing.style.display = "flex";
-      }, 220);
+      }, 200);
       t2 = window.setTimeout(() => {
         if (typing) typing.style.display = "none";
         exP.textContent = it.text;
@@ -218,7 +200,7 @@ function HeroCarousel() {
           meta.textContent = it.sender + " · nyss";
           meta.style.opacity = "1";
         }
-      }, 900);
+      }, 1150);
     }, 3000);
     return () => {
       window.clearInterval(id);
@@ -255,9 +237,9 @@ function HeroCarousel() {
             className="absolute inset-0 hidden items-center justify-center"
           >
             <span className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.2s_infinite]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.2s_infinite] [animation-delay:.4s]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.2s_infinite] [animation-delay:.8s]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0s_ease-in-out_infinite]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0.16s_ease-in-out_infinite]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0.32s_ease-in-out_infinite]" />
             </span>
           </div>
         </div>
