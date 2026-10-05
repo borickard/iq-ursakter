@@ -624,7 +624,7 @@ function Compose({
         {senderChosen && (
           <>
             {/* Mobil: pratbubbla som förhandsvisning. */}
-            <div className="flex flex-col gap-3.5 lg:hidden">
+            <div className="anim-up flex flex-col gap-3.5 lg:hidden">
               <ExcuseBubble
                 text={current?.text}
                 loading={excuses === null}
@@ -637,7 +637,7 @@ function Compose({
             </div>
 
             {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
-            <p className="hidden text-sm font-semibold lg:block">
+            <p className="anim-up hidden text-sm font-semibold lg:block">
               {COPY.compose.excuseLabel}{" "}
               <span className="font-normal text-muted">
                 {COPY.compose.excuseInPhone}
@@ -645,7 +645,10 @@ function Compose({
             </p>
 
             {/* Slumpa fram / bakåt – i båda vyerna. */}
-            <div className="flex items-center justify-center gap-3 lg:justify-start">
+            <div
+              className="anim-up flex items-center justify-center gap-3 lg:justify-start"
+              style={{ animationDelay: "150ms" }}
+            >
               <button
                 type="button"
                 onClick={goBack}
@@ -694,10 +697,15 @@ function Compose({
             </div>
             {/* Antal skickningar – desktop (mobilen visar det i bildtexten). */}
             {countLabel && (
-              <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
+              <p
+                className="anim-up hidden text-xs text-muted lg:block"
+                style={{ animationDelay: "220ms" }}
+              >
+                {countLabel}
+              </p>
             )}
 
-            <div className="space-y-2">
+            <div className="anim-up space-y-2" style={{ animationDelay: "300ms" }}>
               <label htmlFor="phone" className="block text-sm font-semibold">
                 {COPY.details.phoneLabel}
               </label>
@@ -723,6 +731,8 @@ function Compose({
               block
               onClick={send}
               disabled={sending || !current || !phoneValid}
+              className="anim-up"
+              style={{ animationDelay: "380ms" }}
             >
               {sending ? COPY.browse.sending : COPY.browse.send}
             </Button>
@@ -732,6 +742,8 @@ function Compose({
               variant="secondary"
               onClick={showMessage}
               disabled={!current}
+              className="anim-up"
+              style={{ animationDelay: "460ms" }}
             >
               {COPY.compose.showAsMessage}
             </Button>
@@ -739,10 +751,17 @@ function Compose({
         )}
       </div>
 
-      {/* Höger: live telefon-förhandsvisning (endast desktop). */}
+      {/* Höger: live telefon-förhandsvisning (endast desktop). Glider in från
+          höger när en avsändare valts. */}
       <div className="hidden lg:sticky lg:top-6 lg:flex lg:justify-center">
         {senderChosen && (
-          <PhonePreview sender={contactName} message={current?.text} delayMin={0} />
+          <div className="anim-phone">
+            <PhonePreview
+              sender={contactName}
+              message={current?.text}
+              delayMin={0}
+            />
+          </div>
         )}
       </div>
 

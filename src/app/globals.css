@@ -141,3 +141,20 @@ textarea {
   8%, 80% { opacity: 1; transform: translateY(0) scale(1); }
   92%, 100% { opacity: 0; transform: translateY(-8px) scale(0.98); }
 }
+
+/* Staggered "reveal" när en avsändare valts på skapa-skärmen. */
+@keyframes livlinaRevealRight {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes livlinaRevealUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Telefonen glider in från höger med en lätt taktil "studs". */
+.anim-phone { animation: livlinaRevealRight 0.6s cubic-bezier(0.34, 1.28, 0.5, 1) both; }
+/* Kontrollerna tonar + glider upp mjukt. */
+.anim-up    { animation: livlinaRevealUp 0.45s cubic-bezier(0.22, 0.8, 0.32, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-phone, .anim-up { animation: none; }
+}
