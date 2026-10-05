@@ -91,28 +91,70 @@ export default function Flow() {
 /* ── Steg: landning ─────────────────────────────────────────────────────── */
 
 function Landing({ onStart }: { onStart: () => void }) {
+  // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
+  // CTA-skenet triggas först NÄR alla tre notiser kommit in.
+  const [notifShown, setNotifShown] = useState(0);
+  const [shineKey, setShineKey] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    (async () => {
+      await sleep(1100); // vänta in intron (telefonen glider in först)
+      while (!cancelled) {
+        setNotifShown(0);
+        await sleep(60);
+        if (cancelled) return;
+        setNotifShown(1);
+        await sleep(600);
+        if (cancelled) return;
+        setNotifShown(2);
+        await sleep(600);
+        if (cancelled) return;
+        setNotifShown(3);
+        setShineKey((k) => k + 1); // skenet efter att alla tre är inne
+        await sleep(3000); // håll alla tre i 3 s
+        if (cancelled) return;
+        setNotifShown(0); // tona ut alla samtidigt
+        await sleep(1100); // kort paus innan loop
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
-        <Wordmark className="text-[26px] lg:text-[32px]" />
+        <Wordmark className="intro-pop text-[26px] lg:text-[32px]" />
 
         {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
-        <div className="mt-9 lg:hidden">
+        <div
+          className="intro-rise mt-9 lg:hidden"
+          style={{ animationDelay: "400ms" }}
+        >
           <HeroCarousel />
         </div>
 
         <div className="mt-9 space-y-3.5 lg:mt-10">
           <h1 className="font-display text-[clamp(24px,7.2vw,28px)] font-black leading-[1.1] tracking-tight lg:text-[40px]">
-            {COPY.landing.headline1}
-            <br />
-            {COPY.landing.headline2a}
-            <LivlinaChip onStart={onStart} />
-            {COPY.landing.headline2b}
-            <br />
-            {COPY.landing.headline3}
+            <span className="intro-rise block" style={{ animationDelay: "200ms" }}>
+              {COPY.landing.headline1}
+            </span>
+            <span className="intro-rise block" style={{ animationDelay: "340ms" }}>
+              {COPY.landing.headline2a}
+              <LivlinaChip onStart={onStart} />
+              {COPY.landing.headline2b}
+            </span>
+            <span className="intro-rise block" style={{ animationDelay: "480ms" }}>
+              {COPY.landing.headline3}
+            </span>
           </h1>
-          <p className="max-w-sm text-sm font-medium leading-relaxed text-[#34312b] lg:text-base">
+          <p
+            className="intro-rise max-w-sm text-sm font-medium leading-relaxed text-[#34312b] lg:text-base"
+            style={{ animationDelay: "620ms" }}
+          >
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -120,15 +162,22 @@ function Landing({ onStart }: { onStart: () => void }) {
         <Button
           block
           onClick={onStart}
-          className="mt-auto !rounded-full py-6 text-xl lg:mt-9 lg:w-auto lg:self-start lg:px-10"
+          className="intro-pop relative mt-auto !rounded-full py-6 text-xl lg:mt-9 lg:w-auto lg:self-start lg:px-10"
+          style={{ animationDelay: "820ms" }}
         >
           {COPY.landing.cta}
+          {shineKey > 0 && (
+            <span key={shineKey} aria-hidden className="cta-shine" />
+          )}
         </Button>
       </div>
 
       {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". */}
-      <div className="hidden lg:flex lg:justify-center">
-        <LandingPhone />
+      <div
+        className="intro-pop hidden lg:flex lg:justify-center"
+        style={{ animationDelay: "400ms" }}
+      >
+        <LandingPhone shown={notifShown} />
       </div>
     </div>
   );
@@ -148,7 +197,8 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
           onStart();
         }
       }}
-      className="livlina-mark cursor-pointer"
+      className="livlina-mark livlina-swipe cursor-pointer"
+      style={{ animationDelay: "820ms" }}
     >
       {COPY.landing.headlineLink}
     </span>
@@ -397,19 +447,21 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 
 /* ── Landningens telefon (desktop): flera notiser i rad från samma person ──── */
 
-function LandingPhone() {
+function LandingPhone({ shown }: { shown: number }) {
   const thread = COPY.landing.phoneThread;
   const sender = COPY.landing.phoneSender;
-  const times = ["nu", "nu", "nu"];
   return (
     <PhoneFrame>
       {thread.map((text, i) => (
         <div
           key={i}
-          className="opacity-0 [animation:notifPop_6s_ease-in-out_infinite]"
-          style={{ animationDelay: `${i * 0.6}s` }}
+          className="transition-all duration-300 ease-out"
+          style={{
+            opacity: i < shown ? 1 : 0,
+            transform: i < shown ? "none" : "translateY(-8px) scale(0.98)",
+          }}
         >
-          <Notif sender={sender} text={text} time={times[i] ?? "nu"} />
+          <Notif sender={sender} text={text} time="nu" />
         </div>
       ))}
     </PhoneFrame>
