@@ -458,6 +458,16 @@ launch. Options discussed (user hasn't picked yet):
   but are unlinked (unreachable). Intent: re-enable later as a "skicka in den
   bästa ursäkten"-competition/activation for the target group. Admin's "Väntar på
   granskning" section stays (just gets no new items).
-- **Sender presets** are now **Mamma / Pappa / Chefen / Gullet** (Älskling was
-  renamed — name-mode strips å/ä/ö). The desktop landing hero fronts a
-  notification thread from **"Mamma"** (`COPY.landing.phoneSender`).
+- **Sender presets** are now **Mamma / Pappa / Chefen / Gullet / Bestie /
+  Brorsan / Syrran / Baby** (all å/ä/ö-free for name mode; Älskling→Gullet
+  earlier). All except Chefen are personal → wired to the home seed excuses. The
+  desktop landing hero fronts a notification thread from **"Mamma"**
+  (`COPY.landing.phoneSender`). **PENDING SQL** to give the new senders matching
+  excuses in the live DB (append-only, preserves admin edits):
+  ```sql
+  UPDATE "Excuse" SET "senders" = "senders" || ',Bestie,Brorsan,Syrran,Baby'
+  WHERE "senders" LIKE '%Mamma%' AND "senders" NOT LIKE '%Bestie%';
+  UPDATE "Excuse" SET "senders" = "senders" || ',Baby'
+  WHERE "text" = 'Kan du komma hem? Jag vill inte vara ensam ikväll.'
+    AND "senders" NOT LIKE '%Baby%';
+  ```
