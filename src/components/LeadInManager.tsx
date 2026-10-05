@@ -93,7 +93,7 @@ export function LeadInManager() {
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-brand">
+        <h2 className="inline-block rounded-md border-2 border-border bg-brand px-2.5 py-1 text-sm font-bold uppercase tracking-wide text-brand-fg shadow-[2px_2px_0_#0b0b0b]">
           {c.title}
         </h2>
         <p className="text-xs text-muted">{c.help}</p>

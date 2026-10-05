@@ -182,7 +182,7 @@ export default function AdminPage() {
         <div className="mt-6 space-y-8">
           {/* Add new */}
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-brand">
+            <h2 className="inline-block rounded-md border-2 border-border bg-brand px-2.5 py-1 text-sm font-bold uppercase tracking-wide text-brand-fg shadow-[2px_2px_0_#0b0b0b]">
               {COPY.admin.addTitle}
             </h2>
             <textarea
@@ -224,7 +224,7 @@ export default function AdminPage() {
 
           {/* Pending suggestions */}
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-brand">
+            <h2 className="inline-block rounded-md border-2 border-border bg-brand px-2.5 py-1 text-sm font-bold uppercase tracking-wide text-brand-fg shadow-[2px_2px_0_#0b0b0b]">
               {COPY.admin.pendingTitle}
             </h2>
             {pending.length === 0 ? (
@@ -255,7 +255,7 @@ export default function AdminPage() {
 
           {/* All excuses */}
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-brand">
+            <h2 className="inline-block rounded-md border-2 border-border bg-brand px-2.5 py-1 text-sm font-bold uppercase tracking-wide text-brand-fg shadow-[2px_2px_0_#0b0b0b]">
               {COPY.admin.poolTitle}
             </h2>
             {pool.map((e) => (
