@@ -446,11 +446,18 @@ launch. Options discussed (user hasn't picked yet):
   right (`PhonePreview` in `Flow.tsx`) that updates with sender/excuse/delay. On
   desktop the excuse bubble moves into the phone; mobile keeps the single-column
   flow (bubble, no delay/phone). Page wrapper widens via `lg:max-w-4xl`.
-- **"Skicka när?" delay chips (desktop only) — UI-ONLY.** Nu/+1/+5/+15/+30 min/
-  +1 tim update the preview's scheduled time, but **send still goes immediately**
-  — real scheduling is deferred pending a decision (user chose "just the UI for
-  now"). The two backend options (both need a call because of the GDPR "number
-  never stored" rule): (a) **server-side** — store the number encrypted until
-  send, then delete (deviates from "never stored"); (b) **browser-only** — a
-  timer in the open tab (no stored number, but only fires while the tab stays
-  open). Not yet chosen.
+- **"Skicka när?" delay chips — REMOVED (this session, kept in git).** Was a
+  desktop UI-only schedule picker; the user asked to remove it ("maybe take it
+  back later"). `PhonePreview` still accepts a `delayMin` prop (passed `0`) and
+  `COPY.compose.delayOptions/sendWhen` remain, so re-adding is easy. If re-added,
+  the GDPR scheduling-backend decision still applies: (a) server-side (store the
+  number encrypted until send, then delete — deviates from "never stored"); (b)
+  browser-only (timer in the open tab). Not chosen.
+- **User suggestions — PAUSED (this session).** The "Föreslå en ursäkt" link was
+  removed from compose; the `Suggest` screen + `/api/suggest` stay in the code
+  but are unlinked (unreachable). Intent: re-enable later as a "skicka in den
+  bästa ursäkten"-competition/activation for the target group. Admin's "Väntar på
+  granskning" section stays (just gets no new items).
+- **Sender presets** are now **Mamma / Pappa / Chefen / Gullet** (Älskling was
+  renamed — name-mode strips å/ä/ö). The desktop landing hero fronts a
+  notification thread from **"Mamma"** (`COPY.landing.phoneSender`).
