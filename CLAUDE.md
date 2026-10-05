@@ -418,3 +418,16 @@ launch. Options discussed (user hasn't picked yet):
   §6) — out of scope for POC.
 - **OTP** for the future if free-text-to-others is ever introduced (currently
   not, by decision #1).
+- **Desktop compose layout — DONE (this session).** At `lg+` the compose screen
+  is two columns: controls left, a live iPhone lock-screen notification preview
+  right (`PhonePreview` in `Flow.tsx`) that updates with sender/excuse/delay. On
+  desktop the excuse bubble moves into the phone; mobile keeps the single-column
+  flow (bubble, no delay/phone). Page wrapper widens via `lg:max-w-4xl`.
+- **"Skicka när?" delay chips (desktop only) — UI-ONLY.** Nu/+1/+5/+15/+30 min/
+  +1 tim update the preview's scheduled time, but **send still goes immediately**
+  — real scheduling is deferred pending a decision (user chose "just the UI for
+  now"). The two backend options (both need a call because of the GDPR "number
+  never stored" rule): (a) **server-side** — store the number encrypted until
+  send, then delete (deviates from "never stored"); (b) **browser-only** — a
+  timer in the open tab (no stored number, but only fires while the tab stays
+  open). Not yet chosen.
