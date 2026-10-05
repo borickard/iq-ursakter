@@ -54,7 +54,10 @@ export default function RootLayout({
       className={`${hanken.variable} ${archivo.variable} ${spaceMono.variable} ${syne.variable}`}
     >
       <body>
-        <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5">
+        {/* Smal kolumn på mobil; bredare på desktop så skapa-vyn får plats med
+            två kolumner (kontroller + telefonförhandsvisning). Varje vy sätter
+            sin egen maxbredd inuti. */}
+        <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 lg:max-w-4xl lg:px-8">
           {children}
         </div>
       </body>

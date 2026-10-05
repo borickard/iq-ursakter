@@ -92,7 +92,7 @@ export default function Flow() {
 
 function Landing({ onStart }: { onStart: () => void }) {
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <Wordmark className="text-[26px]" />
 
       <div className="mt-9 flex flex-col gap-8">
@@ -307,6 +307,89 @@ function ExcuseBubble({
   );
 }
 
+/* ── Telefon-förhandsvisning (desktop) – lås-skärm med notis ──────────────── */
+
+function PhonePreview({
+  sender,
+  message,
+  delayMin,
+}: {
+  sender: string;
+  message?: string;
+  delayMin: number;
+}) {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(id);
+  }, []);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fmt = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const clock = now ? fmt(now) : "––:––";
+  const scheduled =
+    now && delayMin > 0 ? fmt(new Date(now.getTime() + delayMin * 60000)) : null;
+  const dateLabel = now
+    ? now.toLocaleDateString("sv-SE", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      })
+    : "";
+
+  return (
+    <div className="w-[300px] rounded-[46px] border-2 border-border bg-[#0b0c0f] p-[11px] shadow-[10px_14px_0_#0b0b0b]">
+      <div
+        className="relative flex aspect-[9/19.3] flex-col items-center overflow-hidden rounded-[36px] text-white"
+        style={{ background: "linear-gradient(170deg,#3a4a63,#20262f 55%,#14181f)" }}
+      >
+        <div className="absolute left-1/2 top-[10px] z-10 h-[21px] w-[84px] -translate-x-1/2 rounded-full bg-black" />
+        <div className="flex w-full justify-between px-[22px] pt-3 text-xs font-semibold">
+          <span>{clock}</span>
+          <span>100%</span>
+        </div>
+        <div className="mt-5 text-[62px] font-semibold leading-none tracking-tight">
+          {clock}
+        </div>
+        <div className="mt-0.5 text-[15px] opacity-90 first-letter:uppercase">
+          {dateLabel}
+        </div>
+
+        {/* Notis – ser ut som ett vanligt sms från kontakten. */}
+        <div
+          className="mt-6 flex w-[calc(100%-24px)] gap-2.5 rounded-[18px] bg-white/[0.86] p-3 text-[#111] backdrop-blur"
+          style={{ boxShadow: "0 8px 20px rgba(0,0,0,.25)" }}
+        >
+          <div
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px]"
+            style={{ background: "linear-gradient(180deg,#5df27a,#15cf41)" }}
+          >
+            <svg viewBox="0 0 24 24" className="h-[23px] w-[23px]" fill="#fff" aria-hidden>
+              <path d="M12 3C6.5 3 2 6.6 2 11c0 2.5 1.3 4.7 3.4 6.2-.2 1.1-.8 2.4-1.7 3.4 1.7-.2 3.5-.9 4.8-1.8 1.1.3 2.3.5 3.5.5 5.5 0 10-3.6 10-8S17.5 3 12 3z" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex justify-between gap-2 whitespace-nowrap text-[11px] font-semibold text-[#6b6b70]">
+              <span>MEDDELANDEN</span>
+              <span>{scheduled ?? "nu"}</span>
+            </div>
+            <div className="mt-px text-[15px] font-bold">{sender}</div>
+            <div className="mt-px text-[14px] leading-snug text-[#1c1c1e]">
+              {message}
+            </div>
+          </div>
+        </div>
+
+        {scheduled && (
+          <div className="mt-3.5 flex w-[calc(100%-24px)] items-center justify-center gap-1.5 rounded-full border border-white/20 bg-black/30 px-3 py-1.5 text-[12.5px] font-semibold">
+            ⏱ Schemalagt · skickas {scheduled}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Steg: skapa ────────────────────────────────────────────────────────── */
 
 function Compose({
@@ -339,6 +422,8 @@ function Compose({
   const [formError, setFormError] = useState<string | null>(null);
   const [showFake, setShowFake] = useState(false);
   const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
+  // Schemaläggning (endast desktop, UI-only tills backend är beslutad).
+  const [delayMin, setDelayMin] = useState(0);
 
   const senderChosen = sender.trim() !== "";
   const senderCat = categoryForSender(sender);
@@ -444,114 +529,169 @@ function Compose({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-5">
-      <Wordmark className="text-[20px]" />
-      <Header title={COPY.compose.title} onBack={onBack} />
+    <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-12">
+      {/* Vänster: kontroller */}
+      <div className="flex flex-1 flex-col gap-5">
+        <Wordmark className="text-[20px]" />
+        <Header title={COPY.compose.title} onBack={onBack} />
 
-      <SenderField value={sender} onChange={onSender} />
+        <SenderField value={sender} onChange={onSender} />
 
-      {/* Avsändare-först: allt nedan visas när en avsändare valts, och ursäkterna
-          är filtrerade till dem som passar personen. */}
-      {senderChosen && (
-        <>
-          <div className="flex flex-col gap-3.5">
-            <ExcuseBubble
-              text={current?.text}
-              loading={excuses === null}
-              empty={excuses !== null && poolCount === 0}
-            />
-        {/* Bildtext under bubblan: avsändare till vänster, antal skickningar
-            till höger. Alltid monterad (fast höjd) så sidan inte hoppar. */}
-        <div className="flex h-4 items-baseline justify-between gap-3 pl-[22px] pr-1 font-mono text-[11px] text-muted">
-          <span className="truncate">{current ? contactName : ""}</span>
-          <span className="shrink-0">{countLabel ?? ""}</span>
-        </div>
-      </div>
+        {/* Avsändare-först: allt nedan visas när en avsändare valts, och
+            ursäkterna är filtrerade till dem som passar personen. */}
+        {senderChosen && (
+          <>
+            {/* Mobil: pratbubbla som förhandsvisning. */}
+            <div className="flex flex-col gap-3.5 lg:hidden">
+              <ExcuseBubble
+                text={current?.text}
+                loading={excuses === null}
+                empty={excuses !== null && poolCount === 0}
+              />
+              <div className="flex h-4 items-baseline justify-between gap-3 pl-[22px] pr-1 font-mono text-[11px] text-muted">
+                <span className="truncate">{current ? contactName : ""}</span>
+                <span className="shrink-0">{countLabel ?? ""}</span>
+              </div>
+            </div>
 
-      {/* Kompakt rad: slumpa fram en ny ursäkt. Bakåtknappen finns alltid men
-          är avstängd tills man slumpat minst en gång. */}
-      <div className="flex items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={goBack}
-          disabled={!canGoBack}
-          aria-label={COPY.compose.prev}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-border bg-surface shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={shuffle}
-          disabled={!current}
-          className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-surface px-5 py-2.5 font-bold shadow-raised transition active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-[18px] w-[18px]"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M16 3h5v5" />
-            <path d="M4 20 21 3" />
-            <path d="M21 16v5h-5" />
-            <path d="M15 15l6 6" />
-            <path d="M4 4l5 5" />
-          </svg>
-          {COPY.compose.shuffle}
-        </button>
-      </div>
-
-          <div className="space-y-2">
-            <label htmlFor="phone" className="block text-sm font-semibold">
-              {COPY.details.phoneLabel}
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder={COPY.details.phonePlaceholder}
-              value={phone}
-              onChange={(e) => onPhone(e.target.value)}
-              className="w-full rounded-2xl border-2 border-border bg-surface px-5 py-3.5 outline-none ring-brand/50 transition focus:ring-2"
-            />
-          </div>
-
-          {(formError || error) && (
-            <p className="text-center text-sm font-medium text-danger">
-              {formError ?? COPY.result.errors[error!]}
+            {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
+            <p className="hidden text-sm font-semibold lg:block">
+              {COPY.compose.excuseLabel}{" "}
+              <span className="font-normal text-muted">
+                {COPY.compose.excuseInPhone}
+              </span>
             </p>
-          )}
 
-          <Button
-            block
-            onClick={send}
-            disabled={sending || !current || !phoneValid}
-          >
-            {sending ? COPY.browse.sending : COPY.browse.send}
-          </Button>
+            {/* Slumpa fram / bakåt – i båda vyerna. */}
+            <div className="flex items-center justify-center gap-3 lg:justify-start">
+              <button
+                type="button"
+                onClick={goBack}
+                disabled={!canGoBack}
+                aria-label={COPY.compose.prev}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-border bg-surface shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={shuffle}
+                disabled={!current}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-surface px-5 py-2.5 font-bold shadow-raised transition active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-[18px] w-[18px]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M16 3h5v5" />
+                  <path d="M4 20 21 3" />
+                  <path d="M21 16v5h-5" />
+                  <path d="M15 15l6 6" />
+                  <path d="M4 4l5 5" />
+                </svg>
+                <span className="lg:hidden">{COPY.compose.shuffle}</span>
+                <span className="hidden lg:inline">{COPY.compose.shuffleLong}</span>
+              </button>
+            </div>
+            {/* Antal skickningar – desktop (mobilen visar det i bildtexten). */}
+            {countLabel && (
+              <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
+            )}
 
-          <Button block variant="secondary" onClick={showMessage} disabled={!current}>
-            {COPY.compose.showAsMessage}
-          </Button>
-        </>
-      )}
+            {/* Schemaläggning – endast desktop. */}
+            <div className="hidden lg:block">
+              <p className="mb-2.5 text-sm font-semibold">
+                {COPY.compose.sendWhen}{" "}
+                <span className="font-normal text-muted">
+                  ({COPY.compose.sendWhenNote})
+                </span>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {COPY.compose.delayOptions.map((o) => (
+                  <Chip
+                    key={o.min}
+                    active={delayMin === o.min}
+                    onClick={() => setDelayMin(o.min)}
+                  >
+                    {o.label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="phone" className="block text-sm font-semibold">
+                {COPY.details.phoneLabel}
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder={COPY.details.phonePlaceholder}
+                value={phone}
+                onChange={(e) => onPhone(e.target.value)}
+                className="w-full rounded-2xl border-2 border-border bg-surface px-5 py-3.5 outline-none ring-brand/50 transition focus:ring-2"
+              />
+            </div>
+
+            {(formError || error) && (
+              <p className="text-center text-sm font-medium text-danger lg:text-left">
+                {formError ?? COPY.result.errors[error!]}
+              </p>
+            )}
+
+            <Button
+              block
+              onClick={send}
+              disabled={sending || !current || !phoneValid}
+            >
+              {sending ? COPY.browse.sending : COPY.browse.send}
+            </Button>
+
+            <Button
+              block
+              variant="secondary"
+              onClick={showMessage}
+              disabled={!current}
+            >
+              {COPY.compose.showAsMessage}
+            </Button>
+          </>
+        )}
+
+        <Button variant="ghost" block onClick={onSuggest} className="text-sm">
+          {COPY.browse.suggestQuestion} {COPY.browse.suggestCta}
+        </Button>
+      </div>
+
+      {/* Höger: live telefon-förhandsvisning (endast desktop). */}
+      <div className="hidden lg:sticky lg:top-6 lg:flex lg:justify-center">
+        {senderChosen && (
+          <PhonePreview
+            sender={contactName}
+            message={current?.text}
+            delayMin={delayMin}
+          />
+        )}
+      </div>
 
       {showFake && current && (
         <div className="fixed inset-0 z-50 bg-white">
@@ -567,10 +707,6 @@ function Compose({
           </div>
         </div>
       )}
-
-      <Button variant="ghost" block onClick={onSuggest} className="text-sm">
-        {COPY.browse.suggestQuestion} {COPY.browse.suggestCta}
-      </Button>
     </div>
   );
 }
@@ -615,7 +751,7 @@ function Result({
   onRestart: () => void;
 }) {
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-border bg-brand shadow-raised">
           <svg
@@ -681,7 +817,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
 
   if (done) {
     return (
-      <div className="flex flex-1 flex-col">
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
           <h1 className="font-display text-2xl font-black">{COPY.suggest.successTitle}</h1>
           <p className="max-w-xs font-medium text-[#34312b]">{COPY.suggest.successBody}</p>
@@ -705,7 +841,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6">
       <Header title={COPY.suggest.title} onBack={onBack} />
 
       <p className="text-sm font-medium leading-relaxed text-[#34312b]">
