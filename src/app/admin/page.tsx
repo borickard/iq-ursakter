@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { COPY, fill } from "@/lib/copy";
 import { Button, Card, Chip } from "@/components/ui";
 import { LeadInManager } from "@/components/LeadInManager";
-import { SENDER_PRESETS, parseSenders } from "@/lib/senders";
+import { SENDER_PRESETS, parseSenders, excuseFitsSender } from "@/lib/senders";
 
 type Excuse = {
   id: string;
@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [newSenders, setNewSenders] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [senderFilter, setSenderFilter] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -51,6 +52,25 @@ export default function AdminPage() {
         .filter((e) => e.status === "approved" || e.status === "disabled")
         .sort((a, b) => b.sentCount - a.sentCount),
     [excuses],
+  );
+
+  // Antal ursäkter som passar varje avsändare (för filterknapparna). En ursäkt
+  // utan valda avsändare ("passar alla") räknas in på varje avsändare.
+  const senderCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const name of SENDER_PRESETS) {
+      m[name] = pool.filter((e) => excuseFitsSender(e.senders, name)).length;
+    }
+    return m;
+  }, [pool]);
+
+  // Listan som faktiskt visas: alla, eller bara de som passar vald avsändare.
+  const filteredPool = useMemo(
+    () =>
+      senderFilter
+        ? pool.filter((e) => excuseFitsSender(e.senders, senderFilter))
+        : pool,
+    [pool, senderFilter],
   );
 
   async function patchStatus(id: string, status: string) {
@@ -258,7 +278,42 @@ export default function AdminPage() {
             <h2 className="inline-block rounded-md border-2 border-border bg-brand px-2.5 py-1 text-sm font-bold uppercase tracking-wide text-brand-fg shadow-[2px_2px_0_#0b0b0b]">
               {COPY.admin.poolTitle}
             </h2>
-            {pool.map((e) => (
+
+            {/* Filtrera listan per avsändare – siffran visar hur många som
+                passar var och en ("passar alla"-ursäkter räknas överallt). */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted">{COPY.admin.filterLabel}:</span>
+              <Chip active={senderFilter === null} onClick={() => setSenderFilter(null)}>
+                {COPY.admin.filterAll} ({pool.length})
+              </Chip>
+              {SENDER_PRESETS.map((name) => (
+                <Chip
+                  key={name}
+                  active={senderFilter === name}
+                  onClick={() =>
+                    setSenderFilter((cur) => (cur === name ? null : name))
+                  }
+                >
+                  {name} ({senderCounts[name] ?? 0})
+                </Chip>
+              ))}
+            </div>
+
+            {senderFilter && (
+              <p className="text-sm font-semibold text-muted">
+                {fill(
+                  filteredPool.length === 0
+                    ? COPY.admin.filterEmpty
+                    : COPY.admin.filterCount,
+                  {
+                    count: filteredPool.length.toLocaleString("sv-SE"),
+                    sender: senderFilter,
+                  },
+                )}
+              </p>
+            )}
+
+            {filteredPool.map((e) => (
               <Card key={e.id} className="gap-3">
                 {editingId === e.id ? (
                   <>

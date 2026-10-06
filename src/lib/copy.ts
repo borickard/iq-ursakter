@@ -116,6 +116,11 @@ export const COPY = {
     pendingTitle: "Väntar på granskning",
     poolTitle: "Alla ursäkter",
     pendingEmpty: "Inga förslag väntar just nu.",
+    filterLabel: "Visa för avsändare",
+    filterAll: "Alla",
+    // {count}/{sender} fylls i. Visas ovanför listan när ett filter är valt.
+    filterCount: "{count} ursäkter som passar {sender}",
+    filterEmpty: "Inga ursäkter passar {sender} än.",
     approve: "Godkänn",
     reject: "Avslå",
     on: "På",
