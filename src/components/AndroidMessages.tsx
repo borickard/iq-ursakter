@@ -64,9 +64,8 @@ export function AndroidMessages({
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#5b8def] text-sm font-medium text-white">
           {initial}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
           <span className="truncate text-[16px] font-medium leading-tight">{contactName}</span>
-          <span className="text-[12px] leading-tight text-black/50">Mobil</span>
         </div>
         <div className="flex items-center gap-1 text-black/70">
           <button type="button" aria-label="Videosamtal" className="flex h-10 w-10 items-center justify-center rounded-full active:bg-black/5">
@@ -121,7 +120,7 @@ function Received({ text }: { text: string }) {
 function Sent({ text }: { text: string }) {
   if (!text) return null;
   return (
-    <div className="max-w-[78%] self-end rounded-[18px] rounded-br-[6px] bg-[#0b57d0] px-3.5 py-2 text-[15px] leading-snug text-white">
+    <div className="max-w-[78%] self-end rounded-[18px] rounded-br-[6px] bg-[#d3e3fd] px-3.5 py-2 text-[15px] leading-snug text-[#001d35]">
       {text}
     </div>
   );
