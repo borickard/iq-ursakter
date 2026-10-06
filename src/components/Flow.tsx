@@ -568,7 +568,16 @@ function Compose({
   // avsändare den passar; tom lista = passar alla).
   const pool = useMemo(() => {
     if (!excuses || !senderChosen) return [];
-    return excuses.filter((e) => excuseFitsSender(e.senders, sender));
+    // Filtrera på avsändare och ta bort dubbletter (samma text) så att en
+    // ursäkt aldrig kan dyka upp som "samma" två gånger pga dubbla rader i DB.
+    const seen = new Set<string>();
+    return excuses.filter((e) => {
+      if (!excuseFitsSender(e.senders, sender)) return false;
+      const key = e.text.trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [excuses, sender, senderChosen]);
 
   const poolCount = pool.length;
@@ -584,18 +593,21 @@ function Compose({
     });
   }, [sender, poolCount]);
 
-  // Slumpa fram en ny ursäkt (aldrig samma som den nuvarande). Historiken låter
+  // Slumpa fram en ny ursäkt. Undviker de senast visade (hela poolen minus en)
+  // så att en ursäkt aldrig dyker upp igen förrän alla andra visats – vilket
+  // garanterat aldrig ger samma ursäkt två gånger på raken. Historiken låter
   // "Föregående" kliva tillbaka – och den visas först när man slumpat en gång.
   const shuffle = useCallback(() => {
     setBrowse(({ hist, cur }) => {
       if (poolCount === 0) return { hist, cur };
-      const curIdx = hist[cur] ?? 0;
-      let n = curIdx;
-      if (poolCount > 1) {
-        while (n === curIdx) n = Math.floor(Math.random() * poolCount);
-      } else {
-        n = 0;
-      }
+      if (poolCount === 1) return { hist: [...hist.slice(0, cur + 1), 0], cur: cur + 1 };
+      // Undvik de senast visade (inkl. den nuvarande) – som mest poolCount-1 st,
+      // så det alltid finns minst en kandidat kvar att slumpa bland.
+      const avoid = Math.min(poolCount - 1, cur + 1);
+      const recent = new Set(hist.slice(cur + 1 - avoid, cur + 1));
+      const candidates: number[] = [];
+      for (let i = 0; i < poolCount; i++) if (!recent.has(i)) candidates.push(i);
+      const n = candidates[Math.floor(Math.random() * candidates.length)];
       return { hist: [...hist.slice(0, cur + 1), n], cur: cur + 1 };
     });
   }, [poolCount]);
