@@ -50,7 +50,6 @@ export default function InterfacePage() {
         <div className="mx-auto h-full max-w-md">
           <MessagePreview
             platform={platform}
-            onPlatformChange={setPlatform}
             contactName={name}
             message={message}
             dateLabel={dateLabel}

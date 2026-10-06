@@ -850,7 +850,6 @@ function Compose({
             <div className="mx-auto h-full max-w-md">
               <MessagePreview
                 platform={platform}
-                onPlatformChange={setPlatform}
                 contactName={contactName}
                 message={current.text}
                 leadIn={fakeLeadIn}
