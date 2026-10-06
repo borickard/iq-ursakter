@@ -174,7 +174,11 @@ export const COPY = {
       { min: 60, label: "+1 tim" },
     ],
     scheduledPrefix: "SMS:et skickas kl",
-    showAsMessage: "Visa som meddelande",
+    showAsMessage: "Förhandsvisa som sms",
+    showAsMessageHelp:
+      "Öppnar en skärm som ser ut som en riktig sms-konversation. Inget skickas – bra för att testa utseendet eller visa någon bredvid dig.",
+    previewIos: "iPhone",
+    previewAndroid: "Android",
     close: "Stäng",
     fromLabel: "SMS:et kommer från det här numret:",
     fromHelp:

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { IosMessages } from "@/components/IosMessages";
+import { MessagePreview } from "@/components/MessagePreview";
+import { detectPlatform, type Platform } from "@/lib/device";
 import { Button } from "@/components/ui";
 
 type InstallPromptEvent = Event & {
@@ -21,6 +22,8 @@ export default function InterfacePage() {
   );
   const [dateLabel, setDateLabel] = useState("Idag 17:36");
   const [open, setOpen] = useState(false);
+  const [platform, setPlatform] = useState<Platform>("ios");
+  useEffect(() => setPlatform(detectPlatform()), []);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
 
   // Android/Chrome: fånga install-prompten så vi kan erbjuda en knapp.
@@ -45,7 +48,13 @@ export default function InterfacePage() {
       {/* Helskärms-mockup */}
       <div className="fixed inset-0 z-30 bg-white">
         <div className="mx-auto h-full max-w-md">
-          <IosMessages contactName={name} message={message} dateLabel={dateLabel} />
+          <MessagePreview
+            platform={platform}
+            onPlatformChange={setPlatform}
+            contactName={name}
+            message={message}
+            dateLabel={dateLabel}
+          />
         </div>
       </div>
 

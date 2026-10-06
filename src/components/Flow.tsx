@@ -6,7 +6,8 @@ import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
 import { excuseFitsSender } from "@/lib/senders";
 import { Button, Chip } from "@/components/ui";
-import { IosMessages } from "@/components/IosMessages";
+import { MessagePreview } from "@/components/MessagePreview";
+import { detectPlatform, type Platform } from "@/lib/device";
 import { Wordmark } from "@/components/Wordmark";
 
 type Step = "landing" | "compose" | "result" | "suggest";
@@ -561,6 +562,10 @@ function Compose({
   const [formError, setFormError] = useState<string | null>(null);
   const [showFake, setShowFake] = useState(false);
   const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
+  // Vilken telefon-look den fejkade skärmen visar. Gissas från enheten men kan
+  // bytas manuellt i förhandsvisningen (växel) så båda går att testa.
+  const [platform, setPlatform] = useState<Platform>("ios");
+  useEffect(() => setPlatform(detectPlatform()), []);
 
   const senderChosen = sender.trim() !== "";
 
@@ -801,16 +806,22 @@ function Compose({
               {sending ? COPY.browse.sending : COPY.browse.send}
             </Button>
 
-            <Button
-              block
-              variant="secondary"
-              onClick={showMessage}
-              disabled={!current}
-              className="anim-up"
+            <div
+              className="anim-up space-y-1.5"
               style={{ animationDelay: "460ms" }}
             >
-              {COPY.compose.showAsMessage}
-            </Button>
+              <Button
+                block
+                variant="secondary"
+                onClick={showMessage}
+                disabled={!current}
+              >
+                {COPY.compose.showAsMessage}
+              </Button>
+              <p className="text-center text-xs leading-snug text-muted lg:text-left">
+                {COPY.compose.showAsMessageHelp}
+              </p>
+            </div>
           </>
         )}
       </div>
@@ -837,7 +848,9 @@ function Compose({
              sidfoten), så meddelandevyn ser ut som en äkta Meddelanden-app. */
           <div className="fixed inset-0 z-[100] bg-white">
             <div className="mx-auto h-full max-w-md">
-              <IosMessages
+              <MessagePreview
+                platform={platform}
+                onPlatformChange={setPlatform}
                 contactName={contactName}
                 message={current.text}
                 leadIn={fakeLeadIn}
