@@ -74,8 +74,11 @@ src/app/page.tsx          # renders <Flow/>
 src/app/layout.tsx        # html shell, themeColor, metadata
 src/app/globals.css       # THEME (CSS variables) + body gradient
 src/app/admin/page.tsx    # admin UI: manage all excuses + moderate suggestions
-src/app/interface/page.tsx # /interface – iOS SMS mockup test page (Android TBD)
+src/app/interface/page.tsx # /interface – SMS mockup test page (iOS + Android, with switch)
 src/components/IosMessages.tsx # reusable iOS Messages mockup (bubbles styled in globals.css)
+src/components/AndroidMessages.tsx # reusable Android (Google Messages) mockup
+src/components/MessagePreview.tsx # picks iOS/Android look + a manual switch
+src/lib/device.ts          # platform detection (detectPlatform) + hide-fake-statusbar hook
 src/components/LeadInManager.tsx # admin UI for lead-in conversations (CRUD)
 src/lib/leadins.ts         # SEED_LEADINS source list
 src/app/api/excuses/route.ts   # GET approved excuses, most-sent first + sentCount
@@ -212,8 +215,13 @@ shadow, press-down on `:active`. `layout.tsx` themeColor `#f2efe6`.
 - **Excuse screen** (`Compose`): `ExcuseBubble` (brutalist speech bubble, chosen
   sender under the tail) + **"Föregående" / "Nästa ursäkt"** + usage count +
   phone input + send + "Visa som meddelande". The lock-screen idea was dropped
-  for this bubble style. "Visa som meddelande" still opens the fullscreen
-  `IosMessages` conversation (kept deliberately realistic, not brutal).
+  for this bubble style. **"Förhandsvisa som sms"** (renamed from "Visa som
+  meddelande" + a help line clarifying it opens a FAKE sms-conversation screen
+  and sends nothing) opens the fullscreen `MessagePreview` conversation (kept
+  deliberately realistic, not brutal). `MessagePreview` shows an **iOS** or
+  **Android (Google Messages)** look — auto-detected from the device
+  (`detectPlatform` in `src/lib/device.ts`), with a manual iPhone/Android toggle
+  so both can be tested on any device.
 - Flow never depends on number verification (OTP still deferred).
 - *Earlier looks (pink neumorphic; flat green "Dagsljus") fully removed.*
 
