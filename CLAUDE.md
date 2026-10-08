@@ -104,12 +104,14 @@ src/lib/clsx.ts            # tiny className helper
   (`approved`|`pending`|`rejected`|`disabled`), `sentCount`, `createdAt`.
   Index on `[status, source]`. Only `approved` is public; `disabled` = an
   admin-hidden excuse (toggled off, not deleted).
-- **LeadIn**: `id`, `them1`, `me`, `them2`, `createdAt`. A short prior
-  conversation shown BEFORE the excuse in the iOS mockup (them→you→them); one is
-  picked at random per "Visa som meddelande". `/api/excuses` returns them
-  alongside excuses, resiliently (try/catch → `[]` if the table doesn't exist
-  yet, so prod never breaks before the SQL is run; client falls back to a
-  built-in default conversation).
+- **LeadIn**: `id`, `them1`, `me`, `them2`, `senders`, `createdAt`. A short prior
+  conversation shown BEFORE the excuse in the mockup (them→you→them); one is
+  picked at random per "Förhandsvisa som sms" — but only among those whose
+  `senders` fit the chosen sender (same comma-separated model + `excuseFitsSender`
+  as Excuse; empty = fits all). Admin maps each conversation to senders (chip row
+  in `LeadInManager`). `/api/excuses` returns them alongside excuses, resiliently
+  (two-step try/catch → without `senders`, then `[]` if the table doesn't exist
+  yet; client falls back to a built-in default conversation).
 - **RateBucket**: `key` (`ip:<ip>` | `num:<hash>` | `suggest:<ip>` |
   `global:<YYYY-MM-DD>`), `count`, `resetAt`.
 - **The recipient phone number is NEVER stored.** It is received, validated to
@@ -309,9 +311,12 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
   (PascalCase `"Excuse"`, camelCase columns) because that's what Prisma queries.
   `createdAt` has a DB default; `id` is provided by the app (cuid) for runtime
   inserts, so the manual tables work fine with Prisma at runtime.
-- **PENDING — `LeadIn` table** (lead-in conversations for the iOS mockup). The
-  app is resilient if it's missing (falls back to a built-in default), but run
-  this in Supabase to enable the randomised conversations:
+- **PENDING — `LeadIn` table + `senders` column** (lead-in conversations for the
+  mockup, now mappable to senders). The app is resilient if the table/column is
+  missing (falls back to a built-in default / "fits all"), but run this in
+  Supabase to enable the randomised, sender-matched conversations. Creates the
+  table if missing, adds `senders`, and loads the themed seed set (matches
+  `src/lib/leadins.ts`):
   ```sql
   CREATE TABLE IF NOT EXISTS "LeadIn" (
     "id" TEXT PRIMARY KEY,
@@ -320,13 +325,24 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
     "them2" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
-  INSERT INTO "LeadIn" ("id","them1","me","them2") VALUES
-  ('leadin-01','Kan du ringa mig när du har tid?','Om en stund','Ok, vi hörs sen'),
-  ('leadin-02','Är du fortfarande ute?','Ja, ett tag till','Ok!'),
-  ('leadin-03','Vet du var laddaren tog vägen?','På bordet tror jag','Hittade den'),
-  ('leadin-04','Kommer du nästa vecka?','Ja absolut','Vad bra')
+  ALTER TABLE "LeadIn" ADD COLUMN IF NOT EXISTS "senders" TEXT NOT NULL DEFAULT '';
+  -- replace any old generic seed rows with the themed, sender-mapped set
+  DELETE FROM "LeadIn" WHERE "id" IN ('leadin-01','leadin-02','leadin-03','leadin-04');
+  INSERT INTO "LeadIn" ("id","them1","me","them2","senders") VALUES
+  ('leadin-11','Är du fortfarande ute?','Ja, ett tag till','Ok, hörs sen!',''),
+  ('leadin-12','Hur är det med dig?','Bra, lite trött bara','Hör av dig om du behöver något ❤️','Mamma,Pappa'),
+  ('leadin-13','Glöm inte att höra av dig sen','Jag lovar','Bra, pussar','Mamma,Pappa'),
+  ('leadin-14','Saknar dig 🥺','Snart hemma','❤️❤️','Baby'),
+  ('leadin-15','Blir det sent ikväll?','Tror inte det','Okej, vi ses sen ❤️','Baby'),
+  ('leadin-16','Vart tog du vägen? 😂','Är kvar här nånstans','Haha okej','Bestie,Brorsan,Syrran'),
+  ('leadin-17','Hur blev det ikväll då?','Berättar sen','Haha okej, hörs!','Bestie,Brorsan,Syrran'),
+  ('leadin-18','Hinner du kolla mejlen?','Strax','Det brådskar lite tyvärr','Chefen'),
+  ('leadin-19','Är du kvar på kontoret?','Nej, på väg hem','Okej, hör av mig snart','Chefen')
   ON CONFLICT ("id") DO NOTHING;
   ```
+  (If the table already has the `senders` column, the whole block is still safe
+  to re-run.) After this, admin can map any conversation to senders via the chip
+  row under each one.
 - **PENDING — `category` column + sender filtering.** The compose flow is now
   **sender-first**: the user picks the sender, then only excuses that fit that
   sender are shown. Each excuse has a `category` (`home` = Mamma/Pappa/Älskling,

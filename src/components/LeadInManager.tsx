@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { COPY } from "@/lib/copy";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, Chip } from "@/components/ui";
+import { SENDER_PRESETS, parseSenders } from "@/lib/senders";
 
-type LeadIn = { id: string; them1: string; me: string; them2: string };
-type Draft = { them1: string; me: string; them2: string };
+type LeadIn = { id: string; them1: string; me: string; them2: string; senders: string };
+type Draft = { them1: string; me: string; them2: string; senders: string[] };
 
-const EMPTY: Draft = { them1: "", me: "", them2: "" };
+const EMPTY: Draft = { them1: "", me: "", them2: "", senders: [] };
 const valid = (d: Draft) =>
   d.them1.trim() !== "" && d.me.trim() !== "" && d.them2.trim() !== "";
 
@@ -65,7 +66,16 @@ export function LeadInManager() {
         body: JSON.stringify({ id, ...draft }),
       });
       if (res.ok) {
-        setItems((c) => (c ? c.map((x) => (x.id === id ? { id, ...draft } : x)) : c));
+        const senders = draft.senders.join(",");
+        setItems((c) =>
+          c
+            ? c.map((x) =>
+                x.id === id
+                  ? { id, them1: draft.them1, me: draft.me, them2: draft.them2, senders }
+                  : x,
+              )
+            : c,
+        );
         setEditingId(null);
       }
     } finally {
@@ -154,28 +164,40 @@ export function LeadInManager() {
                   {it.them2}
                 </p>
               </div>
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  aria-label={COPY.admin.edit}
-                  disabled={busy === it.id}
-                  onClick={() => {
-                    setEditingId(it.id);
-                    setDraft({ them1: it.them1, me: it.me, them2: it.them2 });
-                  }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-soft transition hover:text-brand active:scale-95 disabled:opacity-50"
-                >
-                  ✎
-                </button>
-                <button
-                  type="button"
-                  aria-label={COPY.admin.delete}
-                  disabled={busy === it.id}
-                  onClick={() => remove(it.id)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-soft transition hover:text-danger active:scale-95 disabled:opacity-50"
-                >
-                  ✕
-                </button>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-muted">
+                  {parseSenders(it.senders).length === 0
+                    ? `${c.fitsLabel}: ${COPY.admin.sendersAll}`
+                    : `${c.fitsLabel}: ${parseSenders(it.senders).join(", ")}`}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={COPY.admin.edit}
+                    disabled={busy === it.id}
+                    onClick={() => {
+                      setEditingId(it.id);
+                      setDraft({
+                        them1: it.them1,
+                        me: it.me,
+                        them2: it.them2,
+                        senders: parseSenders(it.senders),
+                      });
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-soft transition hover:text-brand active:scale-95 disabled:opacity-50"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={COPY.admin.delete}
+                    disabled={busy === it.id}
+                    onClick={() => remove(it.id)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-soft transition hover:text-danger active:scale-95 disabled:opacity-50"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             </>
           )}
@@ -194,6 +216,12 @@ function Fields({
 }) {
   const cls =
     "w-full rounded-full border border-border bg-surface px-4 py-2.5 shadow-inset outline-none ring-brand/30 transition focus:ring-2";
+  function toggleSender(name: string) {
+    const next = draft.senders.includes(name)
+      ? draft.senders.filter((x) => x !== name)
+      : [...draft.senders, name];
+    onChange({ ...draft, senders: next });
+  }
   return (
     <div className="space-y-2">
       <input
@@ -217,6 +245,22 @@ function Fields({
         onChange={(e) => onChange({ ...draft, them2: e.target.value })}
         className={cls}
       />
+      {/* Vilka avsändare konversationen passar. Inga = passar alla. */}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <span className="text-xs text-muted">{COPY.admin.sendersLabel}:</span>
+        {SENDER_PRESETS.map((name) => (
+          <Chip
+            key={name}
+            active={draft.senders.includes(name)}
+            onClick={() => toggleSender(name)}
+          >
+            {name}
+          </Chip>
+        ))}
+        {draft.senders.length === 0 && (
+          <span className="text-xs text-muted">({COPY.admin.sendersAll})</span>
+        )}
+      </div>
     </div>
   );
 }

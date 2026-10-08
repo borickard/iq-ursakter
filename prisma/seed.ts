@@ -39,9 +39,21 @@ async function main() {
 
   // Inledande konversationer för meddelande-mockupen (idempotent på them1).
   for (const lead of SEED_LEADINS) {
+    const sendersStr = lead.senders.join(",");
     const existing = await prisma.leadIn.findFirst({ where: { them1: lead.them1 } });
-    if (existing) continue;
-    await prisma.leadIn.create({ data: lead });
+    if (existing) {
+      // Håll avsändar-listan uppdaterad även för redan seedade konversationer.
+      if (existing.senders !== sendersStr) {
+        await prisma.leadIn.update({
+          where: { id: existing.id },
+          data: { senders: sendersStr },
+        });
+      }
+      continue;
+    }
+    await prisma.leadIn.create({
+      data: { them1: lead.them1, me: lead.me, them2: lead.them2, senders: sendersStr },
+    });
   }
   const leadCount = await prisma.leadIn.count();
   console.log(`Klart. ${leadCount} inledande konversationer i databasen.`);

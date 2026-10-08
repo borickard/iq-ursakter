@@ -142,11 +142,12 @@ export const COPY = {
     sourceSeed: "Standard",
     leadins: {
       title: "Inledande konversationer",
-      help: "Visas före ursäkten i meddelandevyn. En slumpas fram varje gång.",
+      help: "Visas före ursäkten i meddelandevyn. En slumpas fram varje gång – men bara bland de som passar den valda avsändaren.",
       them: "De skriver …",
       me: "Du svarar …",
       add: "Lägg till konversation",
       empty: "Inga konversationer än.",
+      fitsLabel: "Passar",
     },
   },
 

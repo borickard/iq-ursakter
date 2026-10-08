@@ -42,13 +42,21 @@ export async function GET() {
   // Inledande konversationer för meddelande-mockupen. Resilient: om tabellen
   // inte finns ännu (innan SQL:en körts) returneras en tom lista istället för
   // att fela – klienten faller då tillbaka på en inbyggd standardkonversation.
-  let leadIns: { them1: string; me: string; them2: string }[] = [];
+  let leadIns: { them1: string; me: string; them2: string; senders: string }[] = [];
   try {
     leadIns = await prisma.leadIn.findMany({
-      select: { them1: true, me: true, them2: true },
+      select: { them1: true, me: true, them2: true, senders: true },
     });
   } catch {
-    leadIns = [];
+    // "senders"-kolumnen saknas ännu → hämta utan den (defaulta "" = passar alla).
+    try {
+      const rows = await prisma.leadIn.findMany({
+        select: { them1: true, me: true, them2: true },
+      });
+      leadIns = rows.map((r) => ({ ...r, senders: "" }));
+    } catch {
+      leadIns = [];
+    }
   }
 
   return NextResponse.json({ excuses, leadIns });

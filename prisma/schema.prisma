@@ -48,6 +48,11 @@ model LeadIn {
   them1     String
   me        String
   them2     String
+  // Kommaseparerad lista med avsändarnamn konversationen passar ihop med, t.ex.
+  // "Mamma,Pappa". Tom sträng = passar alla avsändare. Redigeras i admin, så en
+  // jobb-konversation bara dyker upp för "Chefen" osv. (matchar `senders` på
+  // Excuse och `excuseFitsSender` i src/lib/senders.ts).
+  senders   String   @default("")
   createdAt DateTime @default(now())
 }
 

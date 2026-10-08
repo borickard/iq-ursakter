@@ -17,7 +17,7 @@ type Excuse = {
   sentCount: number;
   senders: string;
 };
-type LeadIn = { them1: string; me: string; them2: string };
+type LeadIn = { them1: string; me: string; them2: string; senders: string };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
 
@@ -666,9 +666,13 @@ function Compose({
     }
     if (!current) return;
     setFormError(null);
+    // Visa bara inledande konversationer som passar den valda avsändaren; faller
+    // tillbaka på alla om ingen matchar, och på inbyggd standard om listan är tom.
+    const fitting = leadIns.filter((l) => excuseFitsSender(l.senders, sender));
+    const pickFrom = fitting.length > 0 ? fitting : leadIns;
     setFakeLeadIn(
-      leadIns.length > 0
-        ? leadIns[Math.floor(Math.random() * leadIns.length)]
+      pickFrom.length > 0
+        ? pickFrom[Math.floor(Math.random() * pickFrom.length)]
         : undefined,
     );
     setShowFake(true);
