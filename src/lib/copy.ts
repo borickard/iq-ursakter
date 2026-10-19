@@ -21,7 +21,7 @@ export const COPY = {
     headline2b: ", levererad via sms.",
     subtitle:
       "En trovärdig ursäkt, redo när du behöver den. För du bestämmer själv när kvällen ska ta slut.",
-    cta: "Skicka mig ett sms",
+    cta: "Skicka mig en ursäkt",
     // Karusell på landningen – roterar och visar produkten direkt. Ordnad så att
     // samma avsändare aldrig visas två gånger i rad (även vid loop).
     carousel: [

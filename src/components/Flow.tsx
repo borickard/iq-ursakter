@@ -178,12 +178,14 @@ function Landing({ onStart }: { onStart: () => void }) {
       <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
-        {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
+        {/* Mobil-hjälte: telefonens övre del (klocka + inkommande notis) syns,
+            centrerad och klippt så bara ~översta tredjedelen visas. Resten av
+            telefonen "fortsätter" nedanför klippet. (Desktop visar hela till höger.) */}
         <div
-          className="intro-rise mt-9 lg:hidden"
-          style={{ animationDelay: "380ms" }}
+          className="intro-rise mt-7 flex items-start justify-center overflow-hidden lg:hidden"
+          style={{ animationDelay: "380ms", maxHeight: "clamp(260px, 44vh, 340px)" }}
         >
-          <HeroCarousel />
+          <LandingPhone shown={notifShown} />
         </div>
 
         <div className="mt-9 space-y-4 lg:mt-10">
@@ -248,110 +250,6 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
     >
       {COPY.landing.headlineLink}
     </span>
-  );
-}
-
-/* ── Landningens roterande pratbubbla ───────────────────────────────────── */
-
-function HeroCarousel() {
-  const items = COPY.landing.carousel;
-  const exRef = useRef<HTMLParagraphElement>(null);
-  const typingRef = useRef<HTMLDivElement>(null);
-  const metaRef = useRef<HTMLParagraphElement>(null);
-  const idx = useRef(0);
-
-  useEffect(() => {
-    const exP = exRef.current;
-    const typing = typingRef.current;
-    const meta = metaRef.current;
-    if (!exP) return;
-    const reduce =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const EASE = "cubic-bezier(.455,.03,.515,.955)";
-    let t1 = 0;
-    let t2 = 0;
-    const id = window.setInterval(() => {
-      idx.current = (idx.current + 1) % items.length;
-      const it = items[idx.current];
-      if (reduce) {
-        exP.textContent = it.text;
-        if (meta) meta.textContent = it.sender + " · nyss";
-        return;
-      }
-      // Tona ut texten → visa skrivindikator en stund → "skriv in" nästa ursäkt.
-      // Ett enda textlager, vertikalt centrerat, så varje byte ser likadant ut.
-      exP.style.transition = "opacity .2s ease";
-      exP.style.opacity = "0";
-      if (meta) meta.style.opacity = "0";
-      t1 = window.setTimeout(() => {
-        if (typing) typing.style.display = "flex";
-      }, 200);
-      t2 = window.setTimeout(() => {
-        if (typing) typing.style.display = "none";
-        exP.textContent = it.text;
-        exP.style.transition = "none";
-        exP.style.opacity = "0";
-        exP.style.transform = "translateY(6px)";
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            exP.style.transition =
-              "opacity .3s " + EASE + ", transform .3s " + EASE;
-            exP.style.opacity = "1";
-            exP.style.transform = "translateY(0)";
-          }),
-        );
-        if (meta) {
-          meta.textContent = it.sender + " · nyss";
-          meta.style.opacity = "1";
-        }
-      }, 1150);
-    }, 3000);
-    return () => {
-      window.clearInterval(id);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
-  }, [items]);
-
-  return (
-    <div className="flex flex-col gap-3.5">
-      {/* Fast storlek: bredd satt så texten radbryts över ~tre rader, och fast
-          trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
-      <div className="relative w-[272px] max-w-full self-start">
-        {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
-        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
-          <p ref={exRef} className="m-0 w-full text-[17px] font-medium leading-snug">
-            {items[0].text}
-          </p>
-          {/* Skrivindikator – centrerad i bubblan, visas mellan ursäkterna. */}
-          <div
-            ref={typingRef}
-            aria-hidden
-            className="absolute inset-0 hidden items-center justify-center"
-          >
-            <span className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0s_ease-in-out_infinite]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0.16s_ease-in-out_infinite]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0.32s_ease-in-out_infinite]" />
-            </span>
-          </div>
-        </div>
-        {/* Svansen överlappar bubblans underkant → vit fyllning döljer bubblans
-            nederkantslinje så spetsen sitter ihop med bubblan. */}
-        <span
-          aria-hidden
-          className="absolute left-[26px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
-          style={{ bottom: "-6px", transform: "rotate(45deg)" }}
-        />
-      </div>
-      <p
-        ref={metaRef}
-        className="pl-[26px] font-mono text-[11px] text-muted transition-opacity duration-300"
-      >
-        {items[0].sender} · nyss
-      </p>
-    </div>
   );
 }
 
