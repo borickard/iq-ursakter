@@ -7,8 +7,8 @@
  */
 export const COPY = {
   brand: {
-    // Sätt till t.ex. "IQ" när beslut om synlighet är taget. Tom sträng = neutral.
-    name: "Livlinan",
+    // Tjänstens namn. (Bytt från "Livlinan" → "Ursäkten", domän ursakt.se.)
+    name: "Ursäkten",
     // Liten byline i sidfoten. Töm för att helt tona ner avsändaren.
     byline: "En utväg, ett sms bort.",
   },
@@ -17,7 +17,7 @@ export const COPY = {
     // Rubrik i två delar; "livlina" är en klickbar lime-chip (går till flödet).
     headline1: "Slipp förklara dig.",
     headline2a: "En ",
-    headlineLink: "livlina",
+    headlineLink: "ursäkt",
     headline2b: " levererad",
     headline3: "via sms.",
     subtitle:
@@ -209,6 +209,14 @@ export const COPY = {
   privacy: {
     short:
       "Ditt nummer skickas till vår SMS-leverantör (ett anlitat personuppgiftsbiträde) enbart för att skicka meddelandet. Vi sparar det aldrig.",
+  },
+
+  // Avsändarraden i sidfoten (ett ställe, tydligt men litet – som Fatta Fyllan).
+  footer: {
+    iqLine: "Ursäkten är en del av IQ.",
+    iqAbout: "IQ finns för att unga ska göra medvetna val kring alkohol.",
+    iqLink: "Läs mer på iq.se",
+    iqHref: "https://iq.se",
   },
 } as const;
 

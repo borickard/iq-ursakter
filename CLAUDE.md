@@ -7,9 +7,22 @@ pending, the key decisions, design direction, and how the user wants to work.
 
 ## 1. What this is
 
-**Livlinan** (renamed from *Ursäkten* this session; livlinan.se is free — "livlina"
-= lifeline, and "lina" also reads as a phone line/number) — a Proof of Concept
-for **IQ** (owned by Systembolaget). A
+**Ursäkten** (name settled back to *Ursäkten*, domän **ursakt.se**; was briefly
+"Livlinan" — the lifeline/extra-life pun was dropped as not descriptive enough) —
+a Proof of Concept for **IQ** (owned by Systembolaget). A
+
+> **IN PROGRESS — IQ-identity redesign on branch `claude/iq-design-preview`
+> (NOT on `main`).** Reworks the look to IQ's visual identity (DESIGN.md +
+> tokens.css): IQ-gul `#EFFE53`, white bg, black, marin `#242F55` phone screen;
+> Copernicus (headings) + PP Neue Montreal (body), self-hosted in
+> `public/fonts/`; square corners, 1px borders, no shadows, hover-invert buttons;
+> most intro/scroll animations removed (only notifications + typing kept). Name
+> changed to **Ursäkten**, wordmark is now a single-line Syne "URSÄKTEN" **without
+> the heart**. IQ shown once in the footer ("Ursäkten är en del av IQ" + logo +
+> link). **PENDING:** the footer `IqLogo` is a PLACEHOLDER — get the official IQ
+> logo SVG before any public use (`src/components/IqLogo.tsx`). The favicon/app
+> icon is a provisional gul "U" tile. Await Rickard's review before merging to
+> `main`.
 mobile-first web app: the user generates a believable excuse and has it sent as
 an **SMS to their own phone**, so it shows up looking like it came from a saved
 contact (e.g. "Mamma", "Älskling", "Chefen"). A friction-free social "exit

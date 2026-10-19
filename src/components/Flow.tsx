@@ -9,6 +9,7 @@ import { Button, Chip } from "@/components/ui";
 import { MessagePreview } from "@/components/MessagePreview";
 import { detectPlatform, type Platform } from "@/lib/device";
 import { Wordmark } from "@/components/Wordmark";
+import { IqLogo } from "@/components/IqLogo";
 
 type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = {
@@ -84,7 +85,7 @@ export default function Flow() {
 
       {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
-      {step !== "landing" && <Footer />}
+      <Footer />
     </main>
   );
 }
@@ -94,13 +95,21 @@ export default function Flow() {
 function Landing({ onStart }: { onStart: () => void }) {
   // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
   // CTA-skenet triggas först NÄR alla tre notiser kommit in.
+  // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
   const [notifShown, setNotifShown] = useState(0);
-  const [shineKey, setShineKey] = useState(0);
   useEffect(() => {
+    // prefers-reduced-motion: visa alla direkt, ingen loop (IQ-krav).
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setNotifShown(3);
+      return;
+    }
     let cancelled = false;
     const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
     (async () => {
-      await sleep(1100); // vänta in intron (telefonen glider in först)
+      await sleep(400);
       while (!cancelled) {
         setNotifShown(0);
         await sleep(60);
@@ -112,7 +121,6 @@ function Landing({ onStart }: { onStart: () => void }) {
         await sleep(600);
         if (cancelled) return;
         setNotifShown(3);
-        setShineKey((k) => k + 1); // skenet efter att alla tre är inne
         await sleep(3000); // håll alla tre i 3 s
         if (cancelled) return;
         setNotifShown(0); // tona ut alla samtidigt
@@ -128,34 +136,24 @@ function Landing({ onStart }: { onStart: () => void }) {
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
-        <Wordmark className="intro-pop text-[26px] lg:text-[32px]" />
+        <Wordmark className="text-[26px] lg:text-[32px]" />
 
         {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
-        <div
-          className="intro-rise mt-9 lg:hidden"
-          style={{ animationDelay: "400ms" }}
-        >
+        <div className="mt-9 lg:hidden">
           <HeroCarousel />
         </div>
 
-        <div className="mt-9 space-y-3.5 lg:mt-10">
-          <h1 className="font-display text-[clamp(24px,7.2vw,28px)] font-black leading-[1.1] tracking-tight lg:text-[40px]">
-            <span className="intro-rise block" style={{ animationDelay: "200ms" }}>
-              {COPY.landing.headline1}
-            </span>
-            <span className="intro-rise block" style={{ animationDelay: "340ms" }}>
+        <div className="mt-9 space-y-4 lg:mt-10">
+          <h1 className="font-display text-[clamp(28px,8vw,36px)] font-normal leading-[1.15] lg:text-[48px]">
+            <span className="block">{COPY.landing.headline1}</span>
+            <span className="block">
               {COPY.landing.headline2a}
               <LivlinaChip onStart={onStart} />
               {COPY.landing.headline2b}
             </span>
-            <span className="intro-rise block" style={{ animationDelay: "480ms" }}>
-              {COPY.landing.headline3}
-            </span>
+            <span className="block">{COPY.landing.headline3}</span>
           </h1>
-          <p
-            className="intro-rise max-w-sm text-sm font-medium leading-relaxed text-[#34312b] lg:text-base"
-            style={{ animationDelay: "620ms" }}
-          >
+          <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-lg">
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -163,21 +161,14 @@ function Landing({ onStart }: { onStart: () => void }) {
         <Button
           block
           onClick={onStart}
-          className="intro-pop relative mt-auto !rounded-full py-6 text-xl lg:mt-9 lg:w-auto lg:self-start lg:px-10"
-          style={{ animationDelay: "820ms" }}
+          className="mt-auto py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
         >
           {COPY.landing.cta}
-          {shineKey > 0 && (
-            <span key={shineKey} aria-hidden className="cta-shine" />
-          )}
         </Button>
       </div>
 
       {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". */}
-      <div
-        className="intro-pop hidden lg:flex lg:justify-center"
-        style={{ animationDelay: "400ms" }}
-      >
+      <div className="hidden lg:flex lg:justify-center">
         <LandingPhone shown={notifShown} />
       </div>
     </div>
@@ -198,8 +189,7 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
           onStart();
         }
       }}
-      className="livlina-mark livlina-swipe cursor-pointer"
-      style={{ animationDelay: "820ms" }}
+      className="livlina-mark cursor-pointer"
     >
       {COPY.landing.headlineLink}
     </span>
@@ -274,19 +264,8 @@ function HeroCarousel() {
       {/* Fast storlek: bredd satt så texten radbryts över ~tre rader, och fast
           trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
       <div className="relative w-[272px] max-w-full self-start">
-        {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
-          style={{ transform: "translate(5px, 5px)" }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-[26px] h-4 w-4 bg-border"
-          style={{ bottom: "-6px", transform: "translate(5px, 5px) rotate(45deg)" }}
-        />
         {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
-        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 pb-5 pt-3">
+        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3">
           <p ref={exRef} className="m-0 w-full text-[17px] font-medium leading-snug">
             {items[0].text}
           </p>
@@ -307,7 +286,7 @@ function HeroCarousel() {
             nederkantslinje så spetsen sitter ihop med bubblan. */}
         <span
           aria-hidden
-          className="absolute left-[26px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+          className="absolute left-[26px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
           style={{ bottom: "-6px", transform: "rotate(45deg)" }}
         />
       </div>
@@ -336,19 +315,8 @@ function ExcuseBubble({
   const body = loading ? "…" : empty || !text ? COPY.compose.empty : text;
   return (
     <div className="relative w-full self-start">
-      {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
-        style={{ transform: "translate(5px, 5px)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
-        style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
-      />
       {/* Fast höjd → sidan hoppar inte beroende på ursäktens längd. */}
-      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4">
+      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4">
         <p
           className={
             "m-0 line-clamp-3 text-[15px] leading-snug " +
@@ -360,7 +328,7 @@ function ExcuseBubble({
       </div>
       <span
         aria-hidden
-        className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+        className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
         style={{ bottom: "-9px", transform: "rotate(45deg)" }}
       />
     </div>
@@ -422,10 +390,10 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
       })
     : "";
   return (
-    <div className="w-[300px] rounded-[46px] border-2 border-border bg-[#0b0c0f] p-[11px] shadow-[10px_14px_0_#0b0b0b]">
+    <div className="w-[300px] rounded-[46px] border border-border bg-black p-[11px]">
       <div
         className="relative flex aspect-[9/19.3] flex-col items-center overflow-hidden rounded-[36px] text-white"
-        style={{ background: "linear-gradient(170deg,#3a4a63,#20262f 55%,#14181f)" }}
+        style={{ background: "var(--iq-marin)" }}
       >
         <div className="absolute left-1/2 top-[10px] z-10 h-[21px] w-[84px] -translate-x-1/2 rounded-full bg-black" />
         <div className="flex w-full justify-between px-[22px] pt-3 text-xs font-semibold">
@@ -500,10 +468,10 @@ function PhonePreview({
     : "";
 
   return (
-    <div className="w-[300px] rounded-[46px] border-2 border-border bg-[#0b0c0f] p-[11px] shadow-[10px_14px_0_#0b0b0b]">
+    <div className="w-[300px] rounded-[46px] border border-border bg-black p-[11px]">
       <div
         className="relative flex aspect-[9/19.3] flex-col items-center overflow-hidden rounded-[36px] text-white"
-        style={{ background: "linear-gradient(170deg,#3a4a63,#20262f 55%,#14181f)" }}
+        style={{ background: "var(--iq-marin)" }}
       >
         <div className="absolute left-1/2 top-[10px] z-10 h-[21px] w-[84px] -translate-x-1/2 rounded-full bg-black" />
         <div className="flex w-full justify-between px-[22px] pt-3 text-xs font-semibold">
@@ -697,7 +665,7 @@ function Compose({
         {senderChosen && (
           <>
             {/* Mobil: pratbubbla som förhandsvisning. */}
-            <div className="anim-up flex flex-col gap-3.5 lg:hidden">
+            <div className="flex flex-col gap-3.5 lg:hidden">
               <ExcuseBubble
                 text={current?.text}
                 loading={excuses === null}
@@ -710,7 +678,7 @@ function Compose({
             </div>
 
             {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
-            <p className="anim-up hidden text-sm font-semibold lg:block">
+            <p className="hidden text-sm font-medium lg:block">
               {COPY.compose.excuseLabel}{" "}
               <span className="font-normal text-muted">
                 {COPY.compose.excuseInPhone}
@@ -718,16 +686,13 @@ function Compose({
             </p>
 
             {/* Slumpa fram / bakåt – i båda vyerna. */}
-            <div
-              className="anim-up flex items-center justify-center gap-3 lg:justify-start"
-              style={{ animationDelay: "150ms" }}
-            >
+            <div className="flex items-center justify-center gap-3 lg:justify-start">
               <button
                 type="button"
                 onClick={goBack}
                 disabled={!canGoBack}
                 aria-label={COPY.compose.prev}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-border bg-surface shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-none border border-border bg-transparent transition duration-100 hover:bg-surface-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -746,7 +711,7 @@ function Compose({
                 type="button"
                 onClick={shuffle}
                 disabled={!current}
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-surface px-5 py-2.5 font-bold shadow-raised transition active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-none border border-border bg-transparent px-5 py-2.5 font-medium transition duration-100 hover:bg-surface-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -770,16 +735,11 @@ function Compose({
             </div>
             {/* Antal skickningar – desktop (mobilen visar det i bildtexten). */}
             {countLabel && (
-              <p
-                className="anim-up hidden text-xs text-muted lg:block"
-                style={{ animationDelay: "220ms" }}
-              >
-                {countLabel}
-              </p>
+              <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
             )}
 
-            <div className="anim-up space-y-2" style={{ animationDelay: "300ms" }}>
-              <label htmlFor="phone" className="block text-sm font-semibold">
+            <div className="space-y-2">
+              <label htmlFor="phone" className="block text-sm font-medium">
                 {COPY.details.phoneLabel}
               </label>
               <input
@@ -790,12 +750,12 @@ function Compose({
                 placeholder={COPY.details.phonePlaceholder}
                 value={phone}
                 onChange={(e) => onPhone(e.target.value)}
-                className="w-full rounded-2xl border-2 border-border bg-surface px-5 py-3.5 outline-none ring-brand/50 transition focus:ring-2"
+                className="w-full rounded-none border border-border bg-surface px-5 py-3.5 outline-none"
               />
             </div>
 
             {(formError || error) && (
-              <p className="text-center text-sm font-medium text-danger lg:text-left">
+              <p className="text-center text-sm font-semibold text-danger lg:text-left">
                 {formError ?? COPY.result.errors[error!]}
               </p>
             )}
@@ -804,16 +764,11 @@ function Compose({
               block
               onClick={send}
               disabled={sending || !current || !phoneValid}
-              className="anim-up"
-              style={{ animationDelay: "380ms" }}
             >
               {sending ? COPY.browse.sending : COPY.browse.send}
             </Button>
 
-            <div
-              className="anim-up space-y-1.5"
-              style={{ animationDelay: "460ms" }}
-            >
+            <div className="space-y-1.5">
               <Button
                 block
                 variant="secondary"
@@ -834,7 +789,7 @@ function Compose({
           höger när en avsändare valts. */}
       <div className="hidden lg:sticky lg:top-6 lg:flex lg:justify-center">
         {senderChosen && (
-          <div className="anim-phone">
+          <div>
             <PhonePreview
               sender={contactName}
               message={current?.text}
@@ -911,13 +866,13 @@ function Result({
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-border bg-brand shadow-raised">
+        <div className="flex h-20 w-20 items-center justify-center border border-border bg-brand">
           <svg
             viewBox="0 0 24 24"
             className="h-9 w-9"
             fill="none"
-            stroke="#0b0b0b"
-            strokeWidth={3}
+            stroke="#000000"
+            strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden
@@ -925,8 +880,8 @@ function Result({
             <path d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="font-display text-2xl font-black">{COPY.result.successTitle}</h1>
-        <p className="max-w-xs font-medium text-[#34312b]">
+        <h1 className="font-display text-3xl font-normal">{COPY.result.successTitle}</h1>
+        <p className="max-w-xs text-[17px] text-text">
           {fill(COPY.result.successBodyName, { name: sender })}
         </p>
       </div>
@@ -977,8 +932,8 @@ function Suggest({ onBack }: { onBack: () => void }) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <h1 className="font-display text-2xl font-black">{COPY.suggest.successTitle}</h1>
-          <p className="max-w-xs font-medium text-[#34312b]">{COPY.suggest.successBody}</p>
+          <h1 className="font-display text-3xl font-normal">{COPY.suggest.successTitle}</h1>
+          <p className="max-w-xs text-[17px] text-text">{COPY.suggest.successBody}</p>
         </div>
         <div className="space-y-3 pt-4">
           <Button
@@ -1002,7 +957,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6">
       <Header title={COPY.suggest.title} onBack={onBack} />
 
-      <p className="text-sm font-medium leading-relaxed text-[#34312b]">
+      <p className="text-[17px] leading-relaxed text-text">
         {COPY.suggest.intro}
       </p>
 
@@ -1012,7 +967,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
         placeholder={COPY.suggest.placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="w-full resize-none rounded-2xl border-2 border-border bg-surface px-5 py-4 outline-none ring-brand/50 transition focus:ring-2"
+        className="w-full resize-none rounded-none border border-border bg-surface px-5 py-4 outline-none"
       />
 
       {error && <p className="text-sm text-danger">{COPY.suggest.errors[error]}</p>}
@@ -1035,19 +990,49 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
         type="button"
         onClick={onBack}
         aria-label="Tillbaka"
-        className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-border bg-surface text-lg shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+        className="-ml-1 flex h-9 w-9 items-center justify-center text-text transition hover:opacity-60 active:translate-y-px"
       >
-        ←
+        {/* Tunn pil (IQ-grepp), ingen ram. */}
+        <svg
+          viewBox="0 0 24 24"
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
       </button>
-      <h1 className="font-display text-xl font-black">{title}</h1>
+      <h1 className="font-display text-2xl font-normal">{title}</h1>
     </div>
   );
 }
 
 function Footer() {
   return (
-    <footer className="pt-8 text-center">
-      <p className="text-[11px] leading-relaxed text-muted">{COPY.privacy.short}</p>
+    <footer className="mt-12 border-t border-border pt-5">
+      {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan). */}
+      <div className="flex items-start gap-3">
+        <IqLogo className="h-8 w-8 shrink-0" />
+        <p className="text-[13px] leading-relaxed text-text">
+          <span className="font-medium">{COPY.footer.iqLine}</span>{" "}
+          {COPY.footer.iqAbout}{" "}
+          <a
+            href={COPY.footer.iqHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2"
+          >
+            {COPY.footer.iqLink} ↗
+          </a>
+        </p>
+      </div>
+      <p className="mt-4 text-[12px] leading-relaxed text-muted">
+        {COPY.privacy.short}
+      </p>
     </footer>
   );
 }
