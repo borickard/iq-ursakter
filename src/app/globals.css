@@ -184,10 +184,10 @@ textarea {
 /* Mjuk "stega fram" när en avsändare valts på skapa-skärmen (enda reveal:en
    kvar; kort, och avstängd vid reduced-motion via regeln nedan). */
 @keyframes revealStep {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.reveal-step { animation: revealStep 0.34s cubic-bezier(0.22, 0.8, 0.32, 1) backwards; }
+.reveal-step { animation: revealStep 0.3s ease-out backwards; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }

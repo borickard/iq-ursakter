@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
@@ -281,7 +288,7 @@ function HeroCarousel() {
           trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
       <div className="relative w-[272px] max-w-full self-start">
         {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
-        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3 shadow-[0_12px_30px_rgba(0,0,0,0.15)]">
+        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
           <p ref={exRef} className="m-0 w-full text-[17px] font-medium leading-snug">
             {items[0].text}
           </p>
@@ -332,7 +339,7 @@ function ExcuseBubble({
   return (
     <div className="relative w-full self-start">
       {/* Fast höjd → sidan hoppar inte beroende på ursäktens längd. */}
-      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 shadow-[0_12px_30px_rgba(0,0,0,0.15)]">
+      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
         <p
           className={
             "m-0 line-clamp-3 text-[15px] leading-snug " +
@@ -592,6 +599,32 @@ function Compose({
     };
   }, [senderChosen]);
 
+  // När en avsändare väljs växer kontroll-kolumnen och (på desktop) centreras om
+  // → annars "hoppar" allt upp. FLIP: mät positionen före/efter och animera
+  // skillnaden snabbt men mjukt. Avstängt vid reduced-motion.
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const prevTopRef = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const el = controlsRef.current;
+    if (!el) return;
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const newTop = el.getBoundingClientRect().top;
+    if (!reduce && prevTopRef.current !== null) {
+      const dy = prevTopRef.current - newTop;
+      if (Math.abs(dy) > 1) {
+        el.style.transition = "none";
+        el.style.transform = `translateY(${dy}px)`;
+        requestAnimationFrame(() => {
+          el.style.transition = "transform 0.3s cubic-bezier(0.22, 0.8, 0.32, 1)";
+          el.style.transform = "";
+        });
+      }
+    }
+    prevTopRef.current = newTop;
+  }, [senderChosen]);
+
   // Ursäkter som passar den valda avsändaren (admin väljer per ursäkt vilka
   // avsändare den passar; tom lista = passar alla).
   const pool = useMemo(() => {
@@ -709,7 +742,7 @@ function Compose({
   return (
     <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center lg:gap-12">
       {/* Vänster: kontroller */}
-      <div className="flex flex-1 flex-col gap-5 lg:flex-none">
+      <div ref={controlsRef} className="flex flex-1 flex-col gap-5 lg:flex-none">
         {/* Samma storlek på ordmärket som startsidan; klickbart = hem (ingen pil). */}
         <Wordmark
           onClick={onBack}
@@ -1097,7 +1130,10 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
       <div className="flex items-start gap-3">
         <IqLogo className="h-9 w-auto shrink-0" />
         <p className="text-[12px] leading-relaxed text-text">
-          <span className="font-medium">{COPY.footer.iqLine}</span>{" "}
+          <span className="font-medium">{COPY.footer.iqLine}</span>
+          {/* Desktop: tvinga "IQ finns…" till rad 2 (→ två rader). Mobil: ingen
+              brytning, texten flödar och blir två rader ändå. */}
+          <br className="hidden lg:block" />{" "}
           {COPY.footer.iqAbout}{" "}
           <a
             href={COPY.footer.iqHref}
