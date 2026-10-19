@@ -51,8 +51,23 @@ a Proof of Concept for **IQ** (owned by Systembolaget). A
 > browser. Helpers in `src/lib/verify.ts`; rate-limited via `checkVerifyRateLimit`.
 > **PENDING SQL (prod):** create the `OtpChallenge` table (see §7). **Optional env:**
 > `VERIFY_SECRET` (long random; else reuses `RATE_LIMIT_HASH_SALT`),
-> `RATE_LIMIT_VERIFY_PER_IP`/`_PER_NUMBER` (default 5). **Next up (not built):**
-> delay chips (1/5/10/30 min) + a "numret sparas inte efter utskick"-notis.
+> `RATE_LIMIT_VERIFY_PER_IP`/`_PER_NUMBER` (default 5).
+>
+> **Delay / scheduled send — BUILT (server-side, user chose "tillförlitligt").**
+> Compose has a "När ska det skickas?" chip row (Nu / +1 / +5 / +10 / +30 min).
+> Nu → `/api/send` as before. Delay → `/api/schedule` (requires the same verify
+> token): the number is **AES-256-GCM encrypted** (`src/lib/crypto.ts`) and stored
+> in `ScheduledSend` with `sendAt`; a **Vercel Cron** hits `/api/cron/dispatch`
+> every minute (`vercel.json`), which decrypts in memory, sends due rows, bumps
+> `sentCount`, and **deletes the row** (retries up to 3×). GDPR: number held only
+> encrypted until sent, then gone; a privacy note is shown under the picker and on
+> the scheduled result screen. Sender resolution shared in `src/lib/sender.ts`.
+> **PENDING SQL (prod):** create `ScheduledSend` (see §7). **Env:** `SCHEDULE_ENC_KEY`
+> (long random; else reuses `VERIFY_SECRET`/`RATE_LIMIT_HASH_SALT`), `CRON_SECRET`
+> (Vercel adds it as `Authorization: Bearer …` to the cron call — set it so only
+> Vercel can trigger dispatch). **Vercel plan caveat:** per-minute cron needs
+> Pro/Team (Hobby cron runs ~once/day); the `iqinitiativet` org account should be
+> fine.
 mobile-first web app: the user generates a believable excuse and has it sent as
 an **SMS to their own phone**, so it shows up looking like it came from a saved
 contact (e.g. "Mamma", "Älskling", "Chefen"). A friction-free social "exit
@@ -398,6 +413,21 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
   );
   CREATE INDEX IF NOT EXISTS "OtpChallenge_expiresAt_idx" ON "OtpChallenge" ("expiresAt");
   ```
+- **PENDING — `ScheduledSend` table** (for the delay/scheduled-send feature):
+  ```sql
+  CREATE TABLE IF NOT EXISTS "ScheduledSend" (
+    "id" TEXT PRIMARY KEY,
+    "encPhone" TEXT NOT NULL,
+    "excuseId" TEXT NOT NULL,
+    "sender" TEXT NOT NULL,
+    "sendAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS "ScheduledSend_sendAt_idx" ON "ScheduledSend" ("sendAt");
+  ```
+  Also set env `CRON_SECRET` (a long random string) and optionally `SCHEDULE_ENC_KEY`
+  in Vercel; the per-minute cron is declared in `vercel.json` and deploys with the app.
 - **PENDING — `category` column + sender filtering.** The compose flow is now
   **sender-first**: the user picks the sender, then only excuses that fit that
   sender are shown. Each excuse has a `category` (`home` = Mamma/Pappa/Älskling,

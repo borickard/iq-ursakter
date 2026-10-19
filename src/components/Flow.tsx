@@ -59,6 +59,8 @@ export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
   const [phone, setPhone] = useState("");
   const [sender, setSender] = useState("");
+  // ISO-tid om utskicket schemalagts (annars null = skickat direkt).
+  const [scheduledAt, setScheduledAt] = useState<string | null>(null);
 
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [leadIns, setLeadIns] = useState<LeadIn[]>([]);
@@ -92,17 +94,25 @@ export default function Flow() {
           onPhone={setPhone}
           onSender={setSender}
           onBack={() => setStep("landing")}
-          onSent={() => setStep("result")}
+          onSent={(iso) => {
+            setScheduledAt(iso ?? null);
+            setStep("result");
+          }}
         />
       )}
 
       {step === "result" && (
         <Result
           sender={sender}
-          onAgain={() => setStep("compose")}
+          scheduledAt={scheduledAt}
+          onAgain={() => {
+            setScheduledAt(null);
+            setStep("compose");
+          }}
           onRestart={() => {
             setPhone("");
             setSender("");
+            setScheduledAt(null);
             setStep("landing");
           }}
         />
@@ -563,7 +573,7 @@ function Compose({
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
   onBack: () => void;
-  onSent: () => void;
+  onSent: (scheduledAt?: string | null) => void;
 }) {
   const [browse, setBrowse] = useState<{ hist: number[]; cur: number }>({
     hist: [0],
@@ -580,6 +590,8 @@ function Compose({
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyError, setVerifyError] = useState<keyof typeof COPY.verify.errors | null>(null);
   const [devCode, setDevCode] = useState<string | null>(null);
+  // Fördröjning (minuter): 0 = skicka nu, annars schemalägg.
+  const [delayMin, setDelayMin] = useState(0);
   // Vilken telefon-look den fejkade skärmen visar. Gissas från enheten men kan
   // bytas manuellt i förhandsvisningen (växel) så båda går att testa.
   const [platform, setPlatform] = useState<Platform>("ios");
@@ -723,7 +735,8 @@ function Compose({
     setError(null);
     setSending(true);
     try {
-      const res = await fetch("/api/send", {
+      const scheduled = delayMin > 0;
+      const res = await fetch(scheduled ? "/api/schedule" : "/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -731,10 +744,12 @@ function Compose({
           excuseId: current.id,
           sender,
           token: readVerifyToken(),
+          ...(scheduled ? { delayMin } : {}),
         }),
       });
       if (res.ok) {
-        onSent();
+        const data = await res.json().catch(() => ({}));
+        onSent(scheduled ? (data.sendAt ?? null) : null);
         return;
       }
       const data = await res.json().catch(() => ({}));
@@ -971,6 +986,32 @@ function Compose({
               />
             </div>
 
+            {/* När ska det skickas? (Nu eller fördröjt – server-schemalagt.) */}
+            <div
+              className="reveal-step space-y-2"
+              style={{ animationDelay: "210ms" }}
+            >
+              <label className="block text-base font-medium">
+                {COPY.compose.sendWhen}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {COPY.compose.delayOptions.map((o) => (
+                  <Chip
+                    key={o.min}
+                    active={delayMin === o.min}
+                    onClick={() => setDelayMin(o.min)}
+                  >
+                    {o.label}
+                  </Chip>
+                ))}
+              </div>
+              {delayMin > 0 && (
+                <p className="text-xs leading-snug text-muted">
+                  {COPY.compose.schedulePrivacy}
+                </p>
+              )}
+            </div>
+
             {(formError || error) && (
               <p className="text-center text-sm font-semibold text-danger lg:text-left">
                 {formError ?? COPY.result.errors[error!]}
@@ -1077,7 +1118,7 @@ function Compose({
             <PhonePreview
               sender={contactName}
               message={current?.text}
-              delayMin={0}
+              delayMin={delayMin}
             />
           </div>
         ) : (
@@ -1143,13 +1184,21 @@ function SenderField({
 
 function Result({
   sender,
+  scheduledAt,
   onAgain,
   onRestart,
 }: {
   sender: string;
+  scheduledAt: string | null;
   onAgain: () => void;
   onRestart: () => void;
 }) {
+  const scheduledTime = scheduledAt
+    ? new Date(scheduledAt).toLocaleTimeString("sv-SE", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
@@ -1164,13 +1213,29 @@ function Result({
             strokeLinejoin="round"
             aria-hidden
           >
-            <path d="M5 13l4 4L19 7" />
+            {scheduledTime ? (
+              <>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v4l3 2" />
+              </>
+            ) : (
+              <path d="M5 13l4 4L19 7" />
+            )}
           </svg>
         </div>
-        <h1 className="font-display text-3xl font-normal">{COPY.result.successTitle}</h1>
+        <h1 className="font-display text-3xl font-normal">
+          {scheduledTime ? COPY.result.scheduledTitle : COPY.result.successTitle}
+        </h1>
         <p className="max-w-xs text-[17px] text-text">
-          {fill(COPY.result.successBodyName, { name: sender })}
+          {scheduledTime
+            ? fill(COPY.result.scheduledBody, { time: scheduledTime, name: sender })
+            : fill(COPY.result.successBodyName, { name: sender })}
         </p>
+        {scheduledTime && (
+          <p className="max-w-xs text-xs leading-snug text-muted">
+            {COPY.result.scheduledNote}
+          </p>
+        )}
       </div>
       <div className="space-y-3 pt-4">
         <Button block onClick={onAgain}>

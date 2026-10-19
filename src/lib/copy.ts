@@ -162,18 +162,19 @@ export const COPY = {
     shuffleLong: "Slumpa fram en ursäkt",
     excuseLabel: "Ursäkt",
     excuseInPhone: "(visas i telefonen →)",
-    // Schemaläggning – endast desktop. UI-only tills backend är beslutad.
-    sendWhen: "Skicka när?",
-    sendWhenNote: "endast desktop",
+    // Schemaläggning (server-side, krypterat tills utskick).
+    sendWhen: "När ska det skickas?",
+    sendWhenNote: "",
     delayOptions: [
       { min: 0, label: "Nu" },
       { min: 1, label: "+1 min" },
       { min: 5, label: "+5 min" },
-      { min: 15, label: "+15 min" },
+      { min: 10, label: "+10 min" },
       { min: 30, label: "+30 min" },
-      { min: 60, label: "+1 tim" },
     ],
     scheduledPrefix: "SMS:et skickas kl",
+    schedulePrivacy:
+      "Vid fördröjt utskick hålls ditt nummer krypterat tills meddelandet skickats – sen raderas det. Vi sparar det aldrig.",
     showAsMessage: "Förhandsvisa utan att skicka",
     showAsMessageHelp:
       "Öppnar en skärm som ser ut som en riktig sms-konversation. Inget skickas – bra för att testa utseendet eller visa någon bredvid dig.",
@@ -214,6 +215,12 @@ export const COPY = {
       "Ursäkten är på väg. Har du sparat kontakten dyker den upp som ett SMS från “{name}”.",
     successBodyName:
       "Ursäkten är på väg och dyker upp som ett SMS från “{name}”.",
+    scheduledTitle: "Inplanerat",
+    // {time} = klockslag, {name} = avsändare.
+    scheduledBody:
+      "Ursäkten skickas kl {time} och dyker upp som ett sms från “{name}”. Du kan stänga sidan – vi sköter resten.",
+    scheduledNote:
+      "Ditt nummer hålls krypterat tills dess och raderas direkt efter utskicket. Det sparas aldrig.",
     again: "Skicka en till",
     restart: "Börja om",
     errorTitle: "Det gick inte att skicka",
