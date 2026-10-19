@@ -216,9 +216,10 @@ function Landing({ onStart }: { onStart: () => void }) {
         </Button>
       </div>
 
-      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". */}
+      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". Toppställd
+          (lg:self-start) så den hamnar på exakt samma plats som i skapa-vyn. */}
       <div
-        className="intro-pop hidden lg:flex lg:justify-center"
+        className="intro-pop hidden lg:flex lg:justify-center lg:self-start"
         style={{ animationDelay: "380ms" }}
       >
         <LandingPhone shown={notifShown} />
@@ -592,6 +593,9 @@ function Compose({
   const [devCode, setDevCode] = useState<string | null>(null);
   // Fördröjning (minuter): 0 = skicka nu, annars schemalägg.
   const [delayMin, setDelayMin] = useState(0);
+  // Delay-väljaren visas bara när NEXT_PUBLIC_ENABLE_DELAY=true (kräver
+  // ScheduledSend-tabellen + cron). Default av, så en deploy är ofarlig.
+  const delayEnabled = process.env.NEXT_PUBLIC_ENABLE_DELAY === "true";
   // Vilken telefon-look den fejkade skärmen visar. Gissas från enheten men kan
   // bytas manuellt i förhandsvisningen (växel) så båda går att testa.
   const [platform, setPlatform] = useState<Platform>("ios");
@@ -874,7 +878,9 @@ function Compose({
         className="cursor-pointer self-start text-[26px] lg:self-center lg:text-[32px]"
       />
 
-      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center lg:gap-12">
+      {/* Samma rutnät som startsidan (grid-cols-2 + gap-14) så telefonen hamnar
+          på exakt samma plats i båda vyerna och inte hoppar vid vybyte. */}
+      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Vänster: kontroller */}
       <div ref={controlsRef} className="flex flex-1 flex-col gap-5 lg:flex-none">
         <h1 className="mt-10 font-display text-2xl font-normal lg:mt-0">
@@ -986,31 +992,34 @@ function Compose({
               />
             </div>
 
-            {/* När ska det skickas? (Nu eller fördröjt – server-schemalagt.) */}
-            <div
-              className="reveal-step space-y-2"
-              style={{ animationDelay: "210ms" }}
-            >
-              <label className="block text-base font-medium">
-                {COPY.compose.sendWhen}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {COPY.compose.delayOptions.map((o) => (
-                  <Chip
-                    key={o.min}
-                    active={delayMin === o.min}
-                    onClick={() => setDelayMin(o.min)}
-                  >
-                    {o.label}
-                  </Chip>
-                ))}
+            {/* När ska det skickas? (Nu eller fördröjt – server-schemalagt.)
+                Visas bara när delay-funktionen är påslagen. */}
+            {delayEnabled && (
+              <div
+                className="reveal-step space-y-2"
+                style={{ animationDelay: "210ms" }}
+              >
+                <label className="block text-base font-medium">
+                  {COPY.compose.sendWhen}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {COPY.compose.delayOptions.map((o) => (
+                    <Chip
+                      key={o.min}
+                      active={delayMin === o.min}
+                      onClick={() => setDelayMin(o.min)}
+                    >
+                      {o.label}
+                    </Chip>
+                  ))}
+                </div>
+                {delayMin > 0 && (
+                  <p className="text-xs leading-snug text-muted">
+                    {COPY.compose.schedulePrivacy}
+                  </p>
+                )}
               </div>
-              {delayMin > 0 && (
-                <p className="text-xs leading-snug text-muted">
-                  {COPY.compose.schedulePrivacy}
-                </p>
-              )}
-            </div>
+            )}
 
             {(formError || error) && (
               <p className="text-center text-sm font-semibold text-danger lg:text-left">
@@ -1111,8 +1120,9 @@ function Compose({
         )}
       </div>
 
-      {/* Höger: telefon – exempel-notiser tills avsändare valts, sen live. */}
-      <div className="hidden lg:flex lg:justify-center">
+      {/* Höger: telefon – exempel-notiser tills avsändare valts, sen live.
+          Toppställd (lg:self-start) = samma plats som startsidans telefon. */}
+      <div className="hidden lg:flex lg:justify-center lg:self-start">
         {senderChosen ? (
           <div className="reveal-step">
             <PhonePreview

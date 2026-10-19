@@ -43,13 +43,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "invalid_phone" }, { status: 422 });
   }
 
-  // Samma grind som vid direktutskick: enheten måste vara verifierad.
-  const token = typeof payload.token === "string" ? payload.token : "";
-  if (!verifyToken(token, to)) {
-    return NextResponse.json(
-      { ok: false, error: "verification_required" },
-      { status: 401 },
-    );
+  // Samma grind som vid direktutskick (när REQUIRE_VERIFICATION=true).
+  if (process.env.REQUIRE_VERIFICATION === "true") {
+    const token = typeof payload.token === "string" ? payload.token : "";
+    if (!verifyToken(token, to)) {
+      return NextResponse.json(
+        { ok: false, error: "verification_required" },
+        { status: 401 },
+      );
+    }
   }
 
   // Räkna mot samma rate limit/budget som ett direktutskick (reserverar kvoten nu).

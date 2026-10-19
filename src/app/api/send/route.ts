@@ -49,14 +49,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "invalid_phone" }, { status: 422 });
   }
 
-  // Kräv att enheten har verifierat att den äger numret (engångskod). Token:en
-  // är signerad och lever bara i användarens webbläsare – inget nummer lagras.
-  const token = typeof payload.token === "string" ? payload.token : "";
-  if (!verifyToken(token, to)) {
-    return NextResponse.json(
-      { ok: false, error: "verification_required" },
-      { status: 401 },
-    );
+  // Kräv att enheten har verifierat att den äger numret (engångskod) – men bara
+  // när REQUIRE_VERIFICATION=true. Avstängt som default så att en deploy inte
+  // bryter utskick innan OtpChallenge-tabellen finns; slå på när allt är klart.
+  if (process.env.REQUIRE_VERIFICATION === "true") {
+    const token = typeof payload.token === "string" ? payload.token : "";
+    if (!verifyToken(token, to)) {
+      return NextResponse.json(
+        { ok: false, error: "verification_required" },
+        { status: 401 },
+      );
+    }
   }
 
   // Rate limiting (per IP + kortlivad nummer-hash + globalt dygnstak).
