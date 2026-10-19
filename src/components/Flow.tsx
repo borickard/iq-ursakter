@@ -143,11 +143,13 @@ function Landing({ onStart }: { onStart: () => void }) {
   }, []);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none">
+      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop. */}
+      <Wordmark className="intro-pop self-start text-[26px] lg:self-center lg:text-[32px]" />
+
+      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
-        <Wordmark className="intro-pop text-[26px] lg:text-[32px]" />
-
         {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
         <div
           className="intro-rise mt-9 lg:hidden"
@@ -192,6 +194,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         style={{ animationDelay: "380ms" }}
       >
         <LandingPhone shown={notifShown} />
+      </div>
       </div>
     </div>
   );
@@ -740,15 +743,19 @@ function Compose({
   }
 
   return (
-    <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center lg:gap-12">
+    <div className="flex flex-1 flex-col">
+      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop.
+          Klickbart = hem (ingen pil). Ingen intro-animation här (samma plats som
+          startsidan, så den behöver inte animeras om vid vybyte). */}
+      <Wordmark
+        onClick={onBack}
+        className="cursor-pointer self-start text-[26px] lg:self-center lg:text-[32px]"
+      />
+
+      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center lg:gap-12">
       {/* Vänster: kontroller */}
       <div ref={controlsRef} className="flex flex-1 flex-col gap-5 lg:flex-none">
-        {/* Samma storlek på ordmärket som startsidan; klickbart = hem (ingen pil). */}
-        <Wordmark
-          onClick={onBack}
-          className="intro-pop cursor-pointer self-start text-[26px] lg:text-[32px]"
-        />
-        <h1 className="mt-10 font-display text-2xl font-normal lg:mt-2">
+        <h1 className="mt-10 font-display text-2xl font-normal lg:mt-0">
           {COPY.compose.title}
         </h1>
 
@@ -895,9 +902,8 @@ function Compose({
         )}
       </div>
 
-      {/* Höger: live telefon-förhandsvisning (endast desktop). Glider in från
-          höger när en avsändare valts. */}
-      <div className="hidden lg:sticky lg:top-6 lg:flex lg:justify-center">
+      {/* Höger: telefon – exempel-notiser tills avsändare valts, sen live. */}
+      <div className="hidden lg:flex lg:justify-center">
         {senderChosen ? (
           <div className="reveal-step">
             <PhonePreview
@@ -909,6 +915,7 @@ function Compose({
         ) : (
           <LandingPhone shown={exampleShown} />
         )}
+      </div>
       </div>
 
       {showFake &&
