@@ -21,9 +21,14 @@ a Proof of Concept for **IQ** (owned by Systembolaget). A
 > "URSÄKTEN" **without the heart**. Landing headline shortened to one Copernicus
 > line "En **ursäkt**, levererad via sms." (gul highlight on the clickable
 > "ursäkt"). IQ shown once in the footer ("Ursäkten är en del av IQ" + logo +
-> link). **IQ logo = official SVG** (`public/iq-logo.svg`, IQ LOGOTYP A
-> orange-på-lila, Firefly/C2PA metadata stripped); `IqLogo` renders it via
-> `<img>`. **Wordmark font:** kept Syne — the IQ pack only has Neue Montreal
+> link, with "IQ finns för…" on its own line). **Privacy line shows only in the
+> flow (compose/result), not on the landing.** **IQ logo = official SVG**
+> (`public/iq-logo.svg`, IQ LOGOTYP A **gul/marinblå** — gul box, marin mark;
+> Firefly/C2PA metadata stripped); `IqLogo` renders it via `<img>`. Compose shows
+> the desktop phone **from the start** (looping example notifications) until a
+> sender is picked, then switches to the live preview and the remaining steps
+> reveal with a short `.reveal-step` animation. The two actions ("Skicka till
+> mig" + "Förhandsvisa utan att skicka") sit side by side. **Wordmark font:** kept Syne — the IQ pack only has Neue Montreal
 > Book/Medium (no true Bold), so a heavy Neue wordmark isn't possible without IQ
 > supplying the Bold weight; Syne also keeps Ursäkten distinct from IQ's own Neue.
 > The favicon/app icon is still a provisional gul "U" tile. Await Rickard's review

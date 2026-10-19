@@ -85,7 +85,7 @@ export default function Flow() {
 
       {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
-      <Footer />
+      <Footer showPrivacy={step !== "landing"} />
     </main>
   );
 }
@@ -533,6 +533,45 @@ function Compose({
 
   const senderChosen = sender.trim() !== "";
 
+  // Telefonen (desktop) visas från start. Innan en avsändare valts loopar den
+  // exempel-notiserna (som på startsidan); när man väljer byts den mot den
+  // riktiga förhandsvisningen. Loopen körs bara medan ingen avsändare är vald.
+  const [exampleShown, setExampleShown] = useState(0);
+  useEffect(() => {
+    if (senderChosen) return;
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setExampleShown(3);
+      return;
+    }
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    (async () => {
+      await sleep(300);
+      while (!cancelled) {
+        setExampleShown(0);
+        await sleep(60);
+        if (cancelled) return;
+        setExampleShown(1);
+        await sleep(600);
+        if (cancelled) return;
+        setExampleShown(2);
+        await sleep(600);
+        if (cancelled) return;
+        setExampleShown(3);
+        await sleep(3000);
+        if (cancelled) return;
+        setExampleShown(0);
+        await sleep(1100);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [senderChosen]);
+
   // Ursäkter som passar den valda avsändaren (admin väljer per ursäkt vilka
   // avsändare den passar; tom lista = passar alla).
   const pool = useMemo(() => {
@@ -661,7 +700,7 @@ function Compose({
         {senderChosen && (
           <>
             {/* Mobil: pratbubbla som förhandsvisning. */}
-            <div className="flex flex-col gap-3.5 lg:hidden">
+            <div className="reveal-step flex flex-col gap-3.5 lg:hidden">
               <ExcuseBubble
                 text={current?.text}
                 loading={excuses === null}
@@ -674,7 +713,10 @@ function Compose({
             </div>
 
             {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
-            <p className="hidden text-sm font-medium lg:block">
+            <p
+              className="reveal-step hidden text-sm font-medium lg:block"
+              style={{ animationDelay: "60ms" }}
+            >
               {COPY.compose.excuseLabel}{" "}
               <span className="font-normal text-muted">
                 {COPY.compose.excuseInPhone}
@@ -682,7 +724,10 @@ function Compose({
             </p>
 
             {/* Slumpa fram / bakåt – i båda vyerna. */}
-            <div className="flex items-center justify-center gap-3 lg:justify-start">
+            <div
+              className="reveal-step flex items-center justify-center gap-3 lg:justify-start"
+              style={{ animationDelay: "120ms" }}
+            >
               <button
                 type="button"
                 onClick={goBack}
@@ -734,7 +779,10 @@ function Compose({
               <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
             )}
 
-            <div className="space-y-2">
+            <div
+              className="reveal-step space-y-2"
+              style={{ animationDelay: "180ms" }}
+            >
               <label htmlFor="phone" className="block text-sm font-medium">
                 {COPY.details.phoneLabel}
               </label>
@@ -756,23 +804,30 @@ function Compose({
               </p>
             )}
 
-            <Button
-              block
-              onClick={send}
-              disabled={sending || !current || !phoneValid}
+            <div
+              className="reveal-step space-y-2"
+              style={{ animationDelay: "240ms" }}
             >
-              {sending ? COPY.browse.sending : COPY.browse.send}
-            </Button>
-
-            <div className="space-y-1.5">
-              <Button
-                block
-                variant="secondary"
-                onClick={showMessage}
-                disabled={!current}
-              >
-                {COPY.compose.showAsMessage}
-              </Button>
+              {/* Knapparna sida vid sida: skicka (primär) + förhandsvisa (kontur). */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  block
+                  onClick={send}
+                  disabled={sending || !current || !phoneValid}
+                  className="px-3 text-center"
+                >
+                  {sending ? COPY.browse.sending : COPY.browse.send}
+                </Button>
+                <Button
+                  block
+                  variant="secondary"
+                  onClick={showMessage}
+                  disabled={!current}
+                  className="px-3 text-center"
+                >
+                  {COPY.compose.showAsMessage}
+                </Button>
+              </div>
               <p className="text-center text-xs leading-snug text-muted lg:text-left">
                 {COPY.compose.showAsMessageHelp}
               </p>
@@ -784,14 +839,16 @@ function Compose({
       {/* Höger: live telefon-förhandsvisning (endast desktop). Glider in från
           höger när en avsändare valts. */}
       <div className="hidden lg:sticky lg:top-6 lg:flex lg:justify-center">
-        {senderChosen && (
-          <div>
+        {senderChosen ? (
+          <div className="reveal-step">
             <PhonePreview
               sender={contactName}
               message={current?.text}
               delayMin={0}
             />
           </div>
+        ) : (
+          <LandingPhone shown={exampleShown} />
         )}
       </div>
 
@@ -1007,28 +1064,34 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
   );
 }
 
-function Footer() {
+function Footer({ showPrivacy }: { showPrivacy: boolean }) {
   return (
     <footer className="mt-12 border-t border-border pt-5">
       {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan). */}
       <div className="flex items-start gap-3">
         <IqLogo className="h-9 w-auto shrink-0" />
-        <p className="text-[13px] leading-relaxed text-text">
-          <span className="font-medium">{COPY.footer.iqLine}</span>{" "}
-          {COPY.footer.iqAbout}{" "}
-          <a
-            href={COPY.footer.iqHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
-            {COPY.footer.iqLink} ↗
-          </a>
-        </p>
+        <div className="text-[13px] leading-relaxed text-text">
+          <p className="font-medium">{COPY.footer.iqLine}</p>
+          <p className="mt-1">
+            {COPY.footer.iqAbout}{" "}
+            <a
+              href={COPY.footer.iqHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2"
+            >
+              {COPY.footer.iqLink} ↗
+            </a>
+          </p>
+        </div>
       </div>
-      <p className="mt-4 text-[12px] leading-relaxed text-muted">
-        {COPY.privacy.short}
-      </p>
+      {/* Integritetstexten visas först i flödet (där numret anges), inte på
+          startsidan. */}
+      {showPrivacy && (
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+          {COPY.privacy.short}
+        </p>
+      )}
     </footer>
   );
 }

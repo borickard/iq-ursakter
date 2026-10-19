@@ -174,7 +174,7 @@ export const COPY = {
       { min: 60, label: "+1 tim" },
     ],
     scheduledPrefix: "SMS:et skickas kl",
-    showAsMessage: "Förhandsvisa som sms",
+    showAsMessage: "Förhandsvisa utan att skicka",
     showAsMessageHelp:
       "Öppnar en skärm som ser ut som en riktig sms-konversation. Inget skickas – bra för att testa utseendet eller visa någon bredvid dig.",
     previewIos: "iPhone",
