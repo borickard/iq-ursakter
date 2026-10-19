@@ -182,10 +182,16 @@ function Landing({ onStart }: { onStart: () => void }) {
             centrerad och klippt så bara ~översta tredjedelen visas. Resten av
             telefonen "fortsätter" nedanför klippet. (Desktop visar hela till höger.) */}
         <div
-          className="intro-rise mt-7 flex items-start justify-center overflow-hidden lg:hidden"
+          className="intro-rise relative mt-7 flex items-start justify-center overflow-hidden lg:hidden"
           style={{ animationDelay: "380ms", maxHeight: "clamp(260px, 44vh, 340px)" }}
         >
           <LandingPhoneSolo />
+          {/* Mjuk uttoning i botten så telefonen "fortsätter" ner i sidan
+              istället för ett hårt, tvärt klipp. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-bg"
+          />
         </div>
 
         <div className="mt-9 space-y-4 lg:mt-10">
