@@ -2,8 +2,13 @@
 
 En mobil-först webbsajt där du snabbt genererar en trovärdig ursäkt och får den
 skickad som **SMS till din egen telefon** – så den dyker upp som ett meddelande
-från t.ex. _Mamma_ eller _Älskling_. En smidig social "exit"-knapp för när du
+från t.ex. _Mamma_ eller _Chefen_. En smidig social "exit"-knapp för när du
 fått nog och inte orkar förklara dig.
+
+> **Design:** IQ:s grafiska profil (på preview-branchen `claude/iq-design-preview`):
+> IQ-gul accent, vit bakgrund, rent svart, marinblå telefonskärm; Copernicus
+> (rubriker), Geist (brödtext), Syne (ordmärket). IQ står som avsändare i sidfoten
+> ("Ursäkten är en del av IQ").
 
 > **Status: Proof of Concept (Fas 1 + Fas 2).** Fokus på ett fungerande, snyggt
 > flöde – men med GDPR och missbruksskydd på allvar från start (se nedan).
@@ -26,7 +31,7 @@ värsta missbruksvektorn (se [Risk & GDPR](#risk--gdpr)).
 ## Teknik
 
 - **Next.js (App Router) + TypeScript** – frontend och server-routes i ett.
-- **Tailwind CSS** – mobil-först, mörkt tema, tematiserbart via CSS-variabler.
+- **Tailwind CSS** – mobil-först, ljus IQ-profil, tematiserbart via CSS-variabler.
 - **Prisma + Postgres** (hostad, t.ex. Neon/Supabase) – samma databas lokalt och
   på Vercel, så det fungerar på serverless utan persistent filsystem.
 - **SMS bakom ett internt interface** (`sms.send({ to, from, message })`) så att

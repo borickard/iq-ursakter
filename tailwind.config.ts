@@ -21,21 +21,25 @@ const config: Config = {
         danger: "rgb(var(--color-danger) / <alpha-value>)",
       },
       fontFamily: {
-        sans: ["var(--font-hanken)", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["var(--font-archivo)", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["var(--font-space-mono)", "ui-monospace", "monospace"],
+        // IQ: Neue Montreal för brödtext/etiketter/knappar, Copernicus för
+        // rubriker. Ordmärket behåller sitt eget typsnitt (Syne).
+        sans: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ['"Copernicus"', "ui-serif", "Georgia", "serif"],
+        mono: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
         wordmark: ["var(--font-syne)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
+        // Raka hörn (radius 0) som default. Rundning bara där IQ tillåter den:
+        // valchips (pill) och telefonmockupen (behåller sina stora radier inline).
         xl: "1rem",
         "2xl": "1.25rem",
         "3xl": "1.75rem",
       },
       boxShadow: {
-        // Hårda offset-skuggor (brutalist). Inget suddigt.
-        soft: "3px 3px 0 #0b0b0b",
-        raised: "4px 4px 0 #0b0b0b",
-        float: "6px 6px 0 #0b0b0b",
+        // IQ har inga skuggor i vila. Kvarvarande referenser blir ingen skugga.
+        soft: "none",
+        raised: "none",
+        float: "none",
         inset: "none",
       },
     },

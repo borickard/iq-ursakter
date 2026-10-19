@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeToE164 } from "@/lib/phone";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
-import { getSmsProvider, getSenderNumber } from "@/lib/sms";
+import { getSmsProvider } from "@/lib/sms";
+import { resolveFrom } from "@/lib/sender";
+import { verifyToken } from "@/lib/verify";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,12 @@ export const dynamic = "force-dynamic";
  * fri text. Det stänger den värsta missbruksvektorn.
  */
 export async function POST(req: Request) {
-  let payload: { phone?: unknown; excuseId?: unknown; sender?: unknown };
+  let payload: {
+    phone?: unknown;
+    excuseId?: unknown;
+    sender?: unknown;
+    token?: unknown;
+  };
   try {
     payload = await req.json();
   } catch {
@@ -42,6 +49,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "invalid_phone" }, { status: 422 });
   }
 
+  // Kräv att enheten har verifierat att den äger numret (engångskod) – men bara
+  // när REQUIRE_VERIFICATION=true. Avstängt som default så att en deploy inte
+  // bryter utskick innan OtpChallenge-tabellen finns; slå på när allt är klart.
+  if (process.env.REQUIRE_VERIFICATION === "true") {
+    const token = typeof payload.token === "string" ? payload.token : "";
+    if (!verifyToken(token, to)) {
+      return NextResponse.json(
+        { ok: false, error: "verification_required" },
+        { status: 401 },
+      );
+    }
+  }
+
   // Rate limiting (per IP + kortlivad nummer-hash + globalt dygnstak).
   const ip = getClientIp(req.headers);
   const limit = await checkRateLimit(ip, to);
@@ -57,24 +77,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "bad_request" }, { status: 404 });
   }
 
-  // Avsändare. Två lägen (NEXT_PUBLIC_SMS_SENDER_MODE):
-  //  - "number" (default): fast sändningsnummer, namnet syns via sparad kontakt
-  //    (vCard-modellen i briefen – tryggast).
-  //  - "name": det valda namnet används som alfanumeriskt avsändar-ID direkt.
-  //    Bra för demo (man skickar till sig själv). OBS: i skarp drift öppnar det
-  //    imitationsvektorn som briefen stänger – kräv OTP innan publik launch.
-  let from = getSenderNumber();
-  // Server-side mode läses från en RUNTIME-variabel (SMS_SENDER_MODE). NEXT_PUBLIC_*
-  // bakas in vid build och är opålitlig på servern – därför en egen icke-publik
-  // variabel här (med NEXT_PUBLIC som reserv).
-  const senderMode =
-    process.env.SMS_SENDER_MODE ??
-    process.env.NEXT_PUBLIC_SMS_SENDER_MODE ??
-    "number";
-  if (senderMode === "name") {
-    const id = toAlphanumericSenderId(senderRaw);
-    if (id) from = id;
-  }
+  // Avsändare (fast nummer eller valt namn som alfanumeriskt ID). Se src/lib/sender.
+  const from = resolveFrom(senderRaw);
 
   if (!from) {
     console.error("[send] avsändare saknas – kan inte skicka.");
@@ -96,20 +100,4 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ok: true });
-}
-
-/**
- * Gör om ett valt namn till ett giltigt alfanumeriskt 46elks-avsändar-ID:
- * å/ä→a, ö→o m.fl. translittereras, övriga icke-bokstäver/siffror tas bort,
- * inledande siffror tas bort, längd 3–11. Returnerar null om inget giltigt
- * återstår (då används det fasta sändningsnumret istället).
- */
-function toAlphanumericSenderId(raw: string): string | null {
-  const stripped = raw
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "") // ta bort diakritiska tecken (å ä ö é …)
-    .replace(/[^A-Za-z0-9]/g, "") // bara a–z, A–Z, 0–9 (inga mellanslag)
-    .replace(/^[0-9]+/, ""); // får inte börja med siffra
-  if (stripped.length < 3) return null;
-  return stripped.slice(0, 11);
 }

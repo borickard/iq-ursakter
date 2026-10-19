@@ -7,9 +7,67 @@ pending, the key decisions, design direction, and how the user wants to work.
 
 ## 1. What this is
 
-**Livlinan** (renamed from *Ursäkten* this session; livlinan.se is free — "livlina"
-= lifeline, and "lina" also reads as a phone line/number) — a Proof of Concept
-for **IQ** (owned by Systembolaget). A
+**Ursäkten** (name settled back to *Ursäkten*, domän **ursakt.se**; was briefly
+"Livlinan" — the lifeline/extra-life pun was dropped as not descriptive enough) —
+a Proof of Concept for **IQ** (owned by Systembolaget). A
+
+> **IN PROGRESS — IQ-identity redesign on branch `claude/iq-design-preview`
+> (NOT on `main`).** Reworks the look to IQ's visual identity (DESIGN.md +
+> tokens.css): IQ-gul `#EFFE53`, white bg, black, marin `#242F55` phone screen;
+> **Copernicus** (headings, self-hosted `public/fonts/`) + **Geist** (body/labels,
+> via next/font — replaced PP Neue Montreal, which read poorly in medium/bold and
+> had no true Bold); square corners, 1px borders, hover-invert buttons. **Animations
+> kept/restored (user likes them):** landing intro stagger, "ursäkt" highlight
+> sweep, CTA shine after notifs, notification loop, typing dots, compose
+> `reveal-step`; speech bubbles have a soft drop shadow so they pop; all motion off
+> under `prefers-reduced-motion`. Name
+> changed to **Ursäkten** (domän ursakt.se); wordmark is a single-line Syne
+> "URSÄKTEN" **without the heart**. Landing headline shortened to one Copernicus
+> line "En **ursäkt**, levererad via sms." (gul highlight on the clickable
+> "ursäkt"). IQ shown once in the footer ("Ursäkten är en del av IQ" + logo +
+> link, with "IQ finns för…" on its own line). **Privacy line shows only in the
+> flow (compose/result), not on the landing.** **IQ logo = official SVG**
+> (`public/iq-logo.svg`, IQ LOGOTYP A **gul/marinblå** — gul box, marin mark;
+> Firefly/C2PA metadata stripped); `IqLogo` renders it via `<img>`. Compose shows
+> the desktop phone **from the start** (looping example notifications) until a
+> sender is picked, then switches to the live preview and the remaining steps
+> reveal with a short `.reveal-step` animation. The two actions ("Skicka till
+> mig" + "Förhandsvisa utan att skicka") sit side by side. **Wordmark font:** kept Syne — the IQ pack only has Neue Montreal
+> Book/Medium (no true Bold), so a heavy Neue wordmark isn't possible without IQ
+> supplying the Bold weight; Syne also keeps Ursäkten distinct from IQ's own Neue.
+> The favicon/app icon is still a provisional gul "U" tile. Await Rickard's review
+> before merging to `main`.
+>
+> **OTP (verify number ownership) — BUILT on this branch (dummy mode).** "Skicka
+> till mig" now requires a verified device. Flow: `/api/send` rejects with
+> `verification_required` unless a valid signed token is sent → client calls
+> `/api/verify/start` (sends a 6-digit code; in **dummy** SMS mode the code is
+> returned as `devCode` and shown in-UI as "Testläge: din kod är …" so preview is
+> testable without cost) → user enters code → `/api/verify/check` issues a signed
+> "device verified" token stored in `localStorage` (`ursakt_verify`), valid
+> 30 days → send proceeds. GDPR: number never stored — `OtpChallenge` keeps only a
+> salted `numHash` + `codeHash`, 10-min TTL, swept; the token is HMAC-signed
+> (`VERIFY_SECRET`, falls back to `RATE_LIMIT_HASH_SALT`) and lives only in the
+> browser. Helpers in `src/lib/verify.ts`; rate-limited via `checkVerifyRateLimit`.
+> **PENDING SQL (prod):** create the `OtpChallenge` table (see §7). **Optional env:**
+> `VERIFY_SECRET` (long random; else reuses `RATE_LIMIT_HASH_SALT`),
+> `RATE_LIMIT_VERIFY_PER_IP`/`_PER_NUMBER` (default 5).
+>
+> **Delay / scheduled send — BUILT (server-side, user chose "tillförlitligt").**
+> Compose has a "När ska det skickas?" chip row (Nu / +1 / +5 / +10 / +30 min).
+> Nu → `/api/send` as before. Delay → `/api/schedule` (requires the same verify
+> token): the number is **AES-256-GCM encrypted** (`src/lib/crypto.ts`) and stored
+> in `ScheduledSend` with `sendAt`; a **Vercel Cron** hits `/api/cron/dispatch`
+> every minute (`vercel.json`), which decrypts in memory, sends due rows, bumps
+> `sentCount`, and **deletes the row** (retries up to 3×). GDPR: number held only
+> encrypted until sent, then gone; a privacy note is shown under the picker and on
+> the scheduled result screen. Sender resolution shared in `src/lib/sender.ts`.
+> **PENDING SQL (prod):** create `ScheduledSend` (see §7). **Env:** `SCHEDULE_ENC_KEY`
+> (long random; else reuses `VERIFY_SECRET`/`RATE_LIMIT_HASH_SALT`), `CRON_SECRET`
+> (Vercel adds it as `Authorization: Bearer …` to the cron call — set it so only
+> Vercel can trigger dispatch). **Vercel plan caveat:** per-minute cron needs
+> Pro/Team (Hobby cron runs ~once/day); the `iqinitiativet` org account should be
+> fine.
 mobile-first web app: the user generates a believable excuse and has it sent as
 an **SMS to their own phone**, so it shows up looking like it came from a saved
 contact (e.g. "Mamma", "Älskling", "Chefen"). A friction-free social "exit
@@ -343,6 +401,33 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
   (If the table already has the `senders` column, the whole block is still safe
   to re-run.) After this, admin can map any conversation to senders via the chip
   row under each one.
+- **PENDING — `OtpChallenge` table** (for the OTP verify feature on the preview
+  branch). The app needs it before OTP works in prod:
+  ```sql
+  CREATE TABLE IF NOT EXISTS "OtpChallenge" (
+    "numHash" TEXT PRIMARY KEY,
+    "codeHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS "OtpChallenge_expiresAt_idx" ON "OtpChallenge" ("expiresAt");
+  ```
+- **PENDING — `ScheduledSend` table** (for the delay/scheduled-send feature):
+  ```sql
+  CREATE TABLE IF NOT EXISTS "ScheduledSend" (
+    "id" TEXT PRIMARY KEY,
+    "encPhone" TEXT NOT NULL,
+    "excuseId" TEXT NOT NULL,
+    "sender" TEXT NOT NULL,
+    "sendAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS "ScheduledSend_sendAt_idx" ON "ScheduledSend" ("sendAt");
+  ```
+  Also set env `CRON_SECRET` (a long random string) and optionally `SCHEDULE_ENC_KEY`
+  in Vercel; the per-minute cron is declared in `vercel.json` and deploys with the app.
 - **PENDING — `category` column + sender filtering.** The compose flow is now
   **sender-first**: the user picks the sender, then only excuses that fit that
   sender are shown. Each excuse has a `category` (`home` = Mamma/Pappa/Älskling,

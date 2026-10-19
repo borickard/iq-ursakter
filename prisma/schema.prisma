@@ -56,6 +56,36 @@ model LeadIn {
   createdAt DateTime @default(now())
 }
 
+// Engångskod-utmaning (OTP) för att verifiera nummerägande. GDPR: numret lagras
+// ALDRIG i klartext – `numHash` är en saltad hash och `codeHash` en hash av koden.
+// Kortlivad (CODE_TTL_MINUTES) och städas bort efter utgång. En aktiv utmaning per
+// nummer (numHash som PK → ny start skriver över den gamla).
+model OtpChallenge {
+  numHash   String   @id
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+// Fördröjt (schemalagt) utskick. Mottagarnumret hålls KRYPTERAT (`encPhone`,
+// AES-256-GCM) tills sändtid – aldrig i klartext – och raderas direkt efter att
+// meddelandet skickats. En dispatcher (/api/cron/dispatch, körs varje minut)
+// plockar de som är förfallna, skickar och tar bort dem.
+model ScheduledSend {
+  id        String   @id @default(cuid())
+  encPhone  String // krypterat E.164-nummer (iv:tag:ciphertext)
+  excuseId  String
+  sender    String // valt avsändarnamn (för "name"-läget)
+  sendAt    DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([sendAt])
+}
+
 // Rate limiting-bucket. Fungerar över flera serverless-instanser (till skillnad
 // från in-memory). GDPR: mottagarnumret lagras ALDRIG i klartext – nyckeln för
 // nummer-buckets är en saltad HASH. Utgångna buckets städas bort löpande, så

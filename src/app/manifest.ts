@@ -7,13 +7,13 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Livlinan",
-    short_name: "Livlinan",
+    name: "Ursäkten",
+    short_name: "Ursäkten",
     description: "En utväg, ett sms bort.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f2efe6",
-    theme_color: "#f2efe6",
+    background_color: "#ffffff",
+    theme_color: "#ffffff",
     icons: [{ src: "/apple-icon", sizes: "180x180", type: "image/png" }],
   };
 }

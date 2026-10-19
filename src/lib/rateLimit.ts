@@ -131,6 +131,29 @@ export async function checkSuggestRateLimit(ip: string): Promise<RateLimitResult
   return { allowed: true };
 }
 
+/**
+ * Rate limiting för att STARTA en OTP-verifiering (skickar ett SMS → kostar).
+ * Begränsas per IP och per nummer-hash så man inte kan spamma koder.
+ */
+export async function checkVerifyRateLimit(
+  ip: string,
+  e164Number: string,
+): Promise<RateLimitResult> {
+  const windowMs = envInt("RATE_LIMIT_WINDOW_SECONDS", 3600) * 1000;
+  const perIp = envInt("RATE_LIMIT_VERIFY_PER_IP", 5);
+  const perNumber = envInt("RATE_LIMIT_VERIFY_PER_NUMBER", 5);
+
+  await sweepExpired();
+
+  if (await hit("vip:" + ip, perIp, windowMs)) {
+    return { allowed: false, reason: "per_ip" };
+  }
+  if (await hit("vnum:" + hashNumber(e164Number), perNumber, windowMs)) {
+    return { allowed: false, reason: "per_number" };
+  }
+  return { allowed: true };
+}
+
 /** Hämtar klientens IP ur request-headers (bakom proxy/edge). */
 export function getClientIp(headers: Headers): string {
   const fwd = headers.get("x-forwarded-for");

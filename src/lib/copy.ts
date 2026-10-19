@@ -7,21 +7,20 @@
  */
 export const COPY = {
   brand: {
-    // Sätt till t.ex. "IQ" när beslut om synlighet är taget. Tom sträng = neutral.
-    name: "Livlinan",
+    // Tjänstens namn. (Bytt från "Livlinan" → "Ursäkten", domän ursakt.se.)
+    name: "Ursäkten",
     // Liten byline i sidfoten. Töm för att helt tona ner avsändaren.
     byline: "En utväg, ett sms bort.",
   },
 
   landing: {
-    // Rubrik i två delar; "livlina" är en klickbar lime-chip (går till flödet).
-    headline1: "Slipp förklara dig.",
+    // Rubrik (Copernicus) i en rad; "ursäkt" är en klickbar gul chip (går till
+    // flödet). Delarna sätts ihop: {2a}{länk}{2b} = "En ursäkt, levererad via sms."
     headline2a: "En ",
-    headlineLink: "livlina",
-    headline2b: " levererad",
-    headline3: "via sms.",
+    headlineLink: "ursäkt",
+    headline2b: ", levererad via sms.",
     subtitle:
-      "En trovärdig ursäkt, redo när du behöver den. Du bestämmer själv när kvällen är slut.",
+      "En trovärdig ursäkt, redo när du behöver den. För du bestämmer själv när kvällen ska ta slut.",
     cta: "Skicka mig ett sms",
     // Karusell på landningen – roterar och visar produkten direkt. Ordnad så att
     // samma avsändare aldrig visas två gånger i rad (även vid loop).
@@ -163,19 +162,20 @@ export const COPY = {
     shuffleLong: "Slumpa fram en ursäkt",
     excuseLabel: "Ursäkt",
     excuseInPhone: "(visas i telefonen →)",
-    // Schemaläggning – endast desktop. UI-only tills backend är beslutad.
-    sendWhen: "Skicka när?",
-    sendWhenNote: "endast desktop",
+    // Schemaläggning (server-side, krypterat tills utskick).
+    sendWhen: "När ska det skickas?",
+    sendWhenNote: "",
     delayOptions: [
       { min: 0, label: "Nu" },
       { min: 1, label: "+1 min" },
       { min: 5, label: "+5 min" },
-      { min: 15, label: "+15 min" },
+      { min: 10, label: "+10 min" },
       { min: 30, label: "+30 min" },
-      { min: 60, label: "+1 tim" },
     ],
     scheduledPrefix: "SMS:et skickas kl",
-    showAsMessage: "Förhandsvisa som sms",
+    schedulePrivacy:
+      "Vid fördröjt utskick hålls ditt nummer krypterat tills meddelandet skickats – sen raderas det. Vi sparar det aldrig.",
+    showAsMessage: "Förhandsvisa utan att skicka",
     showAsMessageHelp:
       "Öppnar en skärm som ser ut som en riktig sms-konversation. Inget skickas – bra för att testa utseendet eller visa någon bredvid dig.",
     previewIos: "iPhone",
@@ -187,12 +187,40 @@ export const COPY = {
     saveContact: "Spara kontakt",
   },
 
+  // Engångskod-steget (verifiera att man äger numret).
+  verify: {
+    title: "Verifiera ditt nummer",
+    intro:
+      "Vi skickade en engångskod via sms till ditt nummer. Ange den så vet vi att det är ditt – sen skickas ursäkten.",
+    placeholder: "6-siffrig kod",
+    confirm: "Bekräfta kod",
+    confirming: "Kontrollerar …",
+    resend: "Skicka en ny kod",
+    cancel: "Avbryt",
+    // Visas bara i testläge (dummy) så flödet går att prova utan riktiga sms.
+    devHint: "Testläge: din kod är {code}",
+    errors: {
+      invalid_code: "Fel kod. Försök igen.",
+      expired: "Koden har gått ut. Skicka en ny.",
+      too_many: "För många försök. Skicka en ny kod.",
+      rate_limited: "Du har begärt flera koder nyss. Vänta en stund.",
+      send_failed: "Kunde inte skicka koden. Försök igen om en stund.",
+      unknown: "Något gick fel. Försök igen.",
+    },
+  },
+
   result: {
     successTitle: "Skickat – kolla din telefon",
     successBody:
       "Ursäkten är på väg. Har du sparat kontakten dyker den upp som ett SMS från “{name}”.",
     successBodyName:
       "Ursäkten är på väg och dyker upp som ett SMS från “{name}”.",
+    scheduledTitle: "Inplanerat",
+    // {time} = klockslag, {name} = avsändare.
+    scheduledBody:
+      "Ursäkten skickas kl {time} och dyker upp som ett sms från “{name}”. Du kan stänga sidan – vi sköter resten.",
+    scheduledNote:
+      "Ditt nummer hålls krypterat tills dess och raderas direkt efter utskicket. Det sparas aldrig.",
     again: "Skicka en till",
     restart: "Börja om",
     errorTitle: "Det gick inte att skicka",
@@ -209,6 +237,14 @@ export const COPY = {
   privacy: {
     short:
       "Ditt nummer skickas till vår SMS-leverantör (ett anlitat personuppgiftsbiträde) enbart för att skicka meddelandet. Vi sparar det aldrig.",
+  },
+
+  // Avsändarraden i sidfoten (ett ställe, tydligt men litet – som Fatta Fyllan).
+  footer: {
+    iqLine: "Ursäkten är en del av IQ.",
+    iqAbout: "IQ finns för att unga ska göra medvetna val kring alkohol.",
+    iqLink: "Läs mer på iq.se",
+    iqHref: "https://iq.se",
   },
 } as const;
 

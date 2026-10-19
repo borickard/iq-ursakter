@@ -1,42 +1,40 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Hanken_Grotesk, Space_Mono, Syne } from "next/font/google";
+import { Syne, Geist } from "next/font/google";
 import { COPY } from "@/lib/copy";
 import "./globals.css";
 
-const hanken = Hanken_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-hanken",
-  display: "swap",
-});
-const archivo = Archivo({
-  subsets: ["latin"],
-  weight: ["600", "800", "900"],
-  variable: "--font-archivo",
-  display: "swap",
-});
-const spaceMono = Space_Mono({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-space-mono",
-  display: "swap",
-});
+// Ordmärket behåller sitt eget typsnitt (Syne). Rubriker = Copernicus (självhostad
+// i globals.css). Brödtext/etiketter/knappar = Geist – en ren, modern grotesk i
+// samma familj som PP Neue Montreal men med tydligare medium/bold.
 const syne = Syne({
   subsets: ["latin"],
   weight: ["700", "800"],
   variable: "--font-syne",
   display: "swap",
 });
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: COPY.brand.name,
   description: COPY.landing.subtitle,
+  authors: [{ name: "IQ", url: "https://iq.se" }],
   robots: { index: false, follow: false }, // POC – håll den ur sökmotorer.
   appleWebApp: { capable: true, title: COPY.brand.name, statusBarStyle: "default" },
+  openGraph: {
+    title: COPY.brand.name,
+    description: COPY.landing.subtitle,
+    locale: "sv_SE",
+    type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: COPY.brand.name }],
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f2efe6",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -49,10 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="sv"
-      className={`${hanken.variable} ${archivo.variable} ${spaceMono.variable} ${syne.variable}`}
-    >
+    <html lang="sv" className={`${syne.variable} ${geist.variable}`}>
       <body>
         {/* Smal kolumn på mobil; bredare på desktop så skapa-vyn får plats med
             två kolumner (kontroller + telefonförhandsvisning). Varje vy sätter

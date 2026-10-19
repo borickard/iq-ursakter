@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { normalizeToE164 } from "@/lib/phone";
@@ -9,6 +16,7 @@ import { Button, Chip } from "@/components/ui";
 import { MessagePreview } from "@/components/MessagePreview";
 import { detectPlatform, type Platform } from "@/lib/device";
 import { Wordmark } from "@/components/Wordmark";
+import { IqLogo } from "@/components/IqLogo";
 
 type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = {
@@ -20,6 +28,24 @@ type Excuse = {
 type LeadIn = { them1: string; me: string; them2: string; senders: string };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
+
+/** Verifierings-token (enhet verifierad) – lever bara i användarens webbläsare. */
+const VERIFY_KEY = "ursakt_verify";
+function readVerifyToken(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(VERIFY_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+function storeVerifyToken(token: string): void {
+  try {
+    window.localStorage.setItem(VERIFY_KEY, token);
+  } catch {
+    // privat läge e.d. – strunta i det, man får verifiera igen
+  }
+}
 
 /** "Idag HH:MM" för nu minus angivet antal minuter (mockup-tidsstämplar). */
 function fakeTime(minutesAgo: number): string {
@@ -33,6 +59,8 @@ export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
   const [phone, setPhone] = useState("");
   const [sender, setSender] = useState("");
+  // ISO-tid om utskicket schemalagts (annars null = skickat direkt).
+  const [scheduledAt, setScheduledAt] = useState<string | null>(null);
 
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [leadIns, setLeadIns] = useState<LeadIn[]>([]);
@@ -66,17 +94,25 @@ export default function Flow() {
           onPhone={setPhone}
           onSender={setSender}
           onBack={() => setStep("landing")}
-          onSent={() => setStep("result")}
+          onSent={(iso) => {
+            setScheduledAt(iso ?? null);
+            setStep("result");
+          }}
         />
       )}
 
       {step === "result" && (
         <Result
           sender={sender}
-          onAgain={() => setStep("compose")}
+          scheduledAt={scheduledAt}
+          onAgain={() => {
+            setScheduledAt(null);
+            setStep("compose");
+          }}
           onRestart={() => {
             setPhone("");
             setSender("");
+            setScheduledAt(null);
             setStep("landing");
           }}
         />
@@ -84,7 +120,7 @@ export default function Flow() {
 
       {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
-      {step !== "landing" && <Footer />}
+      <Footer showPrivacy={step !== "landing"} />
     </main>
   );
 }
@@ -94,13 +130,23 @@ export default function Flow() {
 function Landing({ onStart }: { onStart: () => void }) {
   // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
   // CTA-skenet triggas först NÄR alla tre notiser kommit in.
+  // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
+  // CTA-skenet triggas först när alla tre är inne.
   const [notifShown, setNotifShown] = useState(0);
   const [shineKey, setShineKey] = useState(0);
   useEffect(() => {
+    // prefers-reduced-motion: visa alla direkt, ingen loop.
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setNotifShown(3);
+      return;
+    }
     let cancelled = false;
     const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
     (async () => {
-      await sleep(1100); // vänta in intron (telefonen glider in först)
+      await sleep(1000); // vänta in intron
       while (!cancelled) {
         setNotifShown(0);
         await sleep(60);
@@ -112,7 +158,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         await sleep(600);
         if (cancelled) return;
         setNotifShown(3);
-        setShineKey((k) => k + 1); // skenet efter att alla tre är inne
+        setShineKey((k) => k + 1); // skenet när alla tre är inne
         await sleep(3000); // håll alla tre i 3 s
         if (cancelled) return;
         setNotifShown(0); // tona ut alla samtidigt
@@ -125,36 +171,35 @@ function Landing({ onStart }: { onStart: () => void }) {
   }, []);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none">
+      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop. */}
+      <Wordmark className="intro-pop self-start text-[26px] lg:self-center lg:text-[32px]" />
+
+      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
-        <Wordmark className="intro-pop text-[26px] lg:text-[32px]" />
-
         {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
         <div
           className="intro-rise mt-9 lg:hidden"
-          style={{ animationDelay: "400ms" }}
+          style={{ animationDelay: "380ms" }}
         >
           <HeroCarousel />
         </div>
 
-        <div className="mt-9 space-y-3.5 lg:mt-10">
-          <h1 className="font-display text-[clamp(24px,7.2vw,28px)] font-black leading-[1.1] tracking-tight lg:text-[40px]">
-            <span className="intro-rise block" style={{ animationDelay: "200ms" }}>
-              {COPY.landing.headline1}
-            </span>
-            <span className="intro-rise block" style={{ animationDelay: "340ms" }}>
+        <div className="mt-9 space-y-4 lg:mt-10">
+          <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[46px]">
+            <span
+              className="intro-rise inline"
+              style={{ animationDelay: "160ms" }}
+            >
               {COPY.landing.headline2a}
               <LivlinaChip onStart={onStart} />
               {COPY.landing.headline2b}
             </span>
-            <span className="intro-rise block" style={{ animationDelay: "480ms" }}>
-              {COPY.landing.headline3}
-            </span>
           </h1>
           <p
-            className="intro-rise max-w-sm text-sm font-medium leading-relaxed text-[#34312b] lg:text-base"
-            style={{ animationDelay: "620ms" }}
+            className="intro-rise max-w-md text-[17px] leading-relaxed text-text lg:text-lg"
+            style={{ animationDelay: "340ms" }}
           >
             {COPY.landing.subtitle}
           </p>
@@ -163,22 +208,22 @@ function Landing({ onStart }: { onStart: () => void }) {
         <Button
           block
           onClick={onStart}
-          className="intro-pop relative mt-auto !rounded-full py-6 text-xl lg:mt-9 lg:w-auto lg:self-start lg:px-10"
-          style={{ animationDelay: "820ms" }}
+          className="intro-pop relative mt-auto overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
+          style={{ animationDelay: "520ms" }}
         >
           {COPY.landing.cta}
-          {shineKey > 0 && (
-            <span key={shineKey} aria-hidden className="cta-shine" />
-          )}
+          {shineKey > 0 && <span key={shineKey} aria-hidden className="cta-shine" />}
         </Button>
       </div>
 
-      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". */}
+      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". Toppställd
+          (lg:self-start) så den hamnar på exakt samma plats som i skapa-vyn. */}
       <div
-        className="intro-pop hidden lg:flex lg:justify-center"
-        style={{ animationDelay: "400ms" }}
+        className="intro-pop hidden lg:flex lg:justify-center lg:self-start"
+        style={{ animationDelay: "380ms" }}
       >
         <LandingPhone shown={notifShown} />
+      </div>
       </div>
     </div>
   );
@@ -199,7 +244,7 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
         }
       }}
       className="livlina-mark livlina-swipe cursor-pointer"
-      style={{ animationDelay: "820ms" }}
+      style={{ animationDelay: "520ms" }}
     >
       {COPY.landing.headlineLink}
     </span>
@@ -274,19 +319,8 @@ function HeroCarousel() {
       {/* Fast storlek: bredd satt så texten radbryts över ~tre rader, och fast
           trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
       <div className="relative w-[272px] max-w-full self-start">
-        {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
-          style={{ transform: "translate(5px, 5px)" }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-[26px] h-4 w-4 bg-border"
-          style={{ bottom: "-6px", transform: "translate(5px, 5px) rotate(45deg)" }}
-        />
         {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
-        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4 pb-5 pt-3">
+        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
           <p ref={exRef} className="m-0 w-full text-[17px] font-medium leading-snug">
             {items[0].text}
           </p>
@@ -307,7 +341,7 @@ function HeroCarousel() {
             nederkantslinje så spetsen sitter ihop med bubblan. */}
         <span
           aria-hidden
-          className="absolute left-[26px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+          className="absolute left-[26px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
           style={{ bottom: "-6px", transform: "rotate(45deg)" }}
         />
       </div>
@@ -336,19 +370,8 @@ function ExcuseBubble({
   const body = loading ? "…" : empty || !text ? COPY.compose.empty : text;
   return (
     <div className="relative w-full self-start">
-      {/* Hård offset-skugga (bubbla + svans) som egna lager bakom. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-2xl bg-border"
-        style={{ transform: "translate(5px, 5px)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-[22px] h-4 w-4 bg-border"
-        style={{ bottom: "-9px", transform: "translate(5px, 5px) rotate(45deg)" }}
-      />
       {/* Fast höjd → sidan hoppar inte beroende på ursäktens längd. */}
-      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border-2 border-border bg-surface px-4">
+      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
         <p
           className={
             "m-0 line-clamp-3 text-[15px] leading-snug " +
@@ -360,7 +383,7 @@ function ExcuseBubble({
       </div>
       <span
         aria-hidden
-        className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b-2 border-r-2 border-border bg-surface"
+        className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
         style={{ bottom: "-9px", transform: "rotate(45deg)" }}
       />
     </div>
@@ -422,10 +445,10 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
       })
     : "";
   return (
-    <div className="w-[300px] rounded-[46px] border-2 border-border bg-[#0b0c0f] p-[11px] shadow-[10px_14px_0_#0b0b0b]">
+    <div className="w-[300px] rounded-[46px] border border-border bg-black p-[11px]">
       <div
         className="relative flex aspect-[9/19.3] flex-col items-center overflow-hidden rounded-[36px] text-white"
-        style={{ background: "linear-gradient(170deg,#3a4a63,#20262f 55%,#14181f)" }}
+        style={{ background: "var(--iq-marin)" }}
       >
         <div className="absolute left-1/2 top-[10px] z-10 h-[21px] w-[84px] -translate-x-1/2 rounded-full bg-black" />
         <div className="flex w-full justify-between px-[22px] pt-3 text-xs font-semibold">
@@ -500,10 +523,10 @@ function PhonePreview({
     : "";
 
   return (
-    <div className="w-[300px] rounded-[46px] border-2 border-border bg-[#0b0c0f] p-[11px] shadow-[10px_14px_0_#0b0b0b]">
+    <div className="w-[300px] rounded-[46px] border border-border bg-black p-[11px]">
       <div
         className="relative flex aspect-[9/19.3] flex-col items-center overflow-hidden rounded-[36px] text-white"
-        style={{ background: "linear-gradient(170deg,#3a4a63,#20262f 55%,#14181f)" }}
+        style={{ background: "var(--iq-marin)" }}
       >
         <div className="absolute left-1/2 top-[10px] z-10 h-[21px] w-[84px] -translate-x-1/2 rounded-full bg-black" />
         <div className="flex w-full justify-between px-[22px] pt-3 text-xs font-semibold">
@@ -551,7 +574,7 @@ function Compose({
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
   onBack: () => void;
-  onSent: () => void;
+  onSent: (scheduledAt?: string | null) => void;
 }) {
   const [browse, setBrowse] = useState<{ hist: number[]; cur: number }>({
     hist: [0],
@@ -562,12 +585,88 @@ function Compose({
   const [formError, setFormError] = useState<string | null>(null);
   const [showFake, setShowFake] = useState(false);
   const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
+  // Engångskod-steg (verifiera nummer). "idle" = inget, "code" = ange koden.
+  const [verifyStep, setVerifyStep] = useState<"idle" | "code">("idle");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyError, setVerifyError] = useState<keyof typeof COPY.verify.errors | null>(null);
+  const [devCode, setDevCode] = useState<string | null>(null);
+  // Fördröjning (minuter): 0 = skicka nu, annars schemalägg.
+  const [delayMin, setDelayMin] = useState(0);
+  // Delay-väljaren visas bara när NEXT_PUBLIC_ENABLE_DELAY=true (kräver
+  // ScheduledSend-tabellen + cron). Default av, så en deploy är ofarlig.
+  const delayEnabled = process.env.NEXT_PUBLIC_ENABLE_DELAY === "true";
   // Vilken telefon-look den fejkade skärmen visar. Gissas från enheten men kan
   // bytas manuellt i förhandsvisningen (växel) så båda går att testa.
   const [platform, setPlatform] = useState<Platform>("ios");
   useEffect(() => setPlatform(detectPlatform()), []);
 
   const senderChosen = sender.trim() !== "";
+
+  // Telefonen (desktop) visas från start. Innan en avsändare valts loopar den
+  // exempel-notiserna (som på startsidan); när man väljer byts den mot den
+  // riktiga förhandsvisningen. Loopen körs bara medan ingen avsändare är vald.
+  const [exampleShown, setExampleShown] = useState(0);
+  useEffect(() => {
+    if (senderChosen) return;
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setExampleShown(3);
+      return;
+    }
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    (async () => {
+      await sleep(300);
+      while (!cancelled) {
+        setExampleShown(0);
+        await sleep(60);
+        if (cancelled) return;
+        setExampleShown(1);
+        await sleep(600);
+        if (cancelled) return;
+        setExampleShown(2);
+        await sleep(600);
+        if (cancelled) return;
+        setExampleShown(3);
+        await sleep(3000);
+        if (cancelled) return;
+        setExampleShown(0);
+        await sleep(1100);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [senderChosen]);
+
+  // När en avsändare väljs växer kontroll-kolumnen och (på desktop) centreras om
+  // → annars "hoppar" allt upp. FLIP: mät positionen före/efter och animera
+  // skillnaden snabbt men mjukt. Avstängt vid reduced-motion.
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const prevTopRef = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const el = controlsRef.current;
+    if (!el) return;
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const newTop = el.getBoundingClientRect().top;
+    if (!reduce && prevTopRef.current !== null) {
+      const dy = prevTopRef.current - newTop;
+      if (Math.abs(dy) > 1) {
+        el.style.transition = "none";
+        el.style.transform = `translateY(${dy}px)`;
+        requestAnimationFrame(() => {
+          el.style.transition = "transform 0.3s cubic-bezier(0.22, 0.8, 0.32, 1)";
+          el.style.transform = "";
+        });
+      }
+    }
+    prevTopRef.current = newTop;
+  }, [senderChosen]);
 
   // Ursäkter som passar den valda avsändaren (admin väljer per ursäkt vilka
   // avsändare den passar; tom lista = passar alla).
@@ -640,23 +739,109 @@ function Compose({
     setError(null);
     setSending(true);
     try {
-      const res = await fetch("/api/send", {
+      const scheduled = delayMin > 0;
+      const res = await fetch(scheduled ? "/api/schedule" : "/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, excuseId: current.id, sender }),
+        body: JSON.stringify({
+          phone,
+          excuseId: current.id,
+          sender,
+          token: readVerifyToken(),
+          ...(scheduled ? { delayMin } : {}),
+        }),
       });
       if (res.ok) {
-        onSent();
-      } else {
         const data = await res.json().catch(() => ({}));
-        const err = (data?.error ?? "unknown") as string;
-        setError((err in COPY.result.errors ? err : "unknown") as SendError);
+        onSent(scheduled ? (data.sendAt ?? null) : null);
+        return;
       }
+      const data = await res.json().catch(() => ({}));
+      const err = (data?.error ?? "unknown") as string;
+      // Enheten är inte verifierad → starta engångskod-flödet.
+      if (err === "verification_required") {
+        await startVerify();
+        return;
+      }
+      setError((err in COPY.result.errors ? err : "unknown") as SendError);
     } catch {
       setError("send_failed");
     } finally {
       setSending(false);
     }
+  }
+
+  // Begär en ny engångskod och visa kodfältet.
+  async function startVerify() {
+    setVerifyError(null);
+    setVerifyCode("");
+    setDevCode(null);
+    setVerifyBusy(true);
+    try {
+      const res = await fetch("/api/verify/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setVerifyStep("code");
+        if (data.devCode) setDevCode(String(data.devCode));
+      } else {
+        const err = (data?.error ?? "unknown") as string;
+        setFormError(
+          COPY.verify.errors[
+            (err in COPY.verify.errors ? err : "unknown") as keyof typeof COPY.verify.errors
+          ],
+        );
+      }
+    } catch {
+      setFormError(COPY.verify.errors.unknown);
+    } finally {
+      setVerifyBusy(false);
+    }
+  }
+
+  // Kontrollera koden; vid rätt kod sparas token och ursäkten skickas.
+  async function confirmCode() {
+    const code = verifyCode.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setVerifyError("invalid_code");
+      return;
+    }
+    setVerifyError(null);
+    setVerifyBusy(true);
+    try {
+      const res = await fetch("/api/verify/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.token) {
+        storeVerifyToken(String(data.token));
+        setVerifyStep("idle");
+        setVerifyCode("");
+        setDevCode(null);
+        await send();
+      } else {
+        const err = (data?.error ?? "unknown") as string;
+        setVerifyError(
+          (err in COPY.verify.errors ? err : "unknown") as keyof typeof COPY.verify.errors,
+        );
+      }
+    } catch {
+      setVerifyError("unknown");
+    } finally {
+      setVerifyBusy(false);
+    }
+  }
+
+  function cancelVerify() {
+    setVerifyStep("idle");
+    setVerifyCode("");
+    setVerifyError(null);
+    setDevCode(null);
   }
 
   function showMessage() {
@@ -684,11 +869,23 @@ function Compose({
   }
 
   return (
-    <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-12">
+    <div className="flex flex-1 flex-col">
+      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop.
+          Klickbart = hem (ingen pil). Ingen intro-animation här (samma plats som
+          startsidan, så den behöver inte animeras om vid vybyte). */}
+      <Wordmark
+        onClick={onBack}
+        className="cursor-pointer self-start text-[26px] lg:self-center lg:text-[32px]"
+      />
+
+      {/* Samma rutnät som startsidan (grid-cols-2 + gap-14) så telefonen hamnar
+          på exakt samma plats i båda vyerna och inte hoppar vid vybyte. */}
+      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Vänster: kontroller */}
-      <div className="flex flex-1 flex-col gap-5">
-        <Wordmark className="text-[20px]" />
-        <Header title={COPY.compose.title} onBack={onBack} />
+      <div ref={controlsRef} className="flex flex-1 flex-col gap-5 lg:flex-none">
+        <h1 className="mt-10 font-display text-2xl font-normal lg:mt-0">
+          {COPY.compose.title}
+        </h1>
 
         <SenderField value={sender} onChange={onSender} />
 
@@ -697,7 +894,7 @@ function Compose({
         {senderChosen && (
           <>
             {/* Mobil: pratbubbla som förhandsvisning. */}
-            <div className="anim-up flex flex-col gap-3.5 lg:hidden">
+            <div className="reveal-step flex flex-col gap-3.5 lg:hidden">
               <ExcuseBubble
                 text={current?.text}
                 loading={excuses === null}
@@ -710,7 +907,10 @@ function Compose({
             </div>
 
             {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
-            <p className="anim-up hidden text-sm font-semibold lg:block">
+            <p
+              className="reveal-step hidden text-sm font-medium lg:block"
+              style={{ animationDelay: "60ms" }}
+            >
               {COPY.compose.excuseLabel}{" "}
               <span className="font-normal text-muted">
                 {COPY.compose.excuseInPhone}
@@ -719,15 +919,15 @@ function Compose({
 
             {/* Slumpa fram / bakåt – i båda vyerna. */}
             <div
-              className="anim-up flex items-center justify-center gap-3 lg:justify-start"
-              style={{ animationDelay: "150ms" }}
+              className="reveal-step flex items-center justify-center gap-3 lg:justify-start"
+              style={{ animationDelay: "120ms" }}
             >
               <button
                 type="button"
                 onClick={goBack}
                 disabled={!canGoBack}
                 aria-label={COPY.compose.prev}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-border bg-surface shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-none border border-border bg-transparent transition duration-100 hover:bg-surface-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -746,7 +946,7 @@ function Compose({
                 type="button"
                 onClick={shuffle}
                 disabled={!current}
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-surface px-5 py-2.5 font-bold shadow-raised transition active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-none border border-border bg-transparent px-5 py-2.5 font-medium transition duration-100 hover:bg-surface-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -770,16 +970,14 @@ function Compose({
             </div>
             {/* Antal skickningar – desktop (mobilen visar det i bildtexten). */}
             {countLabel && (
-              <p
-                className="anim-up hidden text-xs text-muted lg:block"
-                style={{ animationDelay: "220ms" }}
-              >
-                {countLabel}
-              </p>
+              <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
             )}
 
-            <div className="anim-up space-y-2" style={{ animationDelay: "300ms" }}>
-              <label htmlFor="phone" className="block text-sm font-semibold">
+            <div
+              className="reveal-step space-y-2"
+              style={{ animationDelay: "180ms" }}
+            >
+              <label htmlFor="phone" className="block text-base font-medium">
                 {COPY.details.phoneLabel}
               </label>
               <input
@@ -790,58 +988,153 @@ function Compose({
                 placeholder={COPY.details.phonePlaceholder}
                 value={phone}
                 onChange={(e) => onPhone(e.target.value)}
-                className="w-full rounded-2xl border-2 border-border bg-surface px-5 py-3.5 outline-none ring-brand/50 transition focus:ring-2"
+                className="w-full rounded-none border border-border bg-surface px-5 py-3.5 outline-none"
               />
             </div>
 
+            {/* När ska det skickas? (Nu eller fördröjt – server-schemalagt.)
+                Visas bara när delay-funktionen är påslagen. */}
+            {delayEnabled && (
+              <div
+                className="reveal-step space-y-2"
+                style={{ animationDelay: "210ms" }}
+              >
+                <label className="block text-base font-medium">
+                  {COPY.compose.sendWhen}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {COPY.compose.delayOptions.map((o) => (
+                    <Chip
+                      key={o.min}
+                      active={delayMin === o.min}
+                      onClick={() => setDelayMin(o.min)}
+                    >
+                      {o.label}
+                    </Chip>
+                  ))}
+                </div>
+                {delayMin > 0 && (
+                  <p className="text-xs leading-snug text-muted">
+                    {COPY.compose.schedulePrivacy}
+                  </p>
+                )}
+              </div>
+            )}
+
             {(formError || error) && (
-              <p className="text-center text-sm font-medium text-danger lg:text-left">
+              <p className="text-center text-sm font-semibold text-danger lg:text-left">
                 {formError ?? COPY.result.errors[error!]}
               </p>
             )}
 
-            <Button
-              block
-              onClick={send}
-              disabled={sending || !current || !phoneValid}
-              className="anim-up"
-              style={{ animationDelay: "380ms" }}
-            >
-              {sending ? COPY.browse.sending : COPY.browse.send}
-            </Button>
-
             <div
-              className="anim-up space-y-1.5"
-              style={{ animationDelay: "460ms" }}
+              className="reveal-step space-y-2"
+              style={{ animationDelay: "240ms" }}
             >
-              <Button
-                block
-                variant="secondary"
-                onClick={showMessage}
-                disabled={!current}
-              >
-                {COPY.compose.showAsMessage}
-              </Button>
-              <p className="text-center text-xs leading-snug text-muted lg:text-left">
-                {COPY.compose.showAsMessageHelp}
-              </p>
+              {verifyStep === "code" ? (
+                /* Engångskod-steg: ange koden som skickats till numret. */
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-base font-medium">{COPY.verify.title}</p>
+                    <p className="mt-1 text-sm text-muted">{COPY.verify.intro}</p>
+                  </div>
+                  <input
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    autoFocus
+                    value={verifyCode}
+                    onChange={(e) =>
+                      setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    placeholder={COPY.verify.placeholder}
+                    className="w-full rounded-none border border-border bg-surface px-5 py-3.5 text-center text-lg tracking-[0.4em] outline-none"
+                  />
+                  {devCode && (
+                    <p className="text-xs text-muted">
+                      {fill(COPY.verify.devHint, { code: devCode })}
+                    </p>
+                  )}
+                  {verifyError && (
+                    <p className="text-sm font-semibold text-danger">
+                      {COPY.verify.errors[verifyError]}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      block
+                      variant="secondary"
+                      onClick={cancelVerify}
+                      disabled={verifyBusy}
+                      className="px-3 text-center"
+                    >
+                      {COPY.verify.cancel}
+                    </Button>
+                    <Button
+                      block
+                      onClick={confirmCode}
+                      disabled={verifyBusy || verifyCode.length < 6}
+                      className="px-3 text-center"
+                    >
+                      {verifyBusy ? COPY.verify.confirming : COPY.verify.confirm}
+                    </Button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={startVerify}
+                    disabled={verifyBusy}
+                    className="text-xs text-muted underline underline-offset-2 disabled:opacity-50"
+                  >
+                    {COPY.verify.resend}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Knapparna sida vid sida: skicka (primär) + förhandsvisa (kontur). */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      block
+                      onClick={send}
+                      disabled={sending || !current || !phoneValid}
+                      className="px-3 text-center"
+                    >
+                      {sending ? COPY.browse.sending : COPY.browse.send}
+                    </Button>
+                    <Button
+                      block
+                      variant="secondary"
+                      onClick={showMessage}
+                      disabled={!current}
+                      className="px-3 text-center"
+                    >
+                      {COPY.compose.showAsMessage}
+                    </Button>
+                  </div>
+                  <p className="text-center text-xs leading-snug text-muted lg:text-left">
+                    {COPY.compose.showAsMessageHelp}
+                  </p>
+                </>
+              )}
             </div>
           </>
         )}
       </div>
 
-      {/* Höger: live telefon-förhandsvisning (endast desktop). Glider in från
-          höger när en avsändare valts. */}
-      <div className="hidden lg:sticky lg:top-6 lg:flex lg:justify-center">
-        {senderChosen && (
-          <div className="anim-phone">
+      {/* Höger: telefon – exempel-notiser tills avsändare valts, sen live.
+          Toppställd (lg:self-start) = samma plats som startsidans telefon. */}
+      <div className="hidden lg:flex lg:justify-center lg:self-start">
+        {senderChosen ? (
+          <div className="reveal-step">
             <PhonePreview
               sender={contactName}
               message={current?.text}
-              delayMin={0}
+              delayMin={delayMin}
             />
           </div>
+        ) : (
+          <LandingPhone shown={exampleShown} />
         )}
+      </div>
       </div>
 
       {showFake &&
@@ -882,7 +1175,7 @@ function SenderField({
 
   return (
     <div className="space-y-2.5">
-      <label className="block text-sm font-semibold">
+      <label className="block text-lg font-medium lg:text-xl">
         {COPY.compose.senderLabel}
       </label>
 
@@ -901,34 +1194,58 @@ function SenderField({
 
 function Result({
   sender,
+  scheduledAt,
   onAgain,
   onRestart,
 }: {
   sender: string;
+  scheduledAt: string | null;
   onAgain: () => void;
   onRestart: () => void;
 }) {
+  const scheduledTime = scheduledAt
+    ? new Date(scheduledAt).toLocaleTimeString("sv-SE", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-border bg-brand shadow-raised">
+        <div className="flex h-20 w-20 items-center justify-center border border-border bg-brand">
           <svg
             viewBox="0 0 24 24"
             className="h-9 w-9"
             fill="none"
-            stroke="#0b0b0b"
-            strokeWidth={3}
+            stroke="#000000"
+            strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden
           >
-            <path d="M5 13l4 4L19 7" />
+            {scheduledTime ? (
+              <>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v4l3 2" />
+              </>
+            ) : (
+              <path d="M5 13l4 4L19 7" />
+            )}
           </svg>
         </div>
-        <h1 className="font-display text-2xl font-black">{COPY.result.successTitle}</h1>
-        <p className="max-w-xs font-medium text-[#34312b]">
-          {fill(COPY.result.successBodyName, { name: sender })}
+        <h1 className="font-display text-3xl font-normal">
+          {scheduledTime ? COPY.result.scheduledTitle : COPY.result.successTitle}
+        </h1>
+        <p className="max-w-xs text-[17px] text-text">
+          {scheduledTime
+            ? fill(COPY.result.scheduledBody, { time: scheduledTime, name: sender })
+            : fill(COPY.result.successBodyName, { name: sender })}
         </p>
+        {scheduledTime && (
+          <p className="max-w-xs text-xs leading-snug text-muted">
+            {COPY.result.scheduledNote}
+          </p>
+        )}
       </div>
       <div className="space-y-3 pt-4">
         <Button block onClick={onAgain}>
@@ -977,8 +1294,8 @@ function Suggest({ onBack }: { onBack: () => void }) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <h1 className="font-display text-2xl font-black">{COPY.suggest.successTitle}</h1>
-          <p className="max-w-xs font-medium text-[#34312b]">{COPY.suggest.successBody}</p>
+          <h1 className="font-display text-3xl font-normal">{COPY.suggest.successTitle}</h1>
+          <p className="max-w-xs text-[17px] text-text">{COPY.suggest.successBody}</p>
         </div>
         <div className="space-y-3 pt-4">
           <Button
@@ -1002,7 +1319,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6">
       <Header title={COPY.suggest.title} onBack={onBack} />
 
-      <p className="text-sm font-medium leading-relaxed text-[#34312b]">
+      <p className="text-[17px] leading-relaxed text-text">
         {COPY.suggest.intro}
       </p>
 
@@ -1012,7 +1329,7 @@ function Suggest({ onBack }: { onBack: () => void }) {
         placeholder={COPY.suggest.placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="w-full resize-none rounded-2xl border-2 border-border bg-surface px-5 py-4 outline-none ring-brand/50 transition focus:ring-2"
+        className="w-full resize-none rounded-none border border-border bg-surface px-5 py-4 outline-none"
       />
 
       {error && <p className="text-sm text-danger">{COPY.suggest.errors[error]}</p>}
@@ -1035,19 +1352,56 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
         type="button"
         onClick={onBack}
         aria-label="Tillbaka"
-        className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-border bg-surface text-lg shadow-soft transition active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+        className="-ml-1 flex h-9 w-9 items-center justify-center text-text transition hover:opacity-60 active:translate-y-px"
       >
-        ←
+        {/* Tunn pil (IQ-grepp), ingen ram. */}
+        <svg
+          viewBox="0 0 24 24"
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
       </button>
-      <h1 className="font-display text-xl font-black">{title}</h1>
+      <h1 className="font-display text-2xl font-normal">{title}</h1>
     </div>
   );
 }
 
-function Footer() {
+function Footer({ showPrivacy }: { showPrivacy: boolean }) {
   return (
-    <footer className="pt-8 text-center">
-      <p className="text-[11px] leading-relaxed text-muted">{COPY.privacy.short}</p>
+    <footer className="mt-12 border-t border-border pt-5">
+      {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan). */}
+      <div className="flex items-start gap-3">
+        <IqLogo className="h-9 w-auto shrink-0" />
+        <p className="text-[12px] leading-relaxed text-text">
+          <span className="font-medium">{COPY.footer.iqLine}</span>
+          {/* Desktop: tvinga "IQ finns…" till rad 2 (→ två rader). Mobil: ingen
+              brytning, texten flödar och blir två rader ändå. */}
+          <br className="hidden lg:block" />{" "}
+          {COPY.footer.iqAbout}{" "}
+          <a
+            href={COPY.footer.iqHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2"
+          >
+            {COPY.footer.iqLink} ↗
+          </a>
+        </p>
+      </div>
+      {/* Integritetstexten visas först i flödet (där numret anges), inte på
+          startsidan. */}
+      {showPrivacy && (
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+          {COPY.privacy.short}
+        </p>
+      )}
     </footer>
   );
 }
