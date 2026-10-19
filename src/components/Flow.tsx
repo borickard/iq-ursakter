@@ -190,7 +190,7 @@ function Landing({ onStart }: { onStart: () => void }) {
               istället för ett hårt, tvärt klipp. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-bg"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-9 bg-gradient-to-b from-transparent to-bg"
           />
         </div>
 
