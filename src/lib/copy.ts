@@ -14,14 +14,13 @@ export const COPY = {
   },
 
   landing: {
-    // Rubrik i två delar; "livlina" är en klickbar lime-chip (går till flödet).
-    headline1: "Slipp förklara dig.",
+    // Rubrik (Copernicus) i en rad; "ursäkt" är en klickbar gul chip (går till
+    // flödet). Delarna sätts ihop: {2a}{länk}{2b} = "En ursäkt, levererad via sms."
     headline2a: "En ",
     headlineLink: "ursäkt",
-    headline2b: " levererad",
-    headline3: "via sms.",
+    headline2b: ", levererad via sms.",
     subtitle:
-      "En trovärdig ursäkt, redo när du behöver den. Du bestämmer själv när kvällen är slut.",
+      "En trovärdig ursäkt, redo när du behöver den. För du bestämmer själv när kvällen ska ta slut.",
     cta: "Skicka mig ett sms",
     // Karusell på landningen – roterar och visar produkten direkt. Ordnad så att
     // samma avsändare aldrig visas två gånger i rad (även vid loop).

@@ -144,14 +144,10 @@ function Landing({ onStart }: { onStart: () => void }) {
         </div>
 
         <div className="mt-9 space-y-4 lg:mt-10">
-          <h1 className="font-display text-[clamp(28px,8vw,36px)] font-normal leading-[1.15] lg:text-[48px]">
-            <span className="block">{COPY.landing.headline1}</span>
-            <span className="block">
-              {COPY.landing.headline2a}
-              <LivlinaChip onStart={onStart} />
-              {COPY.landing.headline2b}
-            </span>
-            <span className="block">{COPY.landing.headline3}</span>
+          <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[46px]">
+            {COPY.landing.headline2a}
+            <LivlinaChip onStart={onStart} />
+            {COPY.landing.headline2b}
           </h1>
           <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-lg">
             {COPY.landing.subtitle}
@@ -1016,7 +1012,7 @@ function Footer() {
     <footer className="mt-12 border-t border-border pt-5">
       {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan). */}
       <div className="flex items-start gap-3">
-        <IqLogo className="h-8 w-8 shrink-0" />
+        <IqLogo className="h-9 w-auto shrink-0" />
         <p className="text-[13px] leading-relaxed text-text">
           <span className="font-medium">{COPY.footer.iqLine}</span>{" "}
           {COPY.footer.iqAbout}{" "}

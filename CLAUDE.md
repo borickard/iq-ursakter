@@ -17,12 +17,17 @@ a Proof of Concept for **IQ** (owned by Systembolaget). A
 > Copernicus (headings) + PP Neue Montreal (body), self-hosted in
 > `public/fonts/`; square corners, 1px borders, no shadows, hover-invert buttons;
 > most intro/scroll animations removed (only notifications + typing kept). Name
-> changed to **Ursäkten**, wordmark is now a single-line Syne "URSÄKTEN" **without
-> the heart**. IQ shown once in the footer ("Ursäkten är en del av IQ" + logo +
-> link). **PENDING:** the footer `IqLogo` is a PLACEHOLDER — get the official IQ
-> logo SVG before any public use (`src/components/IqLogo.tsx`). The favicon/app
-> icon is a provisional gul "U" tile. Await Rickard's review before merging to
-> `main`.
+> changed to **Ursäkten** (domän ursakt.se); wordmark is a single-line Syne
+> "URSÄKTEN" **without the heart**. Landing headline shortened to one Copernicus
+> line "En **ursäkt**, levererad via sms." (gul highlight on the clickable
+> "ursäkt"). IQ shown once in the footer ("Ursäkten är en del av IQ" + logo +
+> link). **IQ logo = official SVG** (`public/iq-logo.svg`, IQ LOGOTYP A
+> orange-på-lila, Firefly/C2PA metadata stripped); `IqLogo` renders it via
+> `<img>`. **Wordmark font:** kept Syne — the IQ pack only has Neue Montreal
+> Book/Medium (no true Bold), so a heavy Neue wordmark isn't possible without IQ
+> supplying the Bold weight; Syne also keeps Ursäkten distinct from IQ's own Neue.
+> The favicon/app icon is still a provisional gul "U" tile. Await Rickard's review
+> before merging to `main`.
 mobile-first web app: the user generates a believable excuse and has it sent as
 an **SMS to their own phone**, so it shows up looking like it came from a saved
 contact (e.g. "Mamma", "Älskling", "Chefen"). A friction-free social "exit
