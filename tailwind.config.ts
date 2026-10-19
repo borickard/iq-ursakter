@@ -23,9 +23,9 @@ const config: Config = {
       fontFamily: {
         // IQ: Neue Montreal för brödtext/etiketter/knappar, Copernicus för
         // rubriker. Ordmärket behåller sitt eget typsnitt (Syne).
-        sans: ['"PP Neue Montreal"', "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
         display: ['"Copernicus"', "ui-serif", "Georgia", "serif"],
-        mono: ['"PP Neue Montreal"', "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
         wordmark: ["var(--font-syne)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {

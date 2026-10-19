@@ -3,30 +3,14 @@
 @tailwind utilities;
 
 /* ───────────────────────────────────────────────────────────────────────
- * IQ-typsnitt (självhostade, filer från IQ). Copernicus = rubriker,
- * PP Neue Montreal = brödtext/etiketter/knappar. Ordmärket använder Syne.
+ * Typsnitt: Copernicus (rubriker, självhostad fil från IQ), Geist (brödtext/
+ * etiketter/knappar, via next/font), Syne (ordmärket, via next/font).
  * ─────────────────────────────────────────────────────────────────────── */
 @font-face {
   font-family: "Copernicus";
   src: url("/fonts/Copernicus-Book.woff2") format("woff2"),
        url("/fonts/Copernicus-Book.woff") format("woff");
   font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "PP Neue Montreal";
-  src: url("/fonts/PPNeueMontreal-Book.woff2") format("woff2"),
-       url("/fonts/PPNeueMontreal-Book.woff") format("woff");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "PP Neue Montreal";
-  src: url("/fonts/PPNeueMontreal-Medium.woff2") format("woff2"),
-       url("/fonts/PPNeueMontreal-Medium.woff") format("woff");
-  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
@@ -59,9 +43,9 @@ body {
   background: rgb(var(--color-bg));
   color: rgb(var(--color-text));
   -webkit-font-smoothing: antialiased;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
   font-family:
-    "PP Neue Montreal", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -158,7 +142,28 @@ textarea {
   22% { opacity: 1; transform: translateY(-6px); }
 }
 
-/* IQ-gul överstrykning bakom "livlina" i sloganen (statisk, ingen animation). */
+/* ── Startsidans intro (kort stegring rad för rad), highlight-svep och CTA-sken.
+   Alla avstängda vid prefers-reduced-motion (regeln längst ned). ── */
+@keyframes livlinaRise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes livlinaPop  { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.intro-rise { animation: livlinaRise 0.5s cubic-bezier(0.22, 0.8, 0.32, 1) backwards; }
+.intro-pop  { animation: livlinaPop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) backwards; }
+
+/* "ursäkt"-överstrykningen ritas in från vänster. */
+@keyframes livlinaSwipe { from { background-size: 0% 78%; } to { background-size: 102% 78%; } }
+.livlina-swipe { animation: livlinaSwipe 0.55s ease-out backwards; }
+
+/* CTA-sken – en ljusreflex som sveper över knappen (en gång per trigger). */
+.cta-shine { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.cta-shine::before {
+  content: ""; position: absolute; top: 0; left: -70%; width: 45%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.65), transparent);
+  transform: skewX(-20deg);
+  animation: livlinaShine 0.9s ease-in-out;
+}
+@keyframes livlinaShine { from { left: -70%; } to { left: 160%; } }
+
+/* IQ-gul överstrykning bakom "ursäkt" i sloganen. */
 .livlina-mark {
   background-image: linear-gradient(
     101deg,

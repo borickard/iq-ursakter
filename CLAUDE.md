@@ -14,9 +14,13 @@ a Proof of Concept for **IQ** (owned by Systembolaget). A
 > **IN PROGRESS — IQ-identity redesign on branch `claude/iq-design-preview`
 > (NOT on `main`).** Reworks the look to IQ's visual identity (DESIGN.md +
 > tokens.css): IQ-gul `#EFFE53`, white bg, black, marin `#242F55` phone screen;
-> Copernicus (headings) + PP Neue Montreal (body), self-hosted in
-> `public/fonts/`; square corners, 1px borders, no shadows, hover-invert buttons;
-> most intro/scroll animations removed (only notifications + typing kept). Name
+> **Copernicus** (headings, self-hosted `public/fonts/`) + **Geist** (body/labels,
+> via next/font — replaced PP Neue Montreal, which read poorly in medium/bold and
+> had no true Bold); square corners, 1px borders, hover-invert buttons. **Animations
+> kept/restored (user likes them):** landing intro stagger, "ursäkt" highlight
+> sweep, CTA shine after notifs, notification loop, typing dots, compose
+> `reveal-step`; speech bubbles have a soft drop shadow so they pop; all motion off
+> under `prefers-reduced-motion`. Name
 > changed to **Ursäkten** (domän ursakt.se); wordmark is a single-line Syne
 > "URSÄKTEN" **without the heart**. Landing headline shortened to one Copernicus
 > line "En **ursäkt**, levererad via sms." (gul highlight on the clickable

@@ -96,9 +96,11 @@ function Landing({ onStart }: { onStart: () => void }) {
   // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
   // CTA-skenet triggas först NÄR alla tre notiser kommit in.
   // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
+  // CTA-skenet triggas först när alla tre är inne.
   const [notifShown, setNotifShown] = useState(0);
+  const [shineKey, setShineKey] = useState(0);
   useEffect(() => {
-    // prefers-reduced-motion: visa alla direkt, ingen loop (IQ-krav).
+    // prefers-reduced-motion: visa alla direkt, ingen loop.
     const reduce =
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -109,7 +111,7 @@ function Landing({ onStart }: { onStart: () => void }) {
     let cancelled = false;
     const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
     (async () => {
-      await sleep(400);
+      await sleep(1000); // vänta in intron
       while (!cancelled) {
         setNotifShown(0);
         await sleep(60);
@@ -121,6 +123,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         await sleep(600);
         if (cancelled) return;
         setNotifShown(3);
+        setShineKey((k) => k + 1); // skenet när alla tre är inne
         await sleep(3000); // håll alla tre i 3 s
         if (cancelled) return;
         setNotifShown(0); // tona ut alla samtidigt
@@ -136,20 +139,31 @@ function Landing({ onStart }: { onStart: () => void }) {
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
-        <Wordmark className="text-[26px] lg:text-[32px]" />
+        <Wordmark className="intro-pop text-[26px] lg:text-[32px]" />
 
         {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
-        <div className="mt-9 lg:hidden">
+        <div
+          className="intro-rise mt-9 lg:hidden"
+          style={{ animationDelay: "380ms" }}
+        >
           <HeroCarousel />
         </div>
 
         <div className="mt-9 space-y-4 lg:mt-10">
           <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[46px]">
-            {COPY.landing.headline2a}
-            <LivlinaChip onStart={onStart} />
-            {COPY.landing.headline2b}
+            <span
+              className="intro-rise inline"
+              style={{ animationDelay: "160ms" }}
+            >
+              {COPY.landing.headline2a}
+              <LivlinaChip onStart={onStart} />
+              {COPY.landing.headline2b}
+            </span>
           </h1>
-          <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-lg">
+          <p
+            className="intro-rise max-w-md text-[17px] leading-relaxed text-text lg:text-lg"
+            style={{ animationDelay: "340ms" }}
+          >
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -157,14 +171,19 @@ function Landing({ onStart }: { onStart: () => void }) {
         <Button
           block
           onClick={onStart}
-          className="mt-auto py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
+          className="intro-pop relative mt-auto overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
+          style={{ animationDelay: "520ms" }}
         >
           {COPY.landing.cta}
+          {shineKey > 0 && <span key={shineKey} aria-hidden className="cta-shine" />}
         </Button>
       </div>
 
       {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". */}
-      <div className="hidden lg:flex lg:justify-center">
+      <div
+        className="intro-pop hidden lg:flex lg:justify-center"
+        style={{ animationDelay: "380ms" }}
+      >
         <LandingPhone shown={notifShown} />
       </div>
     </div>
@@ -185,7 +204,8 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
           onStart();
         }
       }}
-      className="livlina-mark cursor-pointer"
+      className="livlina-mark livlina-swipe cursor-pointer"
+      style={{ animationDelay: "520ms" }}
     >
       {COPY.landing.headlineLink}
     </span>
@@ -261,7 +281,7 @@ function HeroCarousel() {
           trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
       <div className="relative w-[272px] max-w-full self-start">
         {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
-        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3">
+        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3 shadow-[0_12px_30px_rgba(0,0,0,0.15)]">
           <p ref={exRef} className="m-0 w-full text-[17px] font-medium leading-snug">
             {items[0].text}
           </p>
@@ -312,7 +332,7 @@ function ExcuseBubble({
   return (
     <div className="relative w-full self-start">
       {/* Fast höjd → sidan hoppar inte beroende på ursäktens längd. */}
-      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4">
+      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 shadow-[0_12px_30px_rgba(0,0,0,0.15)]">
         <p
           className={
             "m-0 line-clamp-3 text-[15px] leading-snug " +
@@ -687,11 +707,17 @@ function Compose({
   }
 
   return (
-    <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-12">
+    <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center lg:gap-12">
       {/* Vänster: kontroller */}
-      <div className="flex flex-1 flex-col gap-5">
-        <Wordmark className="text-[20px]" />
-        <Header title={COPY.compose.title} onBack={onBack} />
+      <div className="flex flex-1 flex-col gap-5 lg:flex-none">
+        {/* Samma storlek på ordmärket som startsidan; klickbart = hem (ingen pil). */}
+        <Wordmark
+          onClick={onBack}
+          className="intro-pop cursor-pointer self-start text-[26px] lg:text-[32px]"
+        />
+        <h1 className="mt-10 font-display text-2xl font-normal lg:mt-2">
+          {COPY.compose.title}
+        </h1>
 
         <SenderField value={sender} onChange={onSender} />
 
@@ -783,7 +809,7 @@ function Compose({
               className="reveal-step space-y-2"
               style={{ animationDelay: "180ms" }}
             >
-              <label htmlFor="phone" className="block text-sm font-medium">
+              <label htmlFor="phone" className="block text-base font-medium">
                 {COPY.details.phoneLabel}
               </label>
               <input
@@ -890,7 +916,7 @@ function SenderField({
 
   return (
     <div className="space-y-2.5">
-      <label className="block text-sm font-semibold">
+      <label className="block text-lg font-medium lg:text-xl">
         {COPY.compose.senderLabel}
       </label>
 
@@ -1070,20 +1096,18 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
       {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan). */}
       <div className="flex items-start gap-3">
         <IqLogo className="h-9 w-auto shrink-0" />
-        <div className="text-[13px] leading-relaxed text-text">
-          <p className="font-medium">{COPY.footer.iqLine}</p>
-          <p className="mt-1">
-            {COPY.footer.iqAbout}{" "}
-            <a
-              href={COPY.footer.iqHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2"
-            >
-              {COPY.footer.iqLink} ↗
-            </a>
-          </p>
-        </div>
+        <p className="text-[12px] leading-relaxed text-text">
+          <span className="font-medium">{COPY.footer.iqLine}</span>{" "}
+          {COPY.footer.iqAbout}{" "}
+          <a
+            href={COPY.footer.iqHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2"
+          >
+            {COPY.footer.iqLink} ↗
+          </a>
+        </p>
       </div>
       {/* Integritetstexten visas först i flödet (där numret anges), inte på
           startsidan. */}

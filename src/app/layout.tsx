@@ -1,14 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Syne } from "next/font/google";
+import { Syne, Geist } from "next/font/google";
 import { COPY } from "@/lib/copy";
 import "./globals.css";
 
-// Ordmärket behåller sitt eget typsnitt (Syne). Copernicus + Neue Montreal är
-// självhostade i globals.css (@font-face).
+// Ordmärket behåller sitt eget typsnitt (Syne). Rubriker = Copernicus (självhostad
+// i globals.css). Brödtext/etiketter/knappar = Geist – en ren, modern grotesk i
+// samma familj som PP Neue Montreal men med tydligare medium/bold.
 const syne = Syne({
   subsets: ["latin"],
   weight: ["700", "800"],
   variable: "--font-syne",
+  display: "swap",
+});
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
   display: "swap",
 });
 
@@ -41,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="sv" className={syne.variable}>
+    <html lang="sv" className={`${syne.variable} ${geist.variable}`}>
       <body>
         {/* Smal kolumn på mobil; bredare på desktop så skapa-vyn får plats med
             två kolumner (kontroller + telefonförhandsvisning). Varje vy sätter
