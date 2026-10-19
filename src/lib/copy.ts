@@ -186,6 +186,28 @@ export const COPY = {
     saveContact: "Spara kontakt",
   },
 
+  // Engångskod-steget (verifiera att man äger numret).
+  verify: {
+    title: "Verifiera ditt nummer",
+    intro:
+      "Vi skickade en engångskod via sms till ditt nummer. Ange den så vet vi att det är ditt – sen skickas ursäkten.",
+    placeholder: "6-siffrig kod",
+    confirm: "Bekräfta kod",
+    confirming: "Kontrollerar …",
+    resend: "Skicka en ny kod",
+    cancel: "Avbryt",
+    // Visas bara i testläge (dummy) så flödet går att prova utan riktiga sms.
+    devHint: "Testläge: din kod är {code}",
+    errors: {
+      invalid_code: "Fel kod. Försök igen.",
+      expired: "Koden har gått ut. Skicka en ny.",
+      too_many: "För många försök. Skicka en ny kod.",
+      rate_limited: "Du har begärt flera koder nyss. Vänta en stund.",
+      send_failed: "Kunde inte skicka koden. Försök igen om en stund.",
+      unknown: "Något gick fel. Försök igen.",
+    },
+  },
+
   result: {
     successTitle: "Skickat – kolla din telefon",
     successBody:

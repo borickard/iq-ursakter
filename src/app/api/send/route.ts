@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { normalizeToE164 } from "@/lib/phone";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { getSmsProvider, getSenderNumber } from "@/lib/sms";
+import { verifyToken } from "@/lib/verify";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,12 @@ export const dynamic = "force-dynamic";
  * fri text. Det stänger den värsta missbruksvektorn.
  */
 export async function POST(req: Request) {
-  let payload: { phone?: unknown; excuseId?: unknown; sender?: unknown };
+  let payload: {
+    phone?: unknown;
+    excuseId?: unknown;
+    sender?: unknown;
+    token?: unknown;
+  };
   try {
     payload = await req.json();
   } catch {
@@ -40,6 +46,16 @@ export async function POST(req: Request) {
   const to = normalizeToE164(phoneRaw);
   if (!to) {
     return NextResponse.json({ ok: false, error: "invalid_phone" }, { status: 422 });
+  }
+
+  // Kräv att enheten har verifierat att den äger numret (engångskod). Token:en
+  // är signerad och lever bara i användarens webbläsare – inget nummer lagras.
+  const token = typeof payload.token === "string" ? payload.token : "";
+  if (!verifyToken(token, to)) {
+    return NextResponse.json(
+      { ok: false, error: "verification_required" },
+      { status: 401 },
+    );
   }
 
   // Rate limiting (per IP + kortlivad nummer-hash + globalt dygnstak).

@@ -56,6 +56,20 @@ model LeadIn {
   createdAt DateTime @default(now())
 }
 
+// Engångskod-utmaning (OTP) för att verifiera nummerägande. GDPR: numret lagras
+// ALDRIG i klartext – `numHash` är en saltad hash och `codeHash` en hash av koden.
+// Kortlivad (CODE_TTL_MINUTES) och städas bort efter utgång. En aktiv utmaning per
+// nummer (numHash som PK → ny start skriver över den gamla).
+model OtpChallenge {
+  numHash   String   @id
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
 // Rate limiting-bucket. Fungerar över flera serverless-instanser (till skillnad
 // från in-memory). GDPR: mottagarnumret lagras ALDRIG i klartext – nyckeln för
 // nummer-buckets är en saltad HASH. Utgångna buckets städas bort löpande, så

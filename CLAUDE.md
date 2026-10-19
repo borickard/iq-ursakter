@@ -37,6 +37,22 @@ a Proof of Concept for **IQ** (owned by Systembolaget). A
 > supplying the Bold weight; Syne also keeps Ursäkten distinct from IQ's own Neue.
 > The favicon/app icon is still a provisional gul "U" tile. Await Rickard's review
 > before merging to `main`.
+>
+> **OTP (verify number ownership) — BUILT on this branch (dummy mode).** "Skicka
+> till mig" now requires a verified device. Flow: `/api/send` rejects with
+> `verification_required` unless a valid signed token is sent → client calls
+> `/api/verify/start` (sends a 6-digit code; in **dummy** SMS mode the code is
+> returned as `devCode` and shown in-UI as "Testläge: din kod är …" so preview is
+> testable without cost) → user enters code → `/api/verify/check` issues a signed
+> "device verified" token stored in `localStorage` (`ursakt_verify`), valid
+> 30 days → send proceeds. GDPR: number never stored — `OtpChallenge` keeps only a
+> salted `numHash` + `codeHash`, 10-min TTL, swept; the token is HMAC-signed
+> (`VERIFY_SECRET`, falls back to `RATE_LIMIT_HASH_SALT`) and lives only in the
+> browser. Helpers in `src/lib/verify.ts`; rate-limited via `checkVerifyRateLimit`.
+> **PENDING SQL (prod):** create the `OtpChallenge` table (see §7). **Optional env:**
+> `VERIFY_SECRET` (long random; else reuses `RATE_LIMIT_HASH_SALT`),
+> `RATE_LIMIT_VERIFY_PER_IP`/`_PER_NUMBER` (default 5). **Next up (not built):**
+> delay chips (1/5/10/30 min) + a "numret sparas inte efter utskick"-notis.
 mobile-first web app: the user generates a believable excuse and has it sent as
 an **SMS to their own phone**, so it shows up looking like it came from a saved
 contact (e.g. "Mamma", "Älskling", "Chefen"). A friction-free social "exit
@@ -370,6 +386,18 @@ from here. The user runs SQL by hand in **Supabase → SQL Editor**.
   (If the table already has the `senders` column, the whole block is still safe
   to re-run.) After this, admin can map any conversation to senders via the chip
   row under each one.
+- **PENDING — `OtpChallenge` table** (for the OTP verify feature on the preview
+  branch). The app needs it before OTP works in prod:
+  ```sql
+  CREATE TABLE IF NOT EXISTS "OtpChallenge" (
+    "numHash" TEXT PRIMARY KEY,
+    "codeHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS "OtpChallenge_expiresAt_idx" ON "OtpChallenge" ("expiresAt");
+  ```
 - **PENDING — `category` column + sender filtering.** The compose flow is now
   **sender-first**: the user picks the sender, then only excuses that fit that
   sender are shown. Each excuse has a `category` (`home` = Mamma/Pappa/Älskling,

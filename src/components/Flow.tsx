@@ -29,6 +29,24 @@ type LeadIn = { them1: string; me: string; them2: string; senders: string };
 type SendError = keyof typeof COPY.result.errors;
 type SuggestError = keyof typeof COPY.suggest.errors;
 
+/** Verifierings-token (enhet verifierad) – lever bara i användarens webbläsare. */
+const VERIFY_KEY = "ursakt_verify";
+function readVerifyToken(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(VERIFY_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+function storeVerifyToken(token: string): void {
+  try {
+    window.localStorage.setItem(VERIFY_KEY, token);
+  } catch {
+    // privat läge e.d. – strunta i det, man får verifiera igen
+  }
+}
+
 /** "Idag HH:MM" för nu minus angivet antal minuter (mockup-tidsstämplar). */
 function fakeTime(minutesAgo: number): string {
   const d = new Date(Date.now() - minutesAgo * 60000);
@@ -556,6 +574,12 @@ function Compose({
   const [formError, setFormError] = useState<string | null>(null);
   const [showFake, setShowFake] = useState(false);
   const [fakeLeadIn, setFakeLeadIn] = useState<LeadIn | undefined>(undefined);
+  // Engångskod-steg (verifiera nummer). "idle" = inget, "code" = ange koden.
+  const [verifyStep, setVerifyStep] = useState<"idle" | "code">("idle");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyError, setVerifyError] = useState<keyof typeof COPY.verify.errors | null>(null);
+  const [devCode, setDevCode] = useState<string | null>(null);
   // Vilken telefon-look den fejkade skärmen visar. Gissas från enheten men kan
   // bytas manuellt i förhandsvisningen (växel) så båda går att testa.
   const [platform, setPlatform] = useState<Platform>("ios");
@@ -702,20 +726,103 @@ function Compose({
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, excuseId: current.id, sender }),
+        body: JSON.stringify({
+          phone,
+          excuseId: current.id,
+          sender,
+          token: readVerifyToken(),
+        }),
       });
       if (res.ok) {
         onSent();
-      } else {
-        const data = await res.json().catch(() => ({}));
-        const err = (data?.error ?? "unknown") as string;
-        setError((err in COPY.result.errors ? err : "unknown") as SendError);
+        return;
       }
+      const data = await res.json().catch(() => ({}));
+      const err = (data?.error ?? "unknown") as string;
+      // Enheten är inte verifierad → starta engångskod-flödet.
+      if (err === "verification_required") {
+        await startVerify();
+        return;
+      }
+      setError((err in COPY.result.errors ? err : "unknown") as SendError);
     } catch {
       setError("send_failed");
     } finally {
       setSending(false);
     }
+  }
+
+  // Begär en ny engångskod och visa kodfältet.
+  async function startVerify() {
+    setVerifyError(null);
+    setVerifyCode("");
+    setDevCode(null);
+    setVerifyBusy(true);
+    try {
+      const res = await fetch("/api/verify/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setVerifyStep("code");
+        if (data.devCode) setDevCode(String(data.devCode));
+      } else {
+        const err = (data?.error ?? "unknown") as string;
+        setFormError(
+          COPY.verify.errors[
+            (err in COPY.verify.errors ? err : "unknown") as keyof typeof COPY.verify.errors
+          ],
+        );
+      }
+    } catch {
+      setFormError(COPY.verify.errors.unknown);
+    } finally {
+      setVerifyBusy(false);
+    }
+  }
+
+  // Kontrollera koden; vid rätt kod sparas token och ursäkten skickas.
+  async function confirmCode() {
+    const code = verifyCode.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setVerifyError("invalid_code");
+      return;
+    }
+    setVerifyError(null);
+    setVerifyBusy(true);
+    try {
+      const res = await fetch("/api/verify/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.token) {
+        storeVerifyToken(String(data.token));
+        setVerifyStep("idle");
+        setVerifyCode("");
+        setDevCode(null);
+        await send();
+      } else {
+        const err = (data?.error ?? "unknown") as string;
+        setVerifyError(
+          (err in COPY.verify.errors ? err : "unknown") as keyof typeof COPY.verify.errors,
+        );
+      }
+    } catch {
+      setVerifyError("unknown");
+    } finally {
+      setVerifyBusy(false);
+    }
+  }
+
+  function cancelVerify() {
+    setVerifyStep("idle");
+    setVerifyCode("");
+    setVerifyError(null);
+    setDevCode(null);
   }
 
   function showMessage() {
@@ -874,29 +981,90 @@ function Compose({
               className="reveal-step space-y-2"
               style={{ animationDelay: "240ms" }}
             >
-              {/* Knapparna sida vid sida: skicka (primär) + förhandsvisa (kontur). */}
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  block
-                  onClick={send}
-                  disabled={sending || !current || !phoneValid}
-                  className="px-3 text-center"
-                >
-                  {sending ? COPY.browse.sending : COPY.browse.send}
-                </Button>
-                <Button
-                  block
-                  variant="secondary"
-                  onClick={showMessage}
-                  disabled={!current}
-                  className="px-3 text-center"
-                >
-                  {COPY.compose.showAsMessage}
-                </Button>
-              </div>
-              <p className="text-center text-xs leading-snug text-muted lg:text-left">
-                {COPY.compose.showAsMessageHelp}
-              </p>
+              {verifyStep === "code" ? (
+                /* Engångskod-steg: ange koden som skickats till numret. */
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-base font-medium">{COPY.verify.title}</p>
+                    <p className="mt-1 text-sm text-muted">{COPY.verify.intro}</p>
+                  </div>
+                  <input
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    autoFocus
+                    value={verifyCode}
+                    onChange={(e) =>
+                      setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    placeholder={COPY.verify.placeholder}
+                    className="w-full rounded-none border border-border bg-surface px-5 py-3.5 text-center text-lg tracking-[0.4em] outline-none"
+                  />
+                  {devCode && (
+                    <p className="text-xs text-muted">
+                      {fill(COPY.verify.devHint, { code: devCode })}
+                    </p>
+                  )}
+                  {verifyError && (
+                    <p className="text-sm font-semibold text-danger">
+                      {COPY.verify.errors[verifyError]}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      block
+                      variant="secondary"
+                      onClick={cancelVerify}
+                      disabled={verifyBusy}
+                      className="px-3 text-center"
+                    >
+                      {COPY.verify.cancel}
+                    </Button>
+                    <Button
+                      block
+                      onClick={confirmCode}
+                      disabled={verifyBusy || verifyCode.length < 6}
+                      className="px-3 text-center"
+                    >
+                      {verifyBusy ? COPY.verify.confirming : COPY.verify.confirm}
+                    </Button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={startVerify}
+                    disabled={verifyBusy}
+                    className="text-xs text-muted underline underline-offset-2 disabled:opacity-50"
+                  >
+                    {COPY.verify.resend}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Knapparna sida vid sida: skicka (primär) + förhandsvisa (kontur). */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      block
+                      onClick={send}
+                      disabled={sending || !current || !phoneValid}
+                      className="px-3 text-center"
+                    >
+                      {sending ? COPY.browse.sending : COPY.browse.send}
+                    </Button>
+                    <Button
+                      block
+                      variant="secondary"
+                      onClick={showMessage}
+                      disabled={!current}
+                      className="px-3 text-center"
+                    >
+                      {COPY.compose.showAsMessage}
+                    </Button>
+                  </div>
+                  <p className="text-center text-xs leading-snug text-muted lg:text-left">
+                    {COPY.compose.showAsMessageHelp}
+                  </p>
+                </>
+              )}
             </div>
           </>
         )}
