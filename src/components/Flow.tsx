@@ -185,7 +185,7 @@ function Landing({ onStart }: { onStart: () => void }) {
           className="intro-rise mt-7 flex items-start justify-center overflow-hidden lg:hidden"
           style={{ animationDelay: "380ms", maxHeight: "clamp(260px, 44vh, 340px)" }}
         >
-          <LandingPhone shown={notifShown} />
+          <LandingPhoneSolo />
         </div>
 
         <div className="mt-9 space-y-4 lg:mt-10">
@@ -386,6 +386,42 @@ function LandingPhone({ shown }: { shown: number }) {
           <Notif sender={sender} text={text} time="nu" />
         </div>
       ))}
+    </PhoneFrame>
+  );
+}
+
+/* ── Landningens telefon (mobil): EN notis som roterar genom olika ursäkter ── */
+
+function LandingPhoneSolo() {
+  const items = COPY.landing.carousel;
+  const [i, setI] = useState(0);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    setVisible(true);
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    let idx = 0;
+    const id = window.setInterval(() => {
+      setVisible(false); // tona ut
+      window.setTimeout(() => {
+        idx = (idx + 1) % items.length;
+        setI(idx);
+        setVisible(true); // tona in nästa
+      }, 320);
+    }, 3200);
+    return () => window.clearInterval(id);
+  }, [items]);
+  const it = items[i];
+  return (
+    <PhoneFrame>
+      <div
+        className="transition-opacity duration-300 ease-out"
+        style={{ opacity: visible ? 1 : 0 }}
+      >
+        <Notif sender={it.sender} text={it.text} time="nu" />
+      </div>
     </PhoneFrame>
   );
 }
