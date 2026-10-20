@@ -291,7 +291,13 @@ function Notif({
 
 /* ── Lås-skärms-ram med klocka + datum – delad av telefon-vyerna ───────────── */
 
-function PhoneFrame({ children }: { children: React.ReactNode }) {
+function PhoneFrame({
+  children,
+  compact = false,
+}: {
+  children: React.ReactNode;
+  compact?: boolean;
+}) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());
@@ -318,13 +324,23 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
           <span>{clock}</span>
           <span>100%</span>
         </div>
-        <div className="mt-5 text-[62px] font-semibold leading-none tracking-tight">
+        <div
+          className={
+            "font-semibold leading-none tracking-tight " +
+            (compact ? "mt-3 text-[44px]" : "mt-5 text-[62px]")
+          }
+        >
           {clock}
         </div>
         <div className="mt-0.5 text-[15px] opacity-90 first-letter:uppercase">
           {dateLabel}
         </div>
-        <div className="mt-6 flex w-[calc(100%-24px)] flex-col gap-2.5">
+        <div
+          className={
+            (compact ? "mt-4" : "mt-6") +
+            " flex w-[calc(100%-24px)] flex-col gap-2.5"
+          }
+        >
           {children}
         </div>
       </div>
@@ -357,7 +373,7 @@ function LandingPhone({ shown }: { shown: number }) {
 
 /* ── Landningens telefon (mobil): EN notis som roterar genom olika ursäkter ── */
 
-function LandingPhoneSolo() {
+function LandingPhoneSolo({ compact = false }: { compact?: boolean }) {
   const items = COPY.landing.carousel;
   const [i, setI] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -380,7 +396,7 @@ function LandingPhoneSolo() {
   }, [items]);
   const it = items[i];
   return (
-    <PhoneFrame>
+    <PhoneFrame compact={compact}>
       <div
         className="transition-opacity duration-300 ease-out"
         style={{ opacity: visible ? 1 : 0 }}
@@ -473,18 +489,15 @@ function ClippedPhone({
   return (
     <div className="relative mx-auto w-[300px]">
       {/* Telefonen klipps platt i botten (block → ingen ihoptryckning). */}
-      <div className="relative overflow-hidden" style={{ maxHeight: maxH }}>
+      <div className="overflow-hidden" style={{ maxHeight: maxH }}>
         {children}
-        {/* "Under mattan": skugga som mörknar telefonen uppåt mot linjen. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
-        />
       </div>
-      {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. */}
+      {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. Linjen
+          kastar en liten skugga UPPÅT (max ~25px) som går ut på sidorna om
+          mobilen, så den ser ut att glida in under linjen. */}
       <div
         aria-hidden
-        className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.45)]"
+        className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border shadow-[0_-3px_14px_1px_rgba(0,0,0,0.5)]"
       />
     </div>
   );
@@ -824,23 +837,27 @@ function Compose({
 
         <SenderField value={sender} onChange={onSender} />
 
-        {/* Avsändare-först: allt nedan visas när en avsändare valts, och
-            ursäkterna är filtrerade till dem som passar personen. */}
+        {/* Mobil: klippt telefon från start – roterande exempel (exakt som
+            startsidan) tills en avsändare valts, sen vald avsändares preview. */}
+        <div className="lg:hidden">
+          <ClippedPhone maxH="clamp(205px, 30vh, 250px)">
+            {senderChosen ? (
+              <PhonePreview
+                compact
+                sender={contactName}
+                message={current?.text}
+                delayMin={delayMin}
+              />
+            ) : (
+              <LandingPhoneSolo compact />
+            )}
+          </ClippedPhone>
+        </div>
+
+        {/* Avsändare-först: resten visas när en avsändare valts, och ursäkterna
+            är filtrerade till dem som passar personen. */}
         {senderChosen && (
           <>
-            {/* Mobil: klippt telefon-förhandsvisning (kompakt) – visar vald
-                avsändare + ursäkt, så det man väljer syns i mobilen. */}
-            <div className="reveal-step lg:hidden">
-              <ClippedPhone maxH="clamp(205px, 30vh, 250px)">
-                <PhonePreview
-                  compact
-                  sender={contactName}
-                  message={current?.text}
-                  delayMin={delayMin}
-                />
-              </ClippedPhone>
-            </div>
-
             {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
             <p
               className="reveal-step hidden text-sm font-medium lg:block"
