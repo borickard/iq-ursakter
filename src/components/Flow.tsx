@@ -56,8 +56,85 @@ function fakeTime(minutesAgo: number): string {
   return `Idag ${hh}:${mm}`;
 }
 
+/* ── Delade telefon-loopar (bor i Flow så de ÖVERLEVER vybyte) ──────────────
+   Tidigare startade varje vy sin egen loop → förhandsvisningen "blinkade" och
+   började om när man bytte landning↔skapa. Nu drivs båda looparna här uppe och
+   skickas ner som props, så samma notis fortsätter där den var. */
+
+type ThreadLoop = { shown: number; shineKey: number };
+function useThreadLoop(): ThreadLoop {
+  // Desktop-tråden: notiser in en i taget, håll 3 s, loopa. shineKey bumpas när
+  // alla tre är inne (triggar CTA-skenet på landningen).
+  const [shown, setShown] = useState(0);
+  const [shineKey, setShineKey] = useState(0);
+  useEffect(() => {
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setShown(3);
+      return;
+    }
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    (async () => {
+      await sleep(1000);
+      while (!cancelled) {
+        setShown(0);
+        await sleep(60);
+        if (cancelled) return;
+        setShown(1);
+        await sleep(600);
+        if (cancelled) return;
+        setShown(2);
+        await sleep(600);
+        if (cancelled) return;
+        setShown(3);
+        setShineKey((k) => k + 1);
+        await sleep(3000);
+        if (cancelled) return;
+        setShown(0);
+        await sleep(1100);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return { shown, shineKey };
+}
+
+type SoloCarousel = { item: (typeof COPY.landing.carousel)[number]; visible: boolean };
+function useSoloCarousel(): SoloCarousel {
+  // Mobil-karusellen: EN notis som roterar genom olika ursäkter.
+  const items = COPY.landing.carousel;
+  const [i, setI] = useState(0);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    setVisible(true);
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    let idx = 0;
+    const id = window.setInterval(() => {
+      setVisible(false); // tona ut
+      window.setTimeout(() => {
+        idx = (idx + 1) % items.length;
+        setI(idx);
+        setVisible(true); // tona in nästa
+      }, 320);
+    }, 3200);
+    return () => window.clearInterval(id);
+  }, [items]);
+  return { item: items[i], visible };
+}
+
 export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
+  // Telefon-loopar som delas av landning + skapa (överlever vybyte, ingen blink).
+  const thread = useThreadLoop();
+  const solo = useSoloCarousel();
   const [phone, setPhone] = useState("");
   const [sender, setSender] = useState("");
   // ISO-tid om utskicket schemalagts (annars null = skickat direkt).
@@ -89,7 +166,9 @@ export default function Flow() {
       <StickyHeader onHome={() => setStep("landing")} />
 
       <div className="flex flex-1 flex-col pb-6">
-      {step === "landing" && <Landing onStart={() => setStep("compose")} />}
+      {step === "landing" && (
+        <Landing onStart={() => setStep("compose")} thread={thread} solo={solo} />
+      )}
 
       {step === "compose" && (
         <Compose
@@ -97,6 +176,8 @@ export default function Flow() {
           sender={sender}
           excuses={excuses}
           leadIns={leadIns}
+          thread={thread}
+          solo={solo}
           onPhone={setPhone}
           onSender={setSender}
           onSent={(iso) => {
@@ -154,48 +235,18 @@ function StickyHeader({ onHome }: { onHome: () => void }) {
 
 /* ── Steg: landning ─────────────────────────────────────────────────────── */
 
-function Landing({ onStart }: { onStart: () => void }) {
-  // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
-  // CTA-skenet triggas först NÄR alla tre notiser kommit in.
-  // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
-  // CTA-skenet triggas först när alla tre är inne.
-  const [notifShown, setNotifShown] = useState(0);
-  const [shineKey, setShineKey] = useState(0);
-  useEffect(() => {
-    // prefers-reduced-motion: visa alla direkt, ingen loop.
-    const reduce =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setNotifShown(3);
-      return;
-    }
-    let cancelled = false;
-    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-    (async () => {
-      await sleep(1000); // vänta in intron
-      while (!cancelled) {
-        setNotifShown(0);
-        await sleep(60);
-        if (cancelled) return;
-        setNotifShown(1);
-        await sleep(600);
-        if (cancelled) return;
-        setNotifShown(2);
-        await sleep(600);
-        if (cancelled) return;
-        setNotifShown(3);
-        setShineKey((k) => k + 1); // skenet när alla tre är inne
-        await sleep(3000); // håll alla tre i 3 s
-        if (cancelled) return;
-        setNotifShown(0); // tona ut alla samtidigt
-        await sleep(1100); // kort paus innan loop
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+function Landing({
+  onStart,
+  thread,
+  solo,
+}: {
+  onStart: () => void;
+  thread: ThreadLoop;
+  solo: SoloCarousel;
+}) {
+  // Notis-loopen + CTA-skenet drivs i Flow (överlever vybyte) och kommer in som
+  // props → ingen omstart/blink när man byter till skapa-vyn.
+  const { shown: notifShown, shineKey } = thread;
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none">
@@ -213,7 +264,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         <div className="lg:hidden">
           <ClippedPhone maxH="clamp(274px, 40vh, 292px)">
             <div className="phone-rise-up">
-              <LandingPhoneSolo compact />
+              <LandingPhoneSolo compact item={solo.item} visible={solo.visible} />
             </div>
           </ClippedPhone>
         </div>
@@ -393,35 +444,24 @@ function LandingPhone({ shown }: { shown: number }) {
 
 /* ── Landningens telefon (mobil): EN notis som roterar genom olika ursäkter ── */
 
-function LandingPhoneSolo({ compact = false }: { compact?: boolean }) {
-  const items = COPY.landing.carousel;
-  const [i, setI] = useState(0);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    setVisible(true);
-    const reduce =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    let idx = 0;
-    const id = window.setInterval(() => {
-      setVisible(false); // tona ut
-      window.setTimeout(() => {
-        idx = (idx + 1) % items.length;
-        setI(idx);
-        setVisible(true); // tona in nästa
-      }, 320);
-    }, 3200);
-    return () => window.clearInterval(id);
-  }, [items]);
-  const it = items[i];
+function LandingPhoneSolo({
+  item,
+  visible,
+  compact = false,
+}: {
+  item: SoloCarousel["item"];
+  visible: SoloCarousel["visible"];
+  compact?: boolean;
+}) {
+  // Presentationskomponent: rotationen (item/visible) drivs i Flow via
+  // useSoloCarousel så den fortsätter sömlöst mellan landning och skapa-vyn.
   return (
     <PhoneFrame compact={compact}>
       <div
         className="transition-opacity duration-300 ease-out"
         style={{ opacity: visible ? 1 : 0 }}
       >
-        <Notif sender={it.sender} text={it.text} time="nu" />
+        <Notif sender={item.sender} text={item.text} time="nu" />
       </div>
     </PhoneFrame>
   );
@@ -528,6 +568,8 @@ function Compose({
   sender,
   excuses,
   leadIns,
+  thread,
+  solo,
   onPhone,
   onSender,
   onSent,
@@ -536,6 +578,8 @@ function Compose({
   sender: string;
   excuses: Excuse[] | null;
   leadIns: LeadIn[];
+  thread: ThreadLoop;
+  solo: SoloCarousel;
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
   onSent: (scheduledAt?: string | null) => void;
@@ -568,43 +612,9 @@ function Compose({
   const senderChosen = sender.trim() !== "";
 
   // Telefonen (desktop) visas från start. Innan en avsändare valts loopar den
-  // exempel-notiserna (som på startsidan); när man väljer byts den mot den
-  // riktiga förhandsvisningen. Loopen körs bara medan ingen avsändare är vald.
-  const [exampleShown, setExampleShown] = useState(0);
-  useEffect(() => {
-    if (senderChosen) return;
-    const reduce =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setExampleShown(3);
-      return;
-    }
-    let cancelled = false;
-    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-    (async () => {
-      await sleep(300);
-      while (!cancelled) {
-        setExampleShown(0);
-        await sleep(60);
-        if (cancelled) return;
-        setExampleShown(1);
-        await sleep(600);
-        if (cancelled) return;
-        setExampleShown(2);
-        await sleep(600);
-        if (cancelled) return;
-        setExampleShown(3);
-        await sleep(3000);
-        if (cancelled) return;
-        setExampleShown(0);
-        await sleep(1100);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [senderChosen]);
+  // exempel-notiserna – men loopen bor i Flow (thread) så den fortsätter från
+  // där landningen var, utan att blinka/börja om. När man väljer avsändare byts
+  // den mot den riktiga förhandsvisningen.
 
   // När en avsändare väljs växer kontroll-kolumnen och (på desktop) centreras om
   // → annars "hoppar" allt upp. FLIP: mät positionen före/efter och animera
@@ -853,7 +863,7 @@ function Compose({
                 delayMin={delayMin}
               />
             ) : (
-              <LandingPhoneSolo compact />
+              <LandingPhoneSolo compact item={solo.item} visible={solo.visible} />
             )}
           </ClippedPhone>
         </div>
@@ -1092,7 +1102,7 @@ function Compose({
             />
           </div>
         ) : (
-          <LandingPhone shown={exampleShown} />
+          <LandingPhone shown={thread.shown} />
         )}
       </div>
       </div>
