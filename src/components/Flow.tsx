@@ -188,16 +188,21 @@ function Landing({ onStart }: { onStart: () => void }) {
           <div className="relative mx-auto w-[300px]">
             {/* Telefonen klipps platt i botten (block → ingen ihoptryckning). */}
             <div
-              className="overflow-hidden"
+              className="relative overflow-hidden"
               style={{ maxHeight: "clamp(230px, 40vh, 310px)" }}
             >
               <LandingPhoneSolo />
+              {/* "Under mattan": skugga som mörknar telefonen uppåt från linjen,
+                  som att linjens kant kastar skugga på mobilen där den glider in. */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
+              />
             </div>
-            {/* Horisontell linje – bredare än mobilen men inte hela vägen ut.
-                Skuggan nedåt gör att mobilen ser ut att glida in UNDER linjen. */}
+            {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. */}
             <div
               aria-hidden
-              className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border shadow-[0_6px_14px_-2px_rgba(0,0,0,0.4)]"
+              className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.45)]"
             />
           </div>
         </div>
