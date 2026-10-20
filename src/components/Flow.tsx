@@ -211,7 +211,7 @@ function Landing({ onStart }: { onStart: () => void }) {
             dyker upp) – ingen transparens. Samma crop/viloläge som i steg 2 så
             den inte hoppar vid vybyte. */}
         <div className="lg:hidden">
-          <ClippedPhone maxH="clamp(190px, 28vh, 232px)">
+          <ClippedPhone maxH="clamp(274px, 40vh, 292px)">
             <div className="phone-rise-up">
               <LandingPhoneSolo compact />
             </div>
@@ -844,7 +844,7 @@ function Compose({
             exempel tills en avsändare valts, sen vald avsändares preview. Valen
             ligger under. (Desktop: dold här, telefonen visas i högerkolumnen.) */}
         <div className="lg:hidden">
-          <ClippedPhone maxH="clamp(190px, 28vh, 232px)">
+          <ClippedPhone maxH="clamp(274px, 40vh, 292px)">
             {senderChosen ? (
               <PhonePreview
                 compact
