@@ -206,30 +206,27 @@ function Landing({ onStart }: { onStart: () => void }) {
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
         {/* Mobil-hjälte: telefonens övre del (klocka + inkommande notis) syns,
-            centrerad och klippt så bara ~översta tredjedelen visas. Resten av
-            telefonen "fortsätter" nedanför klippet. Samma crop (compact + maxH)
-            som i steg 2 så telefonen inte hoppar när man byter vy. */}
-        <div className="intro-rise lg:hidden" style={{ animationDelay: "380ms" }}>
+            klippt så bara ~översta tredjedelen visas. Telefonen animeras in
+            nerifrån och upp "ur linjen" (allt under linjen är avklippt, så den
+            dyker upp) – ingen transparens. Samma crop/viloläge som i steg 2 så
+            den inte hoppar vid vybyte. */}
+        <div className="lg:hidden">
           <ClippedPhone maxH="clamp(190px, 28vh, 232px)">
-            <LandingPhoneSolo compact />
+            <div className="phone-rise-up">
+              <LandingPhoneSolo compact />
+            </div>
           </ClippedPhone>
         </div>
 
+        {/* Text + knapp syns direkt (ingen intro). "ursäkt" får sitt highlight-svep
+            och knappen sitt sken. */}
         <div className="mt-9 space-y-4 lg:mt-10">
           <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[46px]">
-            <span
-              className="intro-rise inline"
-              style={{ animationDelay: "160ms" }}
-            >
-              {COPY.landing.headline2a}
-              <LivlinaChip onStart={onStart} />
-              {COPY.landing.headline2b}
-            </span>
+            {COPY.landing.headline2a}
+            <LivlinaChip onStart={onStart} />
+            {COPY.landing.headline2b}
           </h1>
-          <p
-            className="intro-rise max-w-md text-[17px] leading-relaxed text-text lg:text-lg"
-            style={{ animationDelay: "340ms" }}
-          >
+          <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-lg">
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -237,8 +234,7 @@ function Landing({ onStart }: { onStart: () => void }) {
         <Button
           block
           onClick={onStart}
-          className="intro-pop relative mt-auto overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
-          style={{ animationDelay: "520ms" }}
+          className="relative mt-auto overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
         >
           {COPY.landing.cta}
           {shineKey > 0 && <span key={shineKey} aria-hidden className="cta-shine" />}
@@ -246,11 +242,8 @@ function Landing({ onStart }: { onStart: () => void }) {
       </div>
 
       {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma", vertikalt
-          centrerad (items-center på rutnätet). */}
-      <div
-        className="intro-pop hidden lg:flex lg:justify-center"
-        style={{ animationDelay: "380ms" }}
-      >
+          centrerad. Animeras in från höger in i bild (ingen transparens). */}
+      <div className="phone-slide-in hidden lg:flex lg:justify-center">
         <LandingPhone shown={notifShown} />
       </div>
       </div>
@@ -273,7 +266,7 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
         }
       }}
       className="livlina-mark livlina-swipe cursor-pointer"
-      style={{ animationDelay: "520ms" }}
+      style={{ animationDelay: "350ms" }}
     >
       {COPY.landing.headlineLink}
     </span>
