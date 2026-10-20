@@ -172,39 +172,20 @@ function Landing({ onStart }: { onStart: () => void }) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none">
-      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop. */}
-      <Wordmark className="intro-pop self-start text-[26px] lg:self-center lg:text-[32px]" />
+      {/* Ordmärket: ovanför kolumnerna – centrerat i båda vyerna, större på desktop. */}
+      <Wordmark className="intro-pop mt-1 self-center text-[26px] lg:mt-3 lg:text-[44px]" />
 
-      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+      {/* Mobil: ~80px luft ner till loggan. Desktop: kolumnerna centreras vertikalt. */}
+      <div className="mt-20 flex flex-1 flex-col lg:mt-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
         {/* Mobil-hjälte: telefonens övre del (klocka + inkommande notis) syns,
             centrerad och klippt så bara ~översta tredjedelen visas. Resten av
             telefonen "fortsätter" nedanför klippet. (Desktop visar hela till höger.) */}
-        <div
-          className="intro-rise mt-7 lg:hidden"
-          style={{ animationDelay: "380ms" }}
-        >
-          <div className="relative mx-auto w-[300px]">
-            {/* Telefonen klipps platt i botten (block → ingen ihoptryckning). */}
-            <div
-              className="relative overflow-hidden"
-              style={{ maxHeight: "clamp(230px, 40vh, 310px)" }}
-            >
-              <LandingPhoneSolo />
-              {/* "Under mattan": skugga som mörknar telefonen uppåt från linjen,
-                  som att linjens kant kastar skugga på mobilen där den glider in. */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
-              />
-            </div>
-            {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. */}
-            <div
-              aria-hidden
-              className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.45)]"
-            />
-          </div>
+        <div className="intro-rise lg:hidden" style={{ animationDelay: "380ms" }}>
+          <ClippedPhone>
+            <LandingPhoneSolo />
+          </ClippedPhone>
         </div>
 
         <div className="mt-9 space-y-4 lg:mt-10">
@@ -237,10 +218,10 @@ function Landing({ onStart }: { onStart: () => void }) {
         </Button>
       </div>
 
-      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". Toppställd
-          (lg:self-start) så den hamnar på exakt samma plats som i skapa-vyn. */}
+      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma", vertikalt
+          centrerad (items-center på rutnätet). */}
       <div
-        className="intro-pop hidden lg:flex lg:justify-center lg:self-start"
+        className="intro-pop hidden lg:flex lg:justify-center"
         style={{ animationDelay: "380ms" }}
       >
         <LandingPhone shown={notifShown} />
@@ -269,41 +250,6 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
     >
       {COPY.landing.headlineLink}
     </span>
-  );
-}
-
-/* ── Pratbubbla för ursäkten (statisk, på skapa-skärmen) ────────────────── */
-
-function ExcuseBubble({
-  text,
-  loading,
-  empty,
-}: {
-  text?: string;
-  loading: boolean;
-  empty: boolean;
-}) {
-  const muted = loading || empty || !text;
-  const body = loading ? "…" : empty || !text ? COPY.compose.empty : text;
-  return (
-    <div className="relative w-full self-start">
-      {/* Fast höjd → sidan hoppar inte beroende på ursäktens längd. */}
-      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
-        <p
-          className={
-            "m-0 line-clamp-3 text-[15px] leading-snug " +
-            (muted ? "text-muted" : "font-medium")
-          }
-        >
-          {body}
-        </p>
-      </div>
-      <span
-        aria-hidden
-        className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
-        style={{ bottom: "-9px", transform: "rotate(45deg)" }}
-      />
-    </div>
   );
 }
 
@@ -451,10 +397,12 @@ function PhonePreview({
   sender,
   message,
   delayMin,
+  compact = false,
 }: {
   sender: string;
   message?: string;
   delayMin: number;
+  compact?: boolean;
 }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -486,7 +434,12 @@ function PhonePreview({
           <span>{clock}</span>
           <span>100%</span>
         </div>
-        <div className="mt-5 text-[62px] font-semibold leading-none tracking-tight">
+        <div
+          className={
+            "font-semibold leading-none tracking-tight " +
+            (compact ? "mt-3 text-[44px]" : "mt-5 text-[62px]")
+          }
+        >
           {clock}
         </div>
         <div className="mt-0.5 text-[15px] opacity-90 first-letter:uppercase">
@@ -494,7 +447,7 @@ function PhonePreview({
         </div>
 
         {/* Notis – ser ut som ett vanligt sms från kontakten. */}
-        <div className="mt-6 w-[calc(100%-24px)]">
+        <div className={(compact ? "mt-4" : "mt-6") + " w-[calc(100%-24px)]"}>
           <Notif sender={sender} text={message} time={scheduled ?? "nu"} />
         </div>
 
@@ -504,6 +457,35 @@ function PhonePreview({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Klippt telefon (mobil): visar översta delen, glider in under en linje ──── */
+
+function ClippedPhone({
+  children,
+  maxH = "clamp(230px, 40vh, 310px)",
+}: {
+  children: React.ReactNode;
+  maxH?: string;
+}) {
+  return (
+    <div className="relative mx-auto w-[300px]">
+      {/* Telefonen klipps platt i botten (block → ingen ihoptryckning). */}
+      <div className="relative overflow-hidden" style={{ maxHeight: maxH }}>
+        {children}
+        {/* "Under mattan": skugga som mörknar telefonen uppåt mot linjen. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
+        />
+      </div>
+      {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. */}
+      <div
+        aria-hidden
+        className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.45)]"
+      />
     </div>
   );
 }
@@ -828,15 +810,15 @@ function Compose({
           startsidan, så den behöver inte animeras om vid vybyte). */}
       <Wordmark
         onClick={onBack}
-        className="cursor-pointer self-start text-[26px] lg:self-center lg:text-[32px]"
+        className="mt-1 cursor-pointer self-center text-[26px] lg:mt-3 lg:text-[44px]"
       />
 
-      {/* Samma rutnät som startsidan (grid-cols-2 + gap-14) så telefonen hamnar
-          på exakt samma plats i båda vyerna och inte hoppar vid vybyte. */}
-      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+      {/* Samma rutnät som startsidan (grid-cols-2 + gap-14); kolumnerna centreras
+          vertikalt på desktop (items-center). */}
+      <div className="mt-6 flex flex-1 flex-col lg:mt-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Vänster: kontroller */}
-      <div ref={controlsRef} className="flex flex-1 flex-col gap-5 lg:flex-none">
-        <h1 className="mt-10 font-display text-2xl font-normal lg:mt-0">
+      <div ref={controlsRef} className="flex flex-1 flex-col gap-4 lg:gap-5 lg:flex-none">
+        <h1 className="mt-4 font-display text-2xl font-normal lg:mt-0">
           {COPY.compose.title}
         </h1>
 
@@ -846,17 +828,17 @@ function Compose({
             ursäkterna är filtrerade till dem som passar personen. */}
         {senderChosen && (
           <>
-            {/* Mobil: pratbubbla som förhandsvisning. */}
-            <div className="reveal-step flex flex-col gap-3.5 lg:hidden">
-              <ExcuseBubble
-                text={current?.text}
-                loading={excuses === null}
-                empty={excuses !== null && poolCount === 0}
-              />
-              <div className="flex h-4 items-baseline justify-between gap-3 pl-[22px] pr-1 font-mono text-[11px] text-muted">
-                <span className="truncate">{current ? contactName : ""}</span>
-                <span className="shrink-0">{countLabel ?? ""}</span>
-              </div>
+            {/* Mobil: klippt telefon-förhandsvisning (kompakt) – visar vald
+                avsändare + ursäkt, så det man väljer syns i mobilen. */}
+            <div className="reveal-step lg:hidden">
+              <ClippedPhone maxH="clamp(205px, 30vh, 250px)">
+                <PhonePreview
+                  compact
+                  sender={contactName}
+                  message={current?.text}
+                  delayMin={delayMin}
+                />
+              </ClippedPhone>
             </div>
 
             {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
@@ -921,9 +903,9 @@ function Compose({
                 <span className="hidden lg:inline">{COPY.compose.shuffleLong}</span>
               </button>
             </div>
-            {/* Antal skickningar – desktop (mobilen visar det i bildtexten). */}
+            {/* Antal skickningar. */}
             {countLabel && (
-              <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
+              <p className="text-center text-xs text-muted lg:text-left">{countLabel}</p>
             )}
 
             <div
@@ -1074,8 +1056,8 @@ function Compose({
       </div>
 
       {/* Höger: telefon – exempel-notiser tills avsändare valts, sen live.
-          Toppställd (lg:self-start) = samma plats som startsidans telefon. */}
-      <div className="hidden lg:flex lg:justify-center lg:self-start">
+          Vertikalt centrerad (items-center på rutnätet). */}
+      <div className="hidden lg:flex lg:justify-center">
         {senderChosen ? (
           <div className="reveal-step">
             <PhonePreview
