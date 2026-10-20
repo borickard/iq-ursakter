@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
+import { clsx } from "@/lib/clsx";
 import { normalizeToE164 } from "@/lib/phone";
 import { excuseFitsSender } from "@/lib/senders";
 import { Button, Chip } from "@/components/ui";
@@ -82,7 +83,12 @@ export default function Flow() {
   }, []);
 
   return (
-    <main className="flex flex-1 flex-col py-6">
+    <main className="flex flex-1 flex-col">
+      {/* Sticky logga högst upp – ligger kvar vid scroll, med halvtransparent
+          vit yta i fullbredd bakom. */}
+      <StickyHeader onHome={() => setStep("landing")} />
+
+      <div className="flex flex-1 flex-col pb-6">
       {step === "landing" && <Landing onStart={() => setStep("compose")} />}
 
       {step === "compose" && (
@@ -93,7 +99,6 @@ export default function Flow() {
           leadIns={leadIns}
           onPhone={setPhone}
           onSender={setSender}
-          onBack={() => setStep("landing")}
           onSent={(iso) => {
             setScheduledAt(iso ?? null);
             setStep("result");
@@ -121,7 +126,29 @@ export default function Flow() {
       {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
       <Footer showPrivacy={step !== "landing"} />
+      </div>
     </main>
+  );
+}
+
+/* ── Sticky logga-header (alla vyer) ──────────────────────────────────────── */
+
+function StickyHeader({ onHome }: { onHome: () => void }) {
+  return (
+    <header className="sticky top-0 z-30">
+      <div className="relative flex justify-center py-3 lg:py-4">
+        {/* Halvtransparent vit yta i FULLBREDD bakom loggan (tonar ner innehåll
+            som scrollar förbi). */}
+        <div
+          aria-hidden
+          className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-white/75 backdrop-blur-sm"
+        />
+        <Wordmark
+          onClick={onHome}
+          className="relative cursor-pointer text-[26px] lg:text-[44px]"
+        />
+      </div>
+    </header>
   );
 }
 
@@ -172,19 +199,19 @@ function Landing({ onStart }: { onStart: () => void }) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none">
-      {/* Ordmärket: ovanför kolumnerna – centrerat i båda vyerna, större på desktop. */}
-      <Wordmark className="intro-pop mt-1 self-center text-[26px] lg:mt-3 lg:text-[44px]" />
-
-      {/* Mobil: ~80px luft ner till loggan. Desktop: kolumnerna centreras vertikalt. */}
-      <div className="mt-20 flex flex-1 flex-col lg:mt-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+      {/* Mobil: luft ner till innehållet. Desktop: kolumnerna centreras vertikalt
+          över hela höjden (grid-rows:1fr) så telefonen hamnar på exakt samma
+          vertikala plats i båda vyerna (steg 1 & steg 2). */}
+      <div className="mt-8 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
         {/* Mobil-hjälte: telefonens övre del (klocka + inkommande notis) syns,
             centrerad och klippt så bara ~översta tredjedelen visas. Resten av
-            telefonen "fortsätter" nedanför klippet. (Desktop visar hela till höger.) */}
+            telefonen "fortsätter" nedanför klippet. Samma crop (compact + maxH)
+            som i steg 2 så telefonen inte hoppar när man byter vy. */}
         <div className="intro-rise lg:hidden" style={{ animationDelay: "380ms" }}>
-          <ClippedPhone>
-            <LandingPhoneSolo />
+          <ClippedPhone maxH="clamp(190px, 28vh, 232px)">
+            <LandingPhoneSolo compact />
           </ClippedPhone>
         </div>
 
@@ -510,7 +537,6 @@ function Compose({
   leadIns,
   onPhone,
   onSender,
-  onBack,
   onSent,
 }: {
   phone: string;
@@ -519,7 +545,6 @@ function Compose({
   leadIns: LeadIn[];
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
-  onBack: () => void;
   onSent: (scheduledAt?: string | null) => void;
 }) {
   const [browse, setBrowse] = useState<{ hist: number[]; cur: number }>({
@@ -816,17 +841,10 @@ function Compose({
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop.
-          Klickbart = hem (ingen pil). Ingen intro-animation här (samma plats som
-          startsidan, så den behöver inte animeras om vid vybyte). */}
-      <Wordmark
-        onClick={onBack}
-        className="mt-1 cursor-pointer self-center text-[26px] lg:mt-3 lg:text-[44px]"
-      />
-
       {/* Samma rutnät som startsidan (grid-cols-2 + gap-14); kolumnerna centreras
-          vertikalt på desktop (items-center). */}
-      <div className="mt-12 flex flex-1 flex-col lg:mt-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+          vertikalt på desktop över hela höjden (grid-rows:1fr) så telefonen hamnar
+          på exakt samma vertikala plats som i steg 1. */}
+      <div className="mt-8 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Vänster: kontroller */}
       <div ref={controlsRef} className="flex flex-1 flex-col gap-4 lg:gap-5 lg:flex-none">
         {/* Mobil: klippt telefon HÖGST UPP (precis som startsidan) – roterande
@@ -1345,12 +1363,19 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
         </p>
       </div>
       {/* Integritetstexten visas först i flödet (där numret anges), inte på
-          startsidan. */}
-      {showPrivacy && (
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          {COPY.privacy.short}
-        </p>
-      )}
+          startsidan. På desktop reserveras ändå raden (osynlig) på startsidan så
+          att sidfotens höjd – och därmed telefonens vertikala centrering – är
+          exakt densamma i båda vyerna (annars hoppar mobilen ~16 px vid vybyte).
+          På mobil döljs den helt (ingen tom lucka). */}
+      <p
+        aria-hidden={!showPrivacy}
+        className={clsx(
+          "mt-4 text-[12px] leading-relaxed text-muted",
+          !showPrivacy && "hidden lg:invisible lg:block",
+        )}
+      >
+        {COPY.privacy.short}
+      </p>
     </footer>
   );
 }
