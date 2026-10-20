@@ -492,12 +492,10 @@ function ClippedPhone({
       <div className="overflow-hidden" style={{ maxHeight: maxH }}>
         {children}
       </div>
-      {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. Linjen
-          kastar en liten skugga UPPÅT (max ~25px) som går ut på sidorna om
-          mobilen, så den ser ut att glida in under linjen. */}
+      {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. */}
       <div
         aria-hidden
-        className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border shadow-[0_-3px_14px_1px_rgba(0,0,0,0.5)]"
+        className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border"
       />
     </div>
   );
@@ -828,19 +826,14 @@ function Compose({
 
       {/* Samma rutnät som startsidan (grid-cols-2 + gap-14); kolumnerna centreras
           vertikalt på desktop (items-center). */}
-      <div className="mt-6 flex flex-1 flex-col lg:mt-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+      <div className="mt-12 flex flex-1 flex-col lg:mt-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
       {/* Vänster: kontroller */}
       <div ref={controlsRef} className="flex flex-1 flex-col gap-4 lg:gap-5 lg:flex-none">
-        <h1 className="mt-4 font-display text-2xl font-normal lg:mt-0">
-          {COPY.compose.title}
-        </h1>
-
-        <SenderField value={sender} onChange={onSender} />
-
-        {/* Mobil: klippt telefon från start – roterande exempel (exakt som
-            startsidan) tills en avsändare valts, sen vald avsändares preview. */}
+        {/* Mobil: klippt telefon HÖGST UPP (precis som startsidan) – roterande
+            exempel tills en avsändare valts, sen vald avsändares preview. Valen
+            ligger under. (Desktop: dold här, telefonen visas i högerkolumnen.) */}
         <div className="lg:hidden">
-          <ClippedPhone maxH="clamp(205px, 30vh, 250px)">
+          <ClippedPhone maxH="clamp(190px, 28vh, 232px)">
             {senderChosen ? (
               <PhonePreview
                 compact
@@ -853,6 +846,10 @@ function Compose({
             )}
           </ClippedPhone>
         </div>
+
+        <h1 className="font-display text-2xl font-normal">{COPY.compose.title}</h1>
+
+        <SenderField value={sender} onChange={onSender} />
 
         {/* Avsändare-först: resten visas när en avsändare valts, och ursäkterna
             är filtrerade till dem som passar personen. */}
