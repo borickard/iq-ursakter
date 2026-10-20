@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Syne, Geist } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { COPY } from "@/lib/copy";
 import "./globals.css";
 
@@ -55,6 +56,8 @@ export default function RootLayout({
         <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 lg:max-w-4xl lg:px-8">
           {children}
         </div>
+        {/* Vercel Analytics – räknar besök/sidvisningar (ingen cookie, ingen PII). */}
+        <Analytics />
       </body>
     </html>
   );

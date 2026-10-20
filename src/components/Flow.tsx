@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
+import { clsx } from "@/lib/clsx";
 import { normalizeToE164 } from "@/lib/phone";
 import { excuseFitsSender } from "@/lib/senders";
 import { Button, Chip } from "@/components/ui";
@@ -55,8 +56,85 @@ function fakeTime(minutesAgo: number): string {
   return `Idag ${hh}:${mm}`;
 }
 
+/* ── Delade telefon-loopar (bor i Flow så de ÖVERLEVER vybyte) ──────────────
+   Tidigare startade varje vy sin egen loop → förhandsvisningen "blinkade" och
+   började om när man bytte landning↔skapa. Nu drivs båda looparna här uppe och
+   skickas ner som props, så samma notis fortsätter där den var. */
+
+type ThreadLoop = { shown: number; shineKey: number };
+function useThreadLoop(): ThreadLoop {
+  // Desktop-tråden: notiser in en i taget, håll 3 s, loopa. shineKey bumpas när
+  // alla tre är inne (triggar CTA-skenet på landningen).
+  const [shown, setShown] = useState(0);
+  const [shineKey, setShineKey] = useState(0);
+  useEffect(() => {
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setShown(3);
+      return;
+    }
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    (async () => {
+      await sleep(1000);
+      while (!cancelled) {
+        setShown(0);
+        await sleep(60);
+        if (cancelled) return;
+        setShown(1);
+        await sleep(600);
+        if (cancelled) return;
+        setShown(2);
+        await sleep(600);
+        if (cancelled) return;
+        setShown(3);
+        setShineKey((k) => k + 1);
+        await sleep(3000);
+        if (cancelled) return;
+        setShown(0);
+        await sleep(1100);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return { shown, shineKey };
+}
+
+type SoloCarousel = { item: (typeof COPY.landing.carousel)[number]; visible: boolean };
+function useSoloCarousel(): SoloCarousel {
+  // Mobil-karusellen: EN notis som roterar genom olika ursäkter.
+  const items = COPY.landing.carousel;
+  const [i, setI] = useState(0);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    setVisible(true);
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    let idx = 0;
+    const id = window.setInterval(() => {
+      setVisible(false); // tona ut
+      window.setTimeout(() => {
+        idx = (idx + 1) % items.length;
+        setI(idx);
+        setVisible(true); // tona in nästa
+      }, 320);
+    }, 3200);
+    return () => window.clearInterval(id);
+  }, [items]);
+  return { item: items[i], visible };
+}
+
 export default function Flow() {
   const [step, setStep] = useState<Step>("landing");
+  // Telefon-loopar som delas av landning + skapa (överlever vybyte, ingen blink).
+  const thread = useThreadLoop();
+  const solo = useSoloCarousel();
   const [phone, setPhone] = useState("");
   const [sender, setSender] = useState("");
   // ISO-tid om utskicket schemalagts (annars null = skickat direkt).
@@ -82,8 +160,15 @@ export default function Flow() {
   }, []);
 
   return (
-    <main className="flex flex-1 flex-col py-6">
-      {step === "landing" && <Landing onStart={() => setStep("compose")} />}
+    <main className="flex flex-1 flex-col">
+      {/* Sticky logga högst upp – ligger kvar vid scroll, med halvtransparent
+          vit yta i fullbredd bakom. */}
+      <StickyHeader onHome={() => setStep("landing")} />
+
+      <div className="flex flex-1 flex-col pb-6">
+      {step === "landing" && (
+        <Landing onStart={() => setStep("compose")} thread={thread} solo={solo} />
+      )}
 
       {step === "compose" && (
         <Compose
@@ -91,9 +176,10 @@ export default function Flow() {
           sender={sender}
           excuses={excuses}
           leadIns={leadIns}
+          thread={thread}
+          solo={solo}
           onPhone={setPhone}
           onSender={setSender}
-          onBack={() => setStep("landing")}
           onSent={(iso) => {
             setScheduledAt(iso ?? null);
             setStep("result");
@@ -121,86 +207,77 @@ export default function Flow() {
       {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
       <Footer showPrivacy={step !== "landing"} />
+      </div>
     </main>
+  );
+}
+
+/* ── Sticky logga-header (alla vyer) ──────────────────────────────────────── */
+
+function StickyHeader({ onHome }: { onHome: () => void }) {
+  return (
+    <header className="sticky top-0 z-30">
+      <div className="relative flex justify-center py-3 lg:py-4">
+        {/* Halvtransparent vit yta i FULLBREDD bakom loggan (tonar ner innehåll
+            som scrollar förbi). */}
+        <div
+          aria-hidden
+          className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-white/75 backdrop-blur-sm"
+        />
+        <Wordmark
+          onClick={onHome}
+          className="relative cursor-pointer text-[26px] lg:text-[44px]"
+        />
+      </div>
+    </header>
   );
 }
 
 /* ── Steg: landning ─────────────────────────────────────────────────────── */
 
-function Landing({ onStart }: { onStart: () => void }) {
-  // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
-  // CTA-skenet triggas först NÄR alla tre notiser kommit in.
-  // Notiserna poppar in en i taget, håller 3 s när alla tre är inne, och loopar.
-  // CTA-skenet triggas först när alla tre är inne.
-  const [notifShown, setNotifShown] = useState(0);
-  const [shineKey, setShineKey] = useState(0);
-  useEffect(() => {
-    // prefers-reduced-motion: visa alla direkt, ingen loop.
-    const reduce =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setNotifShown(3);
-      return;
-    }
-    let cancelled = false;
-    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-    (async () => {
-      await sleep(1000); // vänta in intron
-      while (!cancelled) {
-        setNotifShown(0);
-        await sleep(60);
-        if (cancelled) return;
-        setNotifShown(1);
-        await sleep(600);
-        if (cancelled) return;
-        setNotifShown(2);
-        await sleep(600);
-        if (cancelled) return;
-        setNotifShown(3);
-        setShineKey((k) => k + 1); // skenet när alla tre är inne
-        await sleep(3000); // håll alla tre i 3 s
-        if (cancelled) return;
-        setNotifShown(0); // tona ut alla samtidigt
-        await sleep(1100); // kort paus innan loop
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+function Landing({
+  onStart,
+  thread,
+  solo,
+}: {
+  onStart: () => void;
+  thread: ThreadLoop;
+  solo: SoloCarousel;
+}) {
+  // Notis-loopen + CTA-skenet drivs i Flow (överlever vybyte) och kommer in som
+  // props → ingen omstart/blink när man byter till skapa-vyn.
+  const { shown: notifShown, shineKey } = thread;
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none">
-      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop. */}
-      <Wordmark className="intro-pop self-start text-[26px] lg:self-center lg:text-[32px]" />
-
-      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+      {/* Mobil: luft ner till innehållet. Desktop: kolumnerna centreras vertikalt
+          över hela höjden (grid-rows:1fr) så telefonen hamnar på exakt samma
+          vertikala plats i båda vyerna (steg 1 & steg 2). */}
+      <div className="mt-8 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
-        {/* Mobil-hjälte: typ-bubblan. På desktop tar telefonen till höger över. */}
-        <div
-          className="intro-rise mt-9 lg:hidden"
-          style={{ animationDelay: "380ms" }}
-        >
-          <HeroCarousel />
+        {/* Mobil-hjälte: telefonens övre del (klocka + inkommande notis) syns,
+            klippt så bara ~översta tredjedelen visas. Telefonen animeras in
+            nerifrån och upp "ur linjen" (allt under linjen är avklippt, så den
+            dyker upp) – ingen transparens. Samma crop/viloläge som i steg 2 så
+            den inte hoppar vid vybyte. */}
+        <div className="lg:hidden">
+          <ClippedPhone maxH="clamp(274px, 40vh, 292px)">
+            <div className="phone-rise-up">
+              <LandingPhoneSolo compact item={solo.item} visible={solo.visible} />
+            </div>
+          </ClippedPhone>
         </div>
 
+        {/* Text + knapp syns direkt (ingen intro). "ursäkt" får sitt highlight-svep
+            och knappen sitt sken. */}
         <div className="mt-9 space-y-4 lg:mt-10">
           <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[46px]">
-            <span
-              className="intro-rise inline"
-              style={{ animationDelay: "160ms" }}
-            >
-              {COPY.landing.headline2a}
-              <LivlinaChip onStart={onStart} />
-              {COPY.landing.headline2b}
-            </span>
+            {COPY.landing.headline2a}
+            <LivlinaChip onStart={onStart} />
+            {COPY.landing.headline2b}
           </h1>
-          <p
-            className="intro-rise max-w-md text-[17px] leading-relaxed text-text lg:text-lg"
-            style={{ animationDelay: "340ms" }}
-          >
+          <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-lg">
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -208,20 +285,16 @@ function Landing({ onStart }: { onStart: () => void }) {
         <Button
           block
           onClick={onStart}
-          className="intro-pop relative mt-auto overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
-          style={{ animationDelay: "520ms" }}
+          className="relative mt-auto overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
         >
           {COPY.landing.cta}
           {shineKey > 0 && <span key={shineKey} aria-hidden className="cta-shine" />}
         </Button>
       </div>
 
-      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma". Toppställd
-          (lg:self-start) så den hamnar på exakt samma plats som i skapa-vyn. */}
-      <div
-        className="intro-pop hidden lg:flex lg:justify-center lg:self-start"
-        style={{ animationDelay: "380ms" }}
-      >
+      {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma", vertikalt
+          centrerad. Animeras in från höger in i bild (ingen transparens). */}
+      <div className="phone-slide-in hidden lg:flex lg:justify-center">
         <LandingPhone shown={notifShown} />
       </div>
       </div>
@@ -244,149 +317,10 @@ function LivlinaChip({ onStart }: { onStart: () => void }) {
         }
       }}
       className="livlina-mark livlina-swipe cursor-pointer"
-      style={{ animationDelay: "520ms" }}
+      style={{ animationDelay: "350ms" }}
     >
       {COPY.landing.headlineLink}
     </span>
-  );
-}
-
-/* ── Landningens roterande pratbubbla ───────────────────────────────────── */
-
-function HeroCarousel() {
-  const items = COPY.landing.carousel;
-  const exRef = useRef<HTMLParagraphElement>(null);
-  const typingRef = useRef<HTMLDivElement>(null);
-  const metaRef = useRef<HTMLParagraphElement>(null);
-  const idx = useRef(0);
-
-  useEffect(() => {
-    const exP = exRef.current;
-    const typing = typingRef.current;
-    const meta = metaRef.current;
-    if (!exP) return;
-    const reduce =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const EASE = "cubic-bezier(.455,.03,.515,.955)";
-    let t1 = 0;
-    let t2 = 0;
-    const id = window.setInterval(() => {
-      idx.current = (idx.current + 1) % items.length;
-      const it = items[idx.current];
-      if (reduce) {
-        exP.textContent = it.text;
-        if (meta) meta.textContent = it.sender + " · nyss";
-        return;
-      }
-      // Tona ut texten → visa skrivindikator en stund → "skriv in" nästa ursäkt.
-      // Ett enda textlager, vertikalt centrerat, så varje byte ser likadant ut.
-      exP.style.transition = "opacity .2s ease";
-      exP.style.opacity = "0";
-      if (meta) meta.style.opacity = "0";
-      t1 = window.setTimeout(() => {
-        if (typing) typing.style.display = "flex";
-      }, 200);
-      t2 = window.setTimeout(() => {
-        if (typing) typing.style.display = "none";
-        exP.textContent = it.text;
-        exP.style.transition = "none";
-        exP.style.opacity = "0";
-        exP.style.transform = "translateY(6px)";
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            exP.style.transition =
-              "opacity .3s " + EASE + ", transform .3s " + EASE;
-            exP.style.opacity = "1";
-            exP.style.transform = "translateY(0)";
-          }),
-        );
-        if (meta) {
-          meta.textContent = it.sender + " · nyss";
-          meta.style.opacity = "1";
-        }
-      }, 1150);
-    }, 3000);
-    return () => {
-      window.clearInterval(id);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
-  }, [items]);
-
-  return (
-    <div className="flex flex-col gap-3.5">
-      {/* Fast storlek: bredd satt så texten radbryts över ~tre rader, och fast
-          trehöjd – bubblan byter aldrig storlek mellan meddelandena. */}
-      <div className="relative w-[272px] max-w-full self-start">
-        {/* Texten vertikalt centrerad; pb ger luft så svansen aldrig täcker den. */}
-        <div className="relative flex h-[108px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 pb-5 pt-3 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
-          <p ref={exRef} className="m-0 w-full text-[17px] font-medium leading-snug">
-            {items[0].text}
-          </p>
-          {/* Skrivindikator – centrerad i bubblan, visas mellan ursäkterna. */}
-          <div
-            ref={typingRef}
-            aria-hidden
-            className="absolute inset-0 hidden items-center justify-center"
-          >
-            <span className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0s_ease-in-out_infinite]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0.16s_ease-in-out_infinite]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#c3c3c9] [animation:livlinaTyping_1.3s_0.32s_ease-in-out_infinite]" />
-            </span>
-          </div>
-        </div>
-        {/* Svansen överlappar bubblans underkant → vit fyllning döljer bubblans
-            nederkantslinje så spetsen sitter ihop med bubblan. */}
-        <span
-          aria-hidden
-          className="absolute left-[26px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
-          style={{ bottom: "-6px", transform: "rotate(45deg)" }}
-        />
-      </div>
-      <p
-        ref={metaRef}
-        className="pl-[26px] font-mono text-[11px] text-muted transition-opacity duration-300"
-      >
-        {items[0].sender} · nyss
-      </p>
-    </div>
-  );
-}
-
-/* ── Pratbubbla för ursäkten (statisk, på skapa-skärmen) ────────────────── */
-
-function ExcuseBubble({
-  text,
-  loading,
-  empty,
-}: {
-  text?: string;
-  loading: boolean;
-  empty: boolean;
-}) {
-  const muted = loading || empty || !text;
-  const body = loading ? "…" : empty || !text ? COPY.compose.empty : text;
-  return (
-    <div className="relative w-full self-start">
-      {/* Fast höjd → sidan hoppar inte beroende på ursäktens längd. */}
-      <div className="relative flex h-[72px] items-center overflow-hidden rounded-2xl border border-border bg-surface px-4 shadow-[9px_11px_12px_rgba(0,0,0,0.16)]">
-        <p
-          className={
-            "m-0 line-clamp-3 text-[15px] leading-snug " +
-            (muted ? "text-muted" : "font-medium")
-          }
-        >
-          {body}
-        </p>
-      </div>
-      <span
-        aria-hidden
-        className="absolute left-[22px] h-4 w-4 rounded-br-[4px] border-b border-r border-border bg-surface"
-        style={{ bottom: "-9px", transform: "rotate(45deg)" }}
-      />
-    </div>
   );
 }
 
@@ -428,7 +362,13 @@ function Notif({
 
 /* ── Lås-skärms-ram med klocka + datum – delad av telefon-vyerna ───────────── */
 
-function PhoneFrame({ children }: { children: React.ReactNode }) {
+function PhoneFrame({
+  children,
+  compact = false,
+}: {
+  children: React.ReactNode;
+  compact?: boolean;
+}) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());
@@ -455,13 +395,23 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
           <span>{clock}</span>
           <span>100%</span>
         </div>
-        <div className="mt-5 text-[62px] font-semibold leading-none tracking-tight">
+        <div
+          className={
+            "font-semibold leading-none tracking-tight " +
+            (compact ? "mt-3 text-[44px]" : "mt-5 text-[62px]")
+          }
+        >
           {clock}
         </div>
         <div className="mt-0.5 text-[15px] opacity-90 first-letter:uppercase">
           {dateLabel}
         </div>
-        <div className="mt-6 flex w-[calc(100%-24px)] flex-col gap-2.5">
+        <div
+          className={
+            (compact ? "mt-4" : "mt-6") +
+            " flex w-[calc(100%-24px)] flex-col gap-2.5"
+          }
+        >
           {children}
         </div>
       </div>
@@ -492,16 +442,43 @@ function LandingPhone({ shown }: { shown: number }) {
   );
 }
 
+/* ── Landningens telefon (mobil): EN notis som roterar genom olika ursäkter ── */
+
+function LandingPhoneSolo({
+  item,
+  visible,
+  compact = false,
+}: {
+  item: SoloCarousel["item"];
+  visible: SoloCarousel["visible"];
+  compact?: boolean;
+}) {
+  // Presentationskomponent: rotationen (item/visible) drivs i Flow via
+  // useSoloCarousel så den fortsätter sömlöst mellan landning och skapa-vyn.
+  return (
+    <PhoneFrame compact={compact}>
+      <div
+        className="transition-opacity duration-300 ease-out"
+        style={{ opacity: visible ? 1 : 0 }}
+      >
+        <Notif sender={item.sender} text={item.text} time="nu" />
+      </div>
+    </PhoneFrame>
+  );
+}
+
 /* ── Telefon-förhandsvisning (desktop) – lås-skärm med notis ──────────────── */
 
 function PhonePreview({
   sender,
   message,
   delayMin,
+  compact = false,
 }: {
   sender: string;
   message?: string;
   delayMin: number;
+  compact?: boolean;
 }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -533,7 +510,12 @@ function PhonePreview({
           <span>{clock}</span>
           <span>100%</span>
         </div>
-        <div className="mt-5 text-[62px] font-semibold leading-none tracking-tight">
+        <div
+          className={
+            "font-semibold leading-none tracking-tight " +
+            (compact ? "mt-3 text-[44px]" : "mt-5 text-[62px]")
+          }
+        >
           {clock}
         </div>
         <div className="mt-0.5 text-[15px] opacity-90 first-letter:uppercase">
@@ -541,7 +523,7 @@ function PhonePreview({
         </div>
 
         {/* Notis – ser ut som ett vanligt sms från kontakten. */}
-        <div className="mt-6 w-[calc(100%-24px)]">
+        <div className={(compact ? "mt-4" : "mt-6") + " w-[calc(100%-24px)]"}>
           <Notif sender={sender} text={message} time={scheduled ?? "nu"} />
         </div>
 
@@ -555,6 +537,30 @@ function PhonePreview({
   );
 }
 
+/* ── Klippt telefon (mobil): visar översta delen, glider in under en linje ──── */
+
+function ClippedPhone({
+  children,
+  maxH = "clamp(230px, 40vh, 310px)",
+}: {
+  children: React.ReactNode;
+  maxH?: string;
+}) {
+  return (
+    <div className="relative mx-auto w-[300px]">
+      {/* Telefonen klipps platt i botten (block → ingen ihoptryckning). */}
+      <div className="overflow-hidden" style={{ maxHeight: maxH }}>
+        {children}
+      </div>
+      {/* Horisontell linje – bredare än mobilen men inte hela vägen ut. */}
+      <div
+        aria-hidden
+        className="absolute bottom-0 left-1/2 h-[2px] w-[min(340px,92vw)] -translate-x-1/2 bg-border"
+      />
+    </div>
+  );
+}
+
 /* ── Steg: skapa ────────────────────────────────────────────────────────── */
 
 function Compose({
@@ -562,18 +568,20 @@ function Compose({
   sender,
   excuses,
   leadIns,
+  thread,
+  solo,
   onPhone,
   onSender,
-  onBack,
   onSent,
 }: {
   phone: string;
   sender: string;
   excuses: Excuse[] | null;
   leadIns: LeadIn[];
+  thread: ThreadLoop;
+  solo: SoloCarousel;
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
-  onBack: () => void;
   onSent: (scheduledAt?: string | null) => void;
 }) {
   const [browse, setBrowse] = useState<{ hist: number[]; cur: number }>({
@@ -604,43 +612,9 @@ function Compose({
   const senderChosen = sender.trim() !== "";
 
   // Telefonen (desktop) visas från start. Innan en avsändare valts loopar den
-  // exempel-notiserna (som på startsidan); när man väljer byts den mot den
-  // riktiga förhandsvisningen. Loopen körs bara medan ingen avsändare är vald.
-  const [exampleShown, setExampleShown] = useState(0);
-  useEffect(() => {
-    if (senderChosen) return;
-    const reduce =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setExampleShown(3);
-      return;
-    }
-    let cancelled = false;
-    const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-    (async () => {
-      await sleep(300);
-      while (!cancelled) {
-        setExampleShown(0);
-        await sleep(60);
-        if (cancelled) return;
-        setExampleShown(1);
-        await sleep(600);
-        if (cancelled) return;
-        setExampleShown(2);
-        await sleep(600);
-        if (cancelled) return;
-        setExampleShown(3);
-        await sleep(3000);
-        if (cancelled) return;
-        setExampleShown(0);
-        await sleep(1100);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [senderChosen]);
+  // exempel-notiserna – men loopen bor i Flow (thread) så den fortsätter från
+  // där landningen var, utan att blinka/börja om. När man väljer avsändare byts
+  // den mot den riktiga förhandsvisningen.
 
   // När en avsändare väljs växer kontroll-kolumnen och (på desktop) centreras om
   // → annars "hoppar" allt upp. FLIP: mät positionen före/efter och animera
@@ -870,42 +844,38 @@ function Compose({
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Ordmärket: ovanför kolumnerna – vänster på mobil, centrerat på desktop.
-          Klickbart = hem (ingen pil). Ingen intro-animation här (samma plats som
-          startsidan, så den behöver inte animeras om vid vybyte). */}
-      <Wordmark
-        onClick={onBack}
-        className="cursor-pointer self-start text-[26px] lg:self-center lg:text-[32px]"
-      />
-
-      {/* Samma rutnät som startsidan (grid-cols-2 + gap-14) så telefonen hamnar
-          på exakt samma plats i båda vyerna och inte hoppar vid vybyte. */}
-      <div className="flex flex-1 flex-col lg:mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14">
+      {/* Samma rutnät som startsidan (grid-cols-2 + gap-14); kolumnerna centreras
+          vertikalt på desktop över hela höjden (grid-rows:1fr) så telefonen hamnar
+          på exakt samma vertikala plats som i steg 1. */}
+      <div className="mt-8 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Vänster: kontroller */}
-      <div ref={controlsRef} className="flex flex-1 flex-col gap-5 lg:flex-none">
-        <h1 className="mt-10 font-display text-2xl font-normal lg:mt-0">
-          {COPY.compose.title}
-        </h1>
+      <div ref={controlsRef} className="flex flex-1 flex-col gap-4 lg:gap-5 lg:flex-none">
+        {/* Mobil: klippt telefon HÖGST UPP (precis som startsidan) – roterande
+            exempel tills en avsändare valts, sen vald avsändares preview. Valen
+            ligger under. (Desktop: dold här, telefonen visas i högerkolumnen.) */}
+        <div className="lg:hidden">
+          <ClippedPhone maxH="clamp(274px, 40vh, 292px)">
+            {senderChosen ? (
+              <PhonePreview
+                compact
+                sender={contactName}
+                message={current?.text}
+                delayMin={delayMin}
+              />
+            ) : (
+              <LandingPhoneSolo compact item={solo.item} visible={solo.visible} />
+            )}
+          </ClippedPhone>
+        </div>
+
+        <h1 className="font-display text-2xl font-normal">{COPY.compose.title}</h1>
 
         <SenderField value={sender} onChange={onSender} />
 
-        {/* Avsändare-först: allt nedan visas när en avsändare valts, och
-            ursäkterna är filtrerade till dem som passar personen. */}
+        {/* Avsändare-först: resten visas när en avsändare valts, och ursäkterna
+            är filtrerade till dem som passar personen. */}
         {senderChosen && (
           <>
-            {/* Mobil: pratbubbla som förhandsvisning. */}
-            <div className="reveal-step flex flex-col gap-3.5 lg:hidden">
-              <ExcuseBubble
-                text={current?.text}
-                loading={excuses === null}
-                empty={excuses !== null && poolCount === 0}
-              />
-              <div className="flex h-4 items-baseline justify-between gap-3 pl-[22px] pr-1 font-mono text-[11px] text-muted">
-                <span className="truncate">{current ? contactName : ""}</span>
-                <span className="shrink-0">{countLabel ?? ""}</span>
-              </div>
-            </div>
-
             {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
             <p
               className="reveal-step hidden text-sm font-medium lg:block"
@@ -968,9 +938,9 @@ function Compose({
                 <span className="hidden lg:inline">{COPY.compose.shuffleLong}</span>
               </button>
             </div>
-            {/* Antal skickningar – desktop (mobilen visar det i bildtexten). */}
+            {/* Antal skickningar. */}
             {countLabel && (
-              <p className="hidden text-xs text-muted lg:block">{countLabel}</p>
+              <p className="text-center text-xs text-muted lg:text-left">{countLabel}</p>
             )}
 
             <div
@@ -1121,8 +1091,8 @@ function Compose({
       </div>
 
       {/* Höger: telefon – exempel-notiser tills avsändare valts, sen live.
-          Toppställd (lg:self-start) = samma plats som startsidans telefon. */}
-      <div className="hidden lg:flex lg:justify-center lg:self-start">
+          Vertikalt centrerad (items-center på rutnätet). */}
+      <div className="hidden lg:flex lg:justify-center">
         {senderChosen ? (
           <div className="reveal-step">
             <PhonePreview
@@ -1132,7 +1102,7 @@ function Compose({
             />
           </div>
         ) : (
-          <LandingPhone shown={exampleShown} />
+          <LandingPhone shown={thread.shown} />
         )}
       </div>
       </div>
@@ -1396,12 +1366,19 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
         </p>
       </div>
       {/* Integritetstexten visas först i flödet (där numret anges), inte på
-          startsidan. */}
-      {showPrivacy && (
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          {COPY.privacy.short}
-        </p>
-      )}
+          startsidan. På desktop reserveras ändå raden (osynlig) på startsidan så
+          att sidfotens höjd – och därmed telefonens vertikala centrering – är
+          exakt densamma i båda vyerna (annars hoppar mobilen ~16 px vid vybyte).
+          På mobil döljs den helt (ingen tom lucka). */}
+      <p
+        aria-hidden={!showPrivacy}
+        className={clsx(
+          "mt-4 text-[12px] leading-relaxed text-muted",
+          !showPrivacy && "hidden lg:invisible lg:block",
+        )}
+      >
+        {COPY.privacy.short}
+      </p>
     </footer>
   );
 }

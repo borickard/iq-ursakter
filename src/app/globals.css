@@ -36,6 +36,9 @@ html,
 body {
   padding: 0;
   margin: 0;
+  /* Telefonen på startsidan åker in från höger (desktop) – göm ev. horisontell
+     scroll under animationen. */
+  overflow-x: hidden;
 }
 
 body {
@@ -148,6 +151,14 @@ textarea {
 @keyframes livlinaPop  { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 .intro-rise { animation: livlinaRise 0.5s cubic-bezier(0.22, 0.8, 0.32, 1) backwards; }
 .intro-pop  { animation: livlinaPop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) backwards; }
+
+/* Startsidans telefon åker IN (ingen transparens, bara fysisk förflyttning):
+   – mobil: upp "ur linjen" nerifrån (allt under linjen är avklippt → dyker upp)
+   – desktop: in från höger, utanför bild till sin viloplats. */
+@keyframes livlinaPhoneUp    { from { transform: translateY(320px); } to { transform: translateY(0); } }
+@keyframes livlinaPhoneRight { from { transform: translateX(55vw);  } to { transform: translateX(0); } }
+.phone-rise-up  { animation: livlinaPhoneUp 0.6s cubic-bezier(0.22, 0.8, 0.32, 1) 0.12s backwards; }
+.phone-slide-in { animation: livlinaPhoneRight 0.7s cubic-bezier(0.22, 0.8, 0.32, 1) 0.12s backwards; }
 
 /* "ursäkt"-överstrykningen ritas in från vänster. */
 @keyframes livlinaSwipe { from { background-size: 0% 78%; } to { background-size: 102% 78%; } }
