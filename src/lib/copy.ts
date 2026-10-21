@@ -175,9 +175,9 @@ export const COPY = {
     scheduledPrefix: "SMS:et skickas kl",
     schedulePrivacy:
       "Vid fördröjt utskick hålls ditt nummer krypterat tills meddelandet skickats – sen raderas det. Vi sparar det aldrig.",
-    showAsMessage: "Förhandsvisa utan att skicka",
-    showAsMessageHelp:
-      "Öppnar en skärm som ser ut som en riktig sms-konversation. Inget skickas – bra för att testa utseendet eller visa någon bredvid dig.",
+    // Kort, självförklarande etikett på knappen (ingen separat hjälptext behövs
+    // då – den var otydlig om vilken knapp den avsåg). "sms" = fejkad skärm.
+    showAsMessage: "Förhandsvisa sms",
     previewIos: "iPhone",
     previewAndroid: "Android",
     close: "Stäng",

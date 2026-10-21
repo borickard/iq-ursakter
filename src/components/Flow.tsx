@@ -1059,31 +1059,28 @@ function Compose({
                   </button>
                 </div>
               ) : (
-                <>
-                  {/* Knapparna sida vid sida: skicka (primär) + förhandsvisa (kontur). */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      block
-                      onClick={send}
-                      disabled={sending || !current || !phoneValid}
-                      className="px-3 text-center"
-                    >
-                      {sending ? COPY.browse.sending : COPY.browse.send}
-                    </Button>
-                    <Button
-                      block
-                      variant="secondary"
-                      onClick={showMessage}
-                      disabled={!current}
-                      className="px-3 text-center"
-                    >
-                      {COPY.compose.showAsMessage}
-                    </Button>
-                  </div>
-                  <p className="text-center text-xs leading-snug text-muted lg:text-left">
-                    {COPY.compose.showAsMessageHelp}
-                  </p>
-                </>
+                /* Knapparna sida vid sida (lika breda halvor) så båda etiketterna
+                   ryms på en rad. Den korta, självförklarande etiketten
+                   "Förhandsvisa sms" ersätter den tidigare otydliga hjälptexten. */
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    block
+                    onClick={send}
+                    disabled={sending || !current || !phoneValid}
+                    className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+                  >
+                    {sending ? COPY.browse.sending : COPY.browse.send}
+                  </Button>
+                  <Button
+                    block
+                    variant="secondary"
+                    onClick={showMessage}
+                    disabled={!current}
+                    className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+                  >
+                    {COPY.compose.showAsMessage}
+                  </Button>
+                </div>
               )}
             </div>
           </>
