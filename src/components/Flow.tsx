@@ -743,6 +743,7 @@ function Compose({
           avsändare: contactName,
           ursäkt: current.text,
           typ: scheduled ? "schemalagt" : "nu",
+          delay: scheduled ? `+${delayMin} min` : "Nu",
         });
         onSent(scheduled ? (data.sendAt ?? null) : null);
         return;
@@ -984,7 +985,11 @@ function Compose({
                     <Chip
                       key={o.min}
                       active={delayMin === o.min}
-                      onClick={() => setDelayMin(o.min)}
+                      onClick={() => {
+                        setDelayMin(o.min);
+                        // Spåra beteendet att välja en fördröjning (ej "Nu").
+                        if (o.min > 0) track("Välj delay", { delay: o.label });
+                      }}
                     >
                       {o.label}
                     </Chip>
