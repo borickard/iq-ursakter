@@ -191,7 +191,9 @@ export const COPY = {
   verify: {
     title: "Verifiera ditt nummer",
     intro:
-      "Vi skickade en engångskod via sms till ditt nummer. Ange den så vet vi att det är ditt – sen skickas ursäkten.",
+      "Vi skickade en engångskod via sms. Ange den så vet vi att numret är ditt – sen skickas ursäkten.",
+    // {phone} = numret koden skickades till.
+    sentTo: "Kod skickad till {phone}",
     placeholder: "6-siffrig kod",
     confirm: "Bekräfta kod",
     confirming: "Kontrollerar …",
