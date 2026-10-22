@@ -174,7 +174,7 @@ export const COPY = {
     ],
     scheduledPrefix: "SMS:et skickas kl",
     schedulePrivacy:
-      "Vid fördröjt utskick hålls ditt nummer krypterat tills meddelandet skickats – sen raderas det. Vi sparar det aldrig.",
+      "Vid fördröjt utskick hålls ditt nummer krypterat tills meddelandet skickats – sen raderas det. Vi sparar det aldrig själva.",
     // Kort, självförklarande etikett på knappen (ingen separat hjälptext behövs
     // då – den var otydlig om vilken knapp den avsåg). "sms" = fejkad skärm.
     showAsMessage: "Förhandsvisa sms",
@@ -220,7 +220,7 @@ export const COPY = {
     scheduledBody:
       "Ursäkten skickas kl {time} och dyker upp som ett sms från “{name}”. Du kan stänga sidan – vi sköter resten.",
     scheduledNote:
-      "Ditt nummer hålls krypterat tills dess och raderas direkt efter utskicket. Det sparas aldrig.",
+      "Ditt nummer hålls krypterat tills dess och raderas direkt efter utskicket. Vi sparar det aldrig själva.",
     again: "Skicka en till",
     restart: "Börja om",
     errorTitle: "Det gick inte att skicka",
@@ -236,7 +236,7 @@ export const COPY = {
 
   privacy: {
     short:
-      "Ditt nummer skickas till vår SMS-leverantör (ett anlitat personuppgiftsbiträde) enbart för att skicka meddelandet. Vi sparar det aldrig.",
+      "Ditt nummer skickas till vår SMS-leverantör (ett anlitat personuppgiftsbiträde) enbart för att skicka meddelandet – vi sparar det aldrig själva. Leverantören kan enligt svensk lag spara trafikuppgifter, inklusive numret, i upp till 60 dagar.",
   },
 
   // Avsändarraden i sidfoten (ett ställe, tydligt men litet – som Fatta Fyllan).
