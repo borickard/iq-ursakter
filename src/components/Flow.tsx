@@ -11,6 +11,7 @@ import {
 import { createPortal } from "react-dom";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { clsx } from "@/lib/clsx";
+import { track } from "@/lib/analytics";
 import { normalizeToE164 } from "@/lib/phone";
 import { excuseFitsSender } from "@/lib/senders";
 import { Button, Chip } from "@/components/ui";
@@ -167,7 +168,16 @@ export default function Flow() {
 
       <div className="flex flex-1 flex-col pb-6">
       {step === "landing" && (
-        <Landing onStart={() => setStep("compose")} thread={thread} solo={solo} />
+        <Landing
+          onStart={() => {
+            // Går från start- till skapa-vyn (knappen "Skicka mig en ursäkt"
+            // eller den klickbara "ursäkt"-länken).
+            track("Starta flöde");
+            setStep("compose");
+          }}
+          thread={thread}
+          solo={solo}
+        />
       )}
 
       {step === "compose" && (
@@ -727,6 +737,13 @@ function Compose({
       });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
+        // Statistik: antal skickade + populäraste avsändare/ursäkter (bryt ner
+        // "Skicka sms"-målet på props i Plausible). typ = nu/schemalagt.
+        track("Skicka sms", {
+          avsändare: contactName,
+          ursäkt: current.text,
+          typ: scheduled ? "schemalagt" : "nu",
+        });
         onSent(scheduled ? (data.sendAt ?? null) : null);
         return;
       }
@@ -825,6 +842,7 @@ function Compose({
     }
     if (!current) return;
     setFormError(null);
+    track("Förhandsvisa", { avsändare: contactName });
     // Visa bara inledande konversationer som passar den valda avsändaren; faller
     // tillbaka på alla om ingen matchar, och på inbyggd standard om listan är tom.
     const fitting = leadIns.filter((l) => excuseFitsSender(l.senders, sender));
@@ -876,17 +894,6 @@ function Compose({
             är filtrerade till dem som passar personen. */}
         {senderChosen && (
           <>
-            {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
-            <p
-              className="reveal-step hidden text-sm font-medium lg:block"
-              style={{ animationDelay: "60ms" }}
-            >
-              {COPY.compose.excuseLabel}{" "}
-              <span className="font-normal text-muted">
-                {COPY.compose.excuseInPhone}
-              </span>
-            </p>
-
             {/* Slumpa fram / bakåt – i båda vyerna. */}
             <div
               className="reveal-step flex items-center justify-center gap-3 lg:justify-start"
@@ -1059,31 +1066,28 @@ function Compose({
                   </button>
                 </div>
               ) : (
-                <>
-                  {/* Knapparna sida vid sida: skicka (primär) + förhandsvisa (kontur). */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      block
-                      onClick={send}
-                      disabled={sending || !current || !phoneValid}
-                      className="px-3 text-center"
-                    >
-                      {sending ? COPY.browse.sending : COPY.browse.send}
-                    </Button>
-                    <Button
-                      block
-                      variant="secondary"
-                      onClick={showMessage}
-                      disabled={!current}
-                      className="px-3 text-center"
-                    >
-                      {COPY.compose.showAsMessage}
-                    </Button>
-                  </div>
-                  <p className="text-center text-xs leading-snug text-muted lg:text-left">
-                    {COPY.compose.showAsMessageHelp}
-                  </p>
-                </>
+                /* Knapparna sida vid sida (lika breda halvor) så båda etiketterna
+                   ryms på en rad. Den korta, självförklarande etiketten
+                   "Förhandsvisa sms" ersätter den tidigare otydliga hjälptexten. */
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    block
+                    onClick={send}
+                    disabled={sending || !current || !phoneValid}
+                    className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+                  >
+                    {sending ? COPY.browse.sending : COPY.browse.send}
+                  </Button>
+                  <Button
+                    block
+                    variant="secondary"
+                    onClick={showMessage}
+                    disabled={!current}
+                    className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+                  >
+                    {COPY.compose.showAsMessage}
+                  </Button>
+                </div>
               )}
             </div>
           </>
@@ -1348,7 +1352,17 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
     <footer className="mt-12 border-t border-border pt-5">
       {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan). */}
       <div className="flex items-start gap-3">
-        <IqLogo className="h-9 w-auto shrink-0" />
+        {/* Klickbar IQ-logga → iq.se (spåras som "IQ-logga" i Plausible). */}
+        <a
+          href={COPY.footer.iqHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track("IQ-logga")}
+          aria-label={COPY.footer.iqLink}
+          className="shrink-0"
+        >
+          <IqLogo className="h-9 w-auto" />
+        </a>
         <p className="text-[12px] leading-relaxed text-text">
           <span className="font-medium">{COPY.footer.iqLine}</span>
           {/* Desktop: tvinga "IQ finns…" till rad 2 (→ två rader). Mobil: ingen

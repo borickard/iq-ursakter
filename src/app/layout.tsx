@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Syne, Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { COPY } from "@/lib/copy";
@@ -49,6 +50,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sv" className={`${syne.variable} ${geist.variable}`}>
+      <head>
+        {/* Integritetsvänlig statistik via Plausible (ingen cookie, ingen PII). */}
+        <Script
+          src="https://plausible.io/js/pa-97d98WTw48r2818VQrSgv.js"
+          strategy="afterInteractive"
+        />
+        <Script id="plausible-init" strategy="afterInteractive">
+          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
+        </Script>
+      </head>
       <body>
         {/* Smal kolumn på mobil; bredare på desktop så skapa-vyn får plats med
             två kolumner (kontroller + telefonförhandsvisning). Varje vy sätter
