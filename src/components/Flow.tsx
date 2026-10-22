@@ -894,17 +894,6 @@ function Compose({
             är filtrerade till dem som passar personen. */}
         {senderChosen && (
           <>
-            {/* Desktop: etikett (bubblan visas i telefonen till höger). */}
-            <p
-              className="reveal-step hidden text-sm font-medium lg:block"
-              style={{ animationDelay: "60ms" }}
-            >
-              {COPY.compose.excuseLabel}{" "}
-              <span className="font-normal text-muted">
-                {COPY.compose.excuseInPhone}
-              </span>
-            </p>
-
             {/* Slumpa fram / bakåt – i båda vyerna. */}
             <div
               className="reveal-step flex items-center justify-center gap-3 lg:justify-start"
