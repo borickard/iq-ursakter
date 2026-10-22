@@ -743,7 +743,6 @@ function Compose({
           avsändare: contactName,
           ursäkt: current.text,
           typ: scheduled ? "schemalagt" : "direkt",
-          delay: scheduled ? `+${delayMin} min` : "Nu",
         });
         onSent(scheduled ? (data.sendAt ?? null) : null);
         return;
