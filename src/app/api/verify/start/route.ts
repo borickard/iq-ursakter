@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { normalizeToE164 } from "@/lib/phone";
 import { checkVerifyRateLimit, getClientIp } from "@/lib/rateLimit";
 import { getSmsProvider, getSenderNumber } from "@/lib/sms";
+import { toAlphanumericSenderId } from "@/lib/sender";
 import {
   generateCode,
   hashCode,
@@ -56,7 +57,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "verify_failed" }, { status: 500 });
   }
 
-  const from = getSenderNumber() || "Ursakten";
+  // Avsändar-ID för koden. I namn-läge MÅSTE det vara alfanumeriskt utan å/ä/ö
+  // (GSM-begränsning) → ett ev. "Ursäkten" i env översätts till "Ursakten" så
+  // det inte avvisas. I nummer-läge används det fasta numret som det är.
+  const mode =
+    process.env.SMS_SENDER_MODE ??
+    process.env.NEXT_PUBLIC_SMS_SENDER_MODE ??
+    "number";
+  const rawFrom = getSenderNumber() || "Ursakten";
+  const from = mode === "name" ? toAlphanumericSenderId(rawFrom) ?? "Ursakten" : rawFrom;
   const message = `Din kod till Ursäkten: ${code}. Den gäller i ${CODE_TTL_MINUTES} minuter.`;
   const result = await getSmsProvider().send({ to, from, message });
   if (!result.ok) {
