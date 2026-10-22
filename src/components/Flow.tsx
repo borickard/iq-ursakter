@@ -1004,91 +1004,30 @@ function Compose({
               </p>
             )}
 
+            {/* Knapparna sida vid sida (lika breda halvor) så båda etiketterna
+                ryms på en rad. Engångskoden (OTP) visas i en overlay ovanpå allt
+                (se nedan) så man inte missar steget. */}
             <div
-              className="reveal-step space-y-2"
+              className="reveal-step grid grid-cols-2 gap-3"
               style={{ animationDelay: "240ms" }}
             >
-              {verifyStep === "code" ? (
-                /* Engångskod-steg: ange koden som skickats till numret. */
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-base font-medium">{COPY.verify.title}</p>
-                    <p className="mt-1 text-sm text-muted">{COPY.verify.intro}</p>
-                  </div>
-                  <input
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    autoFocus
-                    value={verifyCode}
-                    onChange={(e) =>
-                      setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    placeholder={COPY.verify.placeholder}
-                    className="w-full rounded-none border border-border bg-surface px-5 py-3.5 text-center text-lg tracking-[0.4em] outline-none"
-                  />
-                  {devCode && (
-                    <p className="text-xs text-muted">
-                      {fill(COPY.verify.devHint, { code: devCode })}
-                    </p>
-                  )}
-                  {verifyError && (
-                    <p className="text-sm font-semibold text-danger">
-                      {COPY.verify.errors[verifyError]}
-                    </p>
-                  )}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      block
-                      variant="secondary"
-                      onClick={cancelVerify}
-                      disabled={verifyBusy}
-                      className="px-3 text-center"
-                    >
-                      {COPY.verify.cancel}
-                    </Button>
-                    <Button
-                      block
-                      onClick={confirmCode}
-                      disabled={verifyBusy || verifyCode.length < 6}
-                      className="px-3 text-center"
-                    >
-                      {verifyBusy ? COPY.verify.confirming : COPY.verify.confirm}
-                    </Button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={startVerify}
-                    disabled={verifyBusy}
-                    className="text-xs text-muted underline underline-offset-2 disabled:opacity-50"
-                  >
-                    {COPY.verify.resend}
-                  </button>
-                </div>
-              ) : (
-                /* Knapparna sida vid sida (lika breda halvor) så båda etiketterna
-                   ryms på en rad. Den korta, självförklarande etiketten
-                   "Förhandsvisa sms" ersätter den tidigare otydliga hjälptexten. */
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    block
-                    onClick={send}
-                    disabled={sending || !current || !phoneValid}
-                    className="whitespace-nowrap px-2 text-[15px] lg:text-base"
-                  >
-                    {sending ? COPY.browse.sending : COPY.browse.send}
-                  </Button>
-                  <Button
-                    block
-                    variant="secondary"
-                    onClick={showMessage}
-                    disabled={!current}
-                    className="whitespace-nowrap px-2 text-[15px] lg:text-base"
-                  >
-                    {COPY.compose.showAsMessage}
-                  </Button>
-                </div>
-              )}
+              <Button
+                block
+                onClick={send}
+                disabled={sending || !current || !phoneValid}
+                className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+              >
+                {sending ? COPY.browse.sending : COPY.browse.send}
+              </Button>
+              <Button
+                block
+                variant="secondary"
+                onClick={showMessage}
+                disabled={!current}
+                className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+              >
+                {COPY.compose.showAsMessage}
+              </Button>
             </div>
           </>
         )}
@@ -1128,6 +1067,82 @@ function Compose({
                 leadInLabel={fakeTime(47)}
                 onBack={() => setShowFake(false)}
               />
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Engångskod (OTP) som overlay ovanpå allt – omöjlig att missa. Visas när
+          en enhet behöver verifieras innan sms skickas. Portal till <body> så den
+          ligger över sidfoten m.m. */}
+      {verifyStep === "code" &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={COPY.verify.title}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-5"
+          >
+            <div className="w-full max-w-sm space-y-4 rounded-none border border-border bg-surface p-6">
+              <div>
+                <p className="font-display text-xl font-normal">{COPY.verify.title}</p>
+                <p className="mt-1 text-sm text-muted">{COPY.verify.intro}</p>
+                {phone && (
+                  <p className="mt-1 text-sm font-medium">
+                    {fill(COPY.verify.sentTo, { phone })}
+                  </p>
+                )}
+              </div>
+              <input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                autoFocus
+                value={verifyCode}
+                onChange={(e) =>
+                  setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                placeholder={COPY.verify.placeholder}
+                className="w-full rounded-none border border-border bg-surface px-5 py-3.5 text-center text-lg tracking-[0.4em] outline-none"
+              />
+              {devCode && (
+                <p className="text-xs text-muted">
+                  {fill(COPY.verify.devHint, { code: devCode })}
+                </p>
+              )}
+              {verifyError && (
+                <p className="text-sm font-semibold text-danger">
+                  {COPY.verify.errors[verifyError]}
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  block
+                  variant="secondary"
+                  onClick={cancelVerify}
+                  disabled={verifyBusy}
+                  className="px-3 text-center"
+                >
+                  {COPY.verify.cancel}
+                </Button>
+                <Button
+                  block
+                  onClick={confirmCode}
+                  disabled={verifyBusy || verifyCode.length < 6}
+                  className="px-3 text-center"
+                >
+                  {verifyBusy ? COPY.verify.confirming : COPY.verify.confirm}
+                </Button>
+              </div>
+              <button
+                type="button"
+                onClick={startVerify}
+                disabled={verifyBusy}
+                className="text-xs text-muted underline underline-offset-2 disabled:opacity-50"
+              >
+                {COPY.verify.resend}
+              </button>
             </div>
           </div>,
           document.body,
