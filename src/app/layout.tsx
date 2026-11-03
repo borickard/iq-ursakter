@@ -20,6 +20,9 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
+  // Absolut bas för og:image/twitter:image m.m. så delningsbilden alltid pekar
+  // på en domän som faktiskt serverar /og.png (den delade adressen).
+  metadataBase: new URL("https://ursakter.vercel.app"),
   title: COPY.brand.name,
   description: COPY.landing.subtitle,
   authors: [{ name: "IQ", url: "https://iq.se" }],
