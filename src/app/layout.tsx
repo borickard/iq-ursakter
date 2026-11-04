@@ -31,6 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: COPY.brand.name,
     description: COPY.landing.subtitle,
+    url: "/", // kanonisk URL (löses mot metadataBase) → og:url
     locale: "sv_SE",
     type: "website",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: COPY.brand.name }],
