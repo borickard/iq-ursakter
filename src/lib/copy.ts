@@ -58,7 +58,7 @@ export const COPY = {
       "Baby",
     ],
     next: "Fortsätt",
-    invalidPhone: "Hmm, det där ser inte ut som ett mobilnummer. Försök igen.",
+    invalidPhone: "Hmm, det där ser inte ut som ett svenskt mobilnummer. Försök igen.",
     missingSender: "Välj eller skriv ett avsändarnamn först.",
   },
 
