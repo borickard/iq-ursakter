@@ -230,6 +230,11 @@ export const COPY = {
       invalid_phone: "Mobilnumret ser inte giltigt ut. Gå tillbaka och kontrollera det.",
       rate_limited:
         "Du har skickat några stycken nyss. Vänta en stund innan du försöker igen.",
+      // Globalt dygnstak nått (budget-/kreditskydd) – visas t.ex. vid stora
+      // kampanjtoppar. Skiljt från rate_limited så vi inte felaktigt säger att
+      // just den här användaren skickat för många.
+      daily_cap:
+        "Just nu är trycket högt och vi har pausat utskicken en liten stund. Försök gärna igen om en stund.",
       send_failed: "Något gick fel hos SMS-leverantören. Försök igen om en liten stund.",
       bad_request: "Något saknades i förfrågan. Börja om och försök igen.",
       unknown: "Något oväntat gick fel. Försök igen.",

@@ -66,7 +66,10 @@ export async function POST(req: Request) {
   const ip = getClientIp(req.headers);
   const limit = await checkRateLimit(ip, to);
   if (!limit.allowed) {
-    return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
+    // Skilj på "just du har skickat för många" och "dygnstaket (budget) är nått"
+    // så användaren får ett begripligt meddelande vid kampanjtoppar.
+    const error = limit.reason === "global_daily_cap" ? "daily_cap" : "rate_limited";
+    return NextResponse.json({ ok: false, error }, { status: 429 });
   }
 
   // Hämta ursäkten – måste vara godkänd. Fri text accepteras inte i Fas 1.
