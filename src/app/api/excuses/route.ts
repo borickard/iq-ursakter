@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+// Motståndskraft under hög trafik: ursäktslistan ändras sällan, så svaret cachas
+// på Vercels CDN (s-maxage=60). Då träffar vi databasen som mest ~1 gång/minut/
+// region istället för en gång per besökare – 40 000 besökare blir en handfull
+// DB-frågor. stale-while-revalidate gör att en (nästan) färsk kopia serveras
+// direkt även medan cachen förnyas, och även om DB skulle vara trög eller nere.
+// Pris: nya/ändrade ursäkter och "Skickad X gånger" kan vara upp till ~60 s gamla.
+export const revalidate = 60;
 
 /**
  * GET /api/excuses
@@ -59,5 +65,12 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ excuses, leadIns });
+  return NextResponse.json(
+    { excuses, leadIns },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    },
+  );
 }
