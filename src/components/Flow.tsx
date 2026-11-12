@@ -295,7 +295,7 @@ function Landing({
         <Button
           block
           onClick={onStart}
-          className="relative mt-auto overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
+          className="relative mt-10 overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
         >
           {COPY.landing.cta}
           {shineKey > 0 && <span key={shineKey} aria-hidden className="cta-shine" />}
