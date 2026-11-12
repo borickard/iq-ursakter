@@ -263,7 +263,7 @@ function Landing({
       {/* Mobil: luft ner till innehållet. Desktop: kolumnerna centreras vertikalt
           över hela höjden (grid-rows:1fr) så telefonen hamnar på exakt samma
           vertikala plats i båda vyerna (steg 1 & steg 2). */}
-      <div className="mt-8 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
+      <div className="mt-5 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
       <div className="flex flex-1 flex-col lg:flex-none">
         {/* Mobil-hjälte: telefonens övre del (klocka + inkommande notis) syns,
@@ -272,7 +272,7 @@ function Landing({
             dyker upp) – ingen transparens. Samma crop/viloläge som i steg 2 så
             den inte hoppar vid vybyte. */}
         <div className="lg:hidden">
-          <ClippedPhone maxH="clamp(274px, 40vh, 292px)">
+          <ClippedPhone maxH="clamp(246px, 34vh, 256px)">
             <div className="phone-rise-up">
               <LandingPhoneSolo compact item={solo.item} visible={solo.visible} />
             </div>
@@ -295,7 +295,7 @@ function Landing({
         <Button
           block
           onClick={onStart}
-          className="relative mt-10 overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
+          className="relative mt-8 overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
         >
           {COPY.landing.cta}
           {shineKey > 0 && <span key={shineKey} aria-hidden className="cta-shine" />}
@@ -408,7 +408,7 @@ function PhoneFrame({
         <div
           className={
             "font-semibold leading-none tracking-tight " +
-            (compact ? "mt-3 text-[44px]" : "mt-5 text-[62px]")
+            (compact ? "mt-2 text-[40px]" : "mt-5 text-[62px]")
           }
         >
           {clock}
@@ -418,7 +418,7 @@ function PhoneFrame({
         </div>
         <div
           className={
-            (compact ? "mt-4" : "mt-6") +
+            (compact ? "mt-3" : "mt-6") +
             " flex w-[calc(100%-24px)] flex-col gap-2.5"
           }
         >
@@ -523,7 +523,7 @@ function PhonePreview({
         <div
           className={
             "font-semibold leading-none tracking-tight " +
-            (compact ? "mt-3 text-[44px]" : "mt-5 text-[62px]")
+            (compact ? "mt-2 text-[40px]" : "mt-5 text-[62px]")
           }
         >
           {clock}
@@ -533,7 +533,7 @@ function PhonePreview({
         </div>
 
         {/* Notis – ser ut som ett vanligt sms från kontakten. */}
-        <div className={(compact ? "mt-4" : "mt-6") + " w-[calc(100%-24px)]"}>
+        <div className={(compact ? "mt-3" : "mt-6") + " w-[calc(100%-24px)]"}>
           <Notif sender={sender} text={message} time={scheduled ?? "nu"} />
         </div>
 
@@ -865,14 +865,14 @@ function Compose({
       {/* Samma rutnät som startsidan (grid-cols-2 + gap-14); kolumnerna centreras
           vertikalt på desktop över hela höjden (grid-rows:1fr) så telefonen hamnar
           på exakt samma vertikala plats som i steg 1. */}
-      <div className="mt-8 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
+      <div className="mt-5 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Vänster: kontroller */}
       <div ref={controlsRef} className="flex flex-1 flex-col gap-4 lg:gap-5 lg:flex-none">
         {/* Mobil: klippt telefon HÖGST UPP (precis som startsidan) – roterande
             exempel tills en avsändare valts, sen vald avsändares preview. Valen
             ligger under. (Desktop: dold här, telefonen visas i högerkolumnen.) */}
         <div className="lg:hidden">
-          <ClippedPhone maxH="clamp(274px, 40vh, 292px)">
+          <ClippedPhone maxH="clamp(246px, 34vh, 256px)">
             {senderChosen ? (
               <PhonePreview
                 compact
