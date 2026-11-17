@@ -66,7 +66,20 @@ export async function POST(req: Request) {
     "number";
   const rawFrom = getSenderNumber() || "Ursakten";
   const from = mode === "name" ? toAlphanumericSenderId(rawFrom) ?? "Ursakten" : rawFrom;
-  const message = `Din kod till Ursäkten: ${code}. Den gäller i ${CODE_TTL_MINUTES} minuter.`;
+
+  // iOS/Safari + Chrome "origin-bound one-time code": en sista rad "@värd #kod"
+  // gör att telefonen tillförlitligt (och säkert, bundet till vår domän) föreslår
+  // koden ovanför tangentbordet när OTP-fältet (autocomplete="one-time-code") är
+  // markerat. Domänen MÅSTE matcha sidan användaren är på, så vi tar den från
+  // request-headern (ursakter.vercel.app idag, ursakt.se senare) istället för att
+  // hårdkoda. Måste ligga SIST, inget får stå före "@värd" på den raden.
+  const hostHeader =
+    req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  const host = hostHeader.split(",")[0]!.trim();
+  const otpLine = /^[a-z0-9.-]+$/i.test(host) ? `\n\n@${host} #${code}` : "";
+  const message =
+    `Din kod till Ursäkten: ${code}. Den gäller i ${CODE_TTL_MINUTES} minuter.` +
+    otpLine;
   const result = await getSmsProvider().send({ to, from, message });
   if (!result.ok) {
     console.error(`[verify/start] SMS-fel: ${result.error}`);
