@@ -273,9 +273,9 @@ function Landing({
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col md:flex-none lg:max-w-none lg:flex-1">
       {/* Mobil: ~40px luft ner till telefonen. Surfplatta (md): naturlig höjd så
           footern följer innehållet direkt. Desktop (lg): två kolumner, bredare
-          grid (~1120px via layout), 96px gap, vänsterblocket centreras vertikalt
-          mot telefonen (items-center + grid-rows:1fr). */}
-      <div className="mt-10 flex flex-1 flex-col md:flex-none lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-24 lg:[grid-template-rows:1fr] lg:flex-1">
+          grid (~1120px via layout), 96px gap; telefonens överkant linjeras med
+          ordmärkets överkant (items-start). */}
+      <div className="mt-10 flex flex-1 flex-col md:flex-none lg:mt-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-24 lg:[grid-template-rows:1fr] lg:flex-1">
       {/* Vänsterkolumn (ordmärke + rubrik + brödtext + knapp). Hela kolumnen på
           mobil. */}
       <div className="flex flex-1 flex-col md:flex-none lg:flex-none">
@@ -321,7 +321,7 @@ function Landing({
           centrerad. Animeras in från höger. Höjdbegränsad till min(78svh, 690px)
           så hero + footer får plats i en skärmhöjd (skalas ner på låga fönster). */}
       <div className="phone-slide-in hidden lg:flex lg:justify-center">
-        <HeightScaledPhone>
+        <HeightScaledPhone maxScale={0.8}>
           <LandingPhone shown={notifShown} />
         </HeightScaledPhone>
       </div>
@@ -452,9 +452,15 @@ function PhoneFrame({
    min(78svh, 690px). transform påverkar inte offsetHeight, så vi mäter den
    oskalade höjden och sätter wrappe­rns höjd till den skalade – då speglas
    storleken i layouten och hero + footer får plats i en skärmhöjd. */
-function HeightScaledPhone({ children }: { children: React.ReactNode }) {
+function HeightScaledPhone({
+  children,
+  maxScale = 1,
+}: {
+  children: React.ReactNode;
+  maxScale?: number;
+}) {
   const innerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(maxScale);
   const [natural, setNatural] = useState(0);
   useLayoutEffect(() => {
     const el = innerRef.current;
@@ -464,7 +470,7 @@ function HeightScaledPhone({ children }: { children: React.ReactNode }) {
       if (!nat) return; // dold (display:none på mobil)
       setNatural(nat);
       const cap = Math.min(0.78 * window.innerHeight, 690);
-      setScale(Math.min(1, cap / nat));
+      setScale(Math.min(maxScale, cap / nat));
     };
     recompute();
     window.addEventListener("resize", recompute);
