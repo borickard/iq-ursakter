@@ -275,7 +275,7 @@ function Landing({
           footern följer innehållet direkt. Desktop (lg): två kolumner, bredare
           grid (~1120px via layout), 96px gap; telefonens överkant linjeras med
           ordmärkets överkant (items-start). */}
-      <div className="mt-10 flex flex-1 flex-col md:flex-none lg:mt-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-24 lg:[grid-template-rows:1fr] lg:flex-1">
+      <div className="mt-10 flex flex-1 flex-col md:flex-none lg:mt-0 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-20 lg:pt-10 lg:[grid-template-rows:1fr] lg:flex-1">
       {/* Vänsterkolumn (ordmärke + rubrik + brödtext + knapp). Hela kolumnen på
           mobil. */}
       <div className="flex flex-1 flex-col md:flex-none lg:flex-none">
@@ -292,17 +292,17 @@ function Landing({
 
         {/* Ordmärket: bara på desktop (på mobil ligger det i sticky-headern).
             Vänsterställt, ~64px ner till rubriken. */}
-        <Wordmark className="mb-24 hidden text-[44px] lg:block" />
+        <Wordmark className="mb-20 hidden text-[44px] lg:block" />
 
         {/* Text + knapp syns direkt (ingen intro). "ursäkt" får sitt highlight-svep
             och knappen sitt sken. */}
-        <div className="mt-9 space-y-4 lg:mt-0">
-          <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[76px] lg:leading-[1.05]">
+        <div className="mt-9 space-y-4 lg:mt-0 lg:space-y-5">
+          <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[clamp(46px,4.6vw,63px)] lg:leading-[1.08]">
             {COPY.landing.headline2a}
             <LivlinaChip onStart={onStart} />
             {COPY.landing.headline2b}
           </h1>
-          <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-xl">
+          <p className="max-w-md text-[17px] leading-relaxed text-text lg:max-w-[34ch] lg:text-[1.4rem] lg:leading-[1.4]">
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -321,7 +321,7 @@ function Landing({
           centrerad. Animeras in från höger. Höjdbegränsad till min(78svh, 690px)
           så hero + footer får plats i en skärmhöjd (skalas ner på låga fönster). */}
       <div className="phone-slide-in hidden lg:flex lg:justify-center">
-        <HeightScaledPhone maxScale={0.8}>
+        <HeightScaledPhone maxScale={0.72}>
           <LandingPhone shown={notifShown} />
         </HeightScaledPhone>
       </div>
