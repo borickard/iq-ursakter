@@ -271,11 +271,23 @@ function Landing({
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col md:flex-none lg:max-w-none lg:flex-1">
+      {/* IQ-loggan uppe i topp vänster – endast desktop (på mobil/surfplatta
+          ligger den kvar i sidfoten). Klickbar → iq.se, spåras som "IQ-logga". */}
+      <a
+        href={COPY.footer.iqHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track("IQ-logga")}
+        aria-label={COPY.footer.iqLink}
+        className="hidden shrink-0 self-start pt-10 lg:block"
+      >
+        <IqLogo className="h-9 w-auto" />
+      </a>
       {/* Mobil: ~40px luft ner till telefonen. Surfplatta (md): naturlig höjd så
           footern följer innehållet direkt. Desktop (lg): två kolumner, bredare
-          grid (~1120px via layout), 96px gap; telefonens överkant linjeras med
-          ordmärkets överkant (items-start). */}
-      <div className="mt-10 flex flex-1 flex-col md:flex-none lg:mt-0 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-20 lg:pt-10 lg:[grid-template-rows:1fr] lg:flex-1">
+          grid (~1120px via layout), 80px gap; innehållet centreras vertikalt
+          (items-center), och telefonens överkant linjeras med ordmärkets. */}
+      <div className="mt-10 flex flex-1 flex-col md:flex-none lg:mt-0 lg:grid lg:grid-cols-[3fr_2fr] lg:items-center lg:gap-20 lg:[grid-template-rows:1fr] lg:flex-1">
       {/* Vänsterkolumn (ordmärke + rubrik + brödtext + knapp). Hela kolumnen på
           mobil. */}
       <div className="flex flex-1 flex-col md:flex-none lg:flex-none">
