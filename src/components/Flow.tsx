@@ -271,18 +271,6 @@ function Landing({
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col md:flex-none lg:max-w-none lg:flex-1">
-      {/* IQ-loggan uppe i topp vänster – endast desktop (på mobil/surfplatta
-          ligger den kvar i sidfoten). Klickbar → iq.se, spåras som "IQ-logga". */}
-      <a
-        href={COPY.footer.iqHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => track("IQ-logga")}
-        aria-label={COPY.footer.iqLink}
-        className="hidden shrink-0 self-start pt-10 lg:block"
-      >
-        <IqLogo className="h-9 w-auto" />
-      </a>
       {/* Mobil: ~40px luft ner till telefonen. Surfplatta (md): naturlig höjd så
           footern följer innehållet direkt. Desktop (lg): två kolumner, bredare
           grid (~1120px via layout), 80px gap; innehållet centreras vertikalt
@@ -302,9 +290,22 @@ function Landing({
           </ClippedPhone>
         </div>
 
-        {/* Ordmärket: bara på desktop (på mobil ligger det i sticky-headern).
-            Vänsterställt, ~64px ner till rubriken. */}
-        <Wordmark className="mb-20 hidden text-[44px] lg:block" />
+        {/* Ordmärket med IQ-loggan precis till vänster (samma höjd som texten).
+            Bara på desktop (på mobil ligger ordmärket i sticky-headern; IQ-loggan
+            i foten). Klickbar logga → iq.se, spåras. */}
+        <div className="mb-20 hidden items-center gap-3.5 lg:flex">
+          <a
+            href={COPY.footer.iqHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track("IQ-logga")}
+            aria-label={COPY.footer.iqLink}
+            className="shrink-0"
+          >
+            <IqLogo className="h-[34px] w-auto" />
+          </a>
+          <Wordmark className="text-[44px]" />
+        </div>
 
         {/* Text + knapp syns direkt (ingen intro). "ursäkt" får sitt highlight-svep
             och knappen sitt sken. */}
@@ -1440,35 +1441,35 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
 function Footer({ showPrivacy }: { showPrivacy: boolean }) {
   return (
     <footer className="mt-12 border-t border-border pt-5">
-      {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan). */}
-      <div className="flex items-start gap-3">
-        {/* Klickbar IQ-logga → iq.se (spåras som "IQ-logga" i Plausible). */}
+      {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan).
+          Första raden: "Ursäkten är en del av [IQ-logga]" – loggan står för
+          "IQ" och ligger inline i samma höjd som texten (klickbar → iq.se,
+          spåras som "IQ-logga"). På raden under skrivs "IQ" som text. */}
+      <p className="text-[12px] leading-relaxed text-text">
+        <span className="font-medium">{COPY.footer.iqLine}</span>{" "}
         <a
           href={COPY.footer.iqHref}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track("IQ-logga")}
-          aria-label={COPY.footer.iqLink}
-          className="shrink-0"
+          aria-label="IQ"
+          className="inline-block align-[-0.18em]"
         >
-          <IqLogo className="h-9 w-auto" />
+          <IqLogo className="h-[1.2em] w-auto" />
         </a>
-        <p className="text-[12px] leading-relaxed text-text">
-          <span className="font-medium">{COPY.footer.iqLine}</span>
-          {/* Desktop: tvinga "IQ finns…" till rad 2 (→ två rader). Mobil: ingen
-              brytning, texten flödar och blir två rader ändå. */}
-          <br className="hidden lg:block" />{" "}
-          {COPY.footer.iqAbout}{" "}
-          <a
-            href={COPY.footer.iqHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
-            {COPY.footer.iqLink} ↗
-          </a>
-        </p>
-      </div>
+        {/* Bryt alltid efter loggan så att "IQ finns…" (med "IQ" i text) hamnar
+            på raden under, på både mobil och desktop. */}
+        <br />{" "}
+        {COPY.footer.iqAbout}{" "}
+        <a
+          href={COPY.footer.iqHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2"
+        >
+          {COPY.footer.iqLink} ↗
+        </a>
+      </p>
       {/* Integritetstexten visas först i flödet (där numret anges), inte på
           startsidan. På desktop reserveras ändå raden (osynlig) på startsidan så
           att sidfotens höjd – och därmed telefonens vertikala centrering – är

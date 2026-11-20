@@ -247,7 +247,8 @@ export const COPY = {
 
   // Avsändarraden i sidfoten (ett ställe, tydligt men litet – som Fatta Fyllan).
   footer: {
-    iqLine: "Ursäkten är en del av IQ.",
+    // Loggan levererar "IQ" på slutet av raden (se Footer), därför ingen "IQ" här.
+    iqLine: "Ursäkten är en del av",
     iqAbout: "IQ finns för att unga ska göra medvetna val kring alkohol.",
     iqLink: "Läs mer på iq.se",
     iqHref: "https://iq.se",
