@@ -292,7 +292,7 @@ function Landing({
 
         {/* Ordmärket: bara på desktop (på mobil ligger det i sticky-headern).
             Vänsterställt, ~64px ner till rubriken. */}
-        <Wordmark className="mb-16 hidden text-[44px] lg:block" />
+        <Wordmark className="mb-24 hidden text-[44px] lg:block" />
 
         {/* Text + knapp syns direkt (ingen intro). "ursäkt" får sitt highlight-svep
             och knappen sitt sken. */}
