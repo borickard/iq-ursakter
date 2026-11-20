@@ -57,7 +57,7 @@ export default function RootLayout({
         {/* Smal kolumn på mobil; bredare på desktop så skapa-vyn får plats med
             två kolumner (kontroller + telefonförhandsvisning). Varje vy sätter
             sin egen maxbredd inuti. */}
-        <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 lg:max-w-4xl lg:px-8">
+        <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 lg:max-w-[1120px] lg:px-8">
           {children}
         </div>
         {/* Vercel Analytics – räknar besök/sidvisningar (ingen cookie, ingen PII). */}

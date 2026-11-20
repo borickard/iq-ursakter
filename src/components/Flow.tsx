@@ -163,8 +163,12 @@ export default function Flow() {
   return (
     <main className="flex flex-1 flex-col">
       {/* Sticky logga högst upp – ligger kvar vid scroll, med halvtransparent
-          vit yta i fullbredd bakom. */}
-      <StickyHeader onHome={() => setStep("landing")} />
+          vit yta i fullbredd bakom. På desktop göms den på landningen (då ligger
+          ordmärket i vänsterkolumnen istället). */}
+      <StickyHeader
+        onHome={() => setStep("landing")}
+        desktopHidden={step === "landing"}
+      />
 
       <div className="flex flex-1 flex-col pb-6">
       {step === "landing" && (
@@ -224,10 +228,17 @@ export default function Flow() {
 
 /* ── Sticky logga-header (alla vyer) ──────────────────────────────────────── */
 
-function StickyHeader({ onHome }: { onHome: () => void }) {
+function StickyHeader({
+  onHome,
+  desktopHidden = false,
+}: {
+  onHome: () => void;
+  desktopHidden?: boolean;
+}) {
   return (
-    <header className="sticky top-0 z-30">
-      <div className="relative flex justify-center py-3 lg:py-4">
+    <header className={clsx("sticky top-0 z-30", desktopHidden && "lg:hidden")}>
+      {/* Mobil: extra luft ovanför loggan (minst 28px, mer vid notch/safe-area). */}
+      <div className="relative flex justify-center pb-3 pt-[max(28px,env(safe-area-inset-top))] lg:py-4">
         {/* Halvtransparent vit yta i FULLBREDD bakom loggan (tonar ner innehåll
             som scrollar förbi). */}
         <div
@@ -259,18 +270,18 @@ function Landing({
   const { shown: notifShown, shineKey } = thread;
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-none">
-      {/* Mobil: luft ner till innehållet. Desktop: kolumnerna centreras vertikalt
-          över hela höjden (grid-rows:1fr) så telefonen hamnar på exakt samma
-          vertikala plats i båda vyerna (steg 1 & steg 2). */}
-      <div className="mt-5 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
-      {/* Innehåll (vänster på desktop, hela kolumnen på mobil) */}
-      <div className="flex flex-1 flex-col lg:flex-none">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col md:flex-none lg:max-w-none lg:flex-1">
+      {/* Mobil: ~40px luft ner till telefonen. Surfplatta (md): naturlig höjd så
+          footern följer innehållet direkt. Desktop (lg): två kolumner, bredare
+          grid (~1120px via layout), 96px gap, vänsterblocket centreras vertikalt
+          mot telefonen (items-center + grid-rows:1fr). */}
+      <div className="mt-10 flex flex-1 flex-col md:flex-none lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-24 lg:[grid-template-rows:1fr] lg:flex-1">
+      {/* Vänsterkolumn (ordmärke + rubrik + brödtext + knapp). Hela kolumnen på
+          mobil. */}
+      <div className="flex flex-1 flex-col md:flex-none lg:flex-none">
         {/* Mobil-hjälte: telefonens övre del (klocka + inkommande notis) syns,
-            klippt så bara ~översta tredjedelen visas. Telefonen animeras in
-            nerifrån och upp "ur linjen" (allt under linjen är avklippt, så den
-            dyker upp) – ingen transparens. Samma crop/viloläge som i steg 2 så
-            den inte hoppar vid vybyte. */}
+            klippt så bara ~översta tredjedelen visas. Animeras in nerifrån "ur
+            linjen". Döljs på desktop (då visas hela telefonen i högerkolumnen). */}
         <div className="lg:hidden">
           <ClippedPhone maxH="clamp(246px, 34vh, 256px)">
             <div className="phone-rise-up">
@@ -279,15 +290,19 @@ function Landing({
           </ClippedPhone>
         </div>
 
+        {/* Ordmärket: bara på desktop (på mobil ligger det i sticky-headern).
+            Vänsterställt, ~64px ner till rubriken. */}
+        <Wordmark className="mb-16 hidden text-[44px] lg:block" />
+
         {/* Text + knapp syns direkt (ingen intro). "ursäkt" får sitt highlight-svep
             och knappen sitt sken. */}
-        <div className="mt-9 space-y-4 lg:mt-10">
-          <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[46px]">
+        <div className="mt-9 space-y-4 lg:mt-0">
+          <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[76px] lg:leading-[1.05]">
             {COPY.landing.headline2a}
             <LivlinaChip onStart={onStart} />
             {COPY.landing.headline2b}
           </h1>
-          <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-lg">
+          <p className="max-w-md text-[17px] leading-relaxed text-text lg:text-xl">
             {COPY.landing.subtitle}
           </p>
         </div>
@@ -295,7 +310,7 @@ function Landing({
         <Button
           block
           onClick={onStart}
-          className="relative mt-8 overflow-hidden py-5 text-lg lg:mt-9 lg:w-auto lg:self-start lg:px-12"
+          className="relative mt-8 overflow-hidden py-5 text-lg lg:mt-10 lg:w-auto lg:self-start lg:px-12"
         >
           {COPY.landing.cta}
           {shineKey > 0 && <span key={shineKey} aria-hidden className="cta-shine" />}
@@ -303,9 +318,12 @@ function Landing({
       </div>
 
       {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma", vertikalt
-          centrerad. Animeras in från höger in i bild (ingen transparens). */}
+          centrerad. Animeras in från höger. Höjdbegränsad till min(78svh, 690px)
+          så hero + footer får plats i en skärmhöjd (skalas ner på låga fönster). */}
       <div className="phone-slide-in hidden lg:flex lg:justify-center">
-        <LandingPhone shown={notifShown} />
+        <HeightScaledPhone>
+          <LandingPhone shown={notifShown} />
+        </HeightScaledPhone>
       </div>
       </div>
     </div>
@@ -424,6 +442,41 @@ function PhoneFrame({
         >
           {children}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Höjdbegränsad telefon (desktop) ──────────────────────────────────────────
+   Skalar ner telefonen (inkl. allt innehåll) så dess höjd aldrig överstiger
+   min(78svh, 690px). transform påverkar inte offsetHeight, så vi mäter den
+   oskalade höjden och sätter wrappe­rns höjd till den skalade – då speglas
+   storleken i layouten och hero + footer får plats i en skärmhöjd. */
+function HeightScaledPhone({ children }: { children: React.ReactNode }) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [natural, setNatural] = useState(0);
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const recompute = () => {
+      const nat = el.offsetHeight; // oförändrad av transform
+      if (!nat) return; // dold (display:none på mobil)
+      setNatural(nat);
+      const cap = Math.min(0.78 * window.innerHeight, 690);
+      setScale(Math.min(1, cap / nat));
+    };
+    recompute();
+    window.addEventListener("resize", recompute);
+    return () => window.removeEventListener("resize", recompute);
+  }, []);
+  return (
+    <div style={{ height: natural ? natural * scale : undefined }}>
+      <div
+        ref={innerRef}
+        style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
+      >
+        {children}
       </div>
     </div>
   );
@@ -865,7 +918,7 @@ function Compose({
       {/* Samma rutnät som startsidan (grid-cols-2 + gap-14); kolumnerna centreras
           vertikalt på desktop över hela höjden (grid-rows:1fr) så telefonen hamnar
           på exakt samma vertikala plats som i steg 1. */}
-      <div className="mt-5 flex flex-1 flex-col lg:mt-0 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
+      <div className="mt-5 flex flex-1 flex-col lg:mx-auto lg:mt-0 lg:grid lg:w-full lg:max-w-4xl lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Vänster: kontroller */}
       <div ref={controlsRef} className="flex flex-1 flex-col gap-4 lg:gap-5 lg:flex-none">
         {/* Mobil: klippt telefon HÖGST UPP (precis som startsidan) – roterande
