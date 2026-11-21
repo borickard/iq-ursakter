@@ -1465,9 +1465,25 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
           href={COPY.footer.iqHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline underline-offset-2"
+          className="underline-offset-2"
         >
-          {COPY.footer.iqLink} ↗
+          <span className="underline">{COPY.footer.iqLink}</span>{" "}
+          {/* Inline-SVG istället för unicode-pilen "↗" (U+2197): den har en
+              emoji-variant som Windows (Segoe UI Emoji) annars ritar som en
+              färgad/inramad symbol. En SVG ser likadan ut överallt. */}
+          <svg
+            viewBox="0 0 10 10"
+            aria-hidden="true"
+            className="inline-block h-[0.72em] w-[0.72em] align-[0.02em]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 7 7 3" />
+            <path d="M3.6 3H7v3.4" />
+          </svg>
         </a>
       </p>
       {/* Integritetstexten visas först i flödet (där numret anges), inte på

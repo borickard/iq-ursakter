@@ -19,7 +19,7 @@ export const COPY = {
     headline2a: "En ",
     headlineLink: "ursäkt",
     headline2b: ", levererad via sms.",
-    subtitle: "Slipp förklara dig. Du bestämmer när kvällen tar slut.",
+    subtitle: "Slipp förklara dig. Du bestämmer när det räcker och när du vill gå hem.",
     cta: "Skicka mig en ursäkt",
     // Karusell på landningen – roterar och visar produkten direkt. Ordnad så att
     // samma avsändare aldrig visas två gånger i rad (även vid loop).
