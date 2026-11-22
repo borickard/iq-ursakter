@@ -160,7 +160,9 @@ export const COPY = {
     shuffle: "Slumpa fram",
     shuffleLong: "Slumpa fram en ursäkt",
     excuseLabel: "Ursäkt",
-    excuseInPhone: "(visas i telefonen →)",
+    // OBS: används inte i UI just nu. Håll fri från unicode-pilar (↗/→) – de
+    // kan ritas som emoji på Windows. Lägg ev. pil som inline-SVG i komponenten.
+    excuseInPhone: "(visas i telefonen)",
     // Schemaläggning (server-side, krypterat tills utskick).
     sendWhen: "När ska det skickas?",
     sendWhenNote: "",
