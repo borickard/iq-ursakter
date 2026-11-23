@@ -20,9 +20,11 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  // Absolut bas för og:image/twitter:image m.m. så delningsbilden alltid pekar
-  // på en domän som faktiskt serverar /og.png (den delade adressen).
-  metadataBase: new URL("https://ursakter.vercel.app"),
+  // Absolut bas för og:url/og:image m.m. Vi använder ASCII-domänen ursakten.se
+  // (inte ä-domänen) så delningskort visar "ursakten.se" snyggt istället för
+  // punycode-formen "xn--urskten-7wa.se". Sidan ligger på ursäkten.se; ursakten.se
+  // redirectar dit, så länken fungerar ändå. /og.png serveras på alla domäner.
+  metadataBase: new URL("https://ursakten.se"),
   title: COPY.brand.name,
   description: COPY.landing.subtitle,
   authors: [{ name: "IQ", url: "https://iq.se" }],
