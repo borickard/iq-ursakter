@@ -1024,10 +1024,18 @@ function Compose({
                 <span className="hidden lg:inline">{COPY.compose.shuffleLong}</span>
               </button>
             </div>
-            {/* Antal skickningar. */}
-            {countLabel && (
-              <p className="text-center text-xs text-muted lg:text-left">{countLabel}</p>
-            )}
+            {/* Antal skickningar. Raden renderas alltid (med en nbsp som
+                platshållare) och döljs bara visuellt vid 0 – så höjden är
+                konstant och övrigt innehåll inte hoppar när siffran saknas. */}
+            <p
+              aria-hidden={!countLabel}
+              className={clsx(
+                "text-center text-xs text-muted lg:text-left",
+                !countLabel && "invisible",
+              )}
+            >
+              {countLabel ?? " "}
+            </p>
 
             <div
               className="reveal-step space-y-2"
