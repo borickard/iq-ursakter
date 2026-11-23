@@ -62,7 +62,7 @@ export function Chip({
     <button
       type="button"
       className={clsx(
-        "rounded-full border border-border px-4 py-2 text-sm font-medium transition active:scale-95",
+        "rounded-none border border-border px-4 py-2 text-sm font-medium transition active:scale-95",
         active ? "bg-brand text-brand-fg" : "bg-transparent text-text hover:bg-surface-2",
         className,
       )}

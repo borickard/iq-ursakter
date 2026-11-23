@@ -140,6 +140,8 @@ export default function Flow() {
   const [sender, setSender] = useState("");
   // ISO-tid om utskicket schemalagts (annars null = skickat direkt).
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
+  // Texten på den skickade ursäkten – visas i telefon-payoffen på bekräftelsen.
+  const [sentMessage, setSentMessage] = useState("");
 
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [leadIns, setLeadIns] = useState<LeadIn[]>([]);
@@ -194,8 +196,9 @@ export default function Flow() {
           solo={solo}
           onPhone={setPhone}
           onSender={setSender}
-          onSent={(iso) => {
+          onSent={(iso, message) => {
             setScheduledAt(iso ?? null);
+            setSentMessage(message ?? "");
             setStep("result");
           }}
         />
@@ -204,6 +207,7 @@ export default function Flow() {
       {step === "result" && (
         <Result
           sender={sender}
+          message={sentMessage}
           scheduledAt={scheduledAt}
           onAgain={() => {
             setScheduledAt(null);
@@ -664,7 +668,7 @@ function Compose({
   solo: SoloCarousel;
   onPhone: (v: string) => void;
   onSender: (v: string) => void;
-  onSent: (scheduledAt?: string | null) => void;
+  onSent: (scheduledAt?: string | null, message?: string) => void;
 }) {
   const [browse, setBrowse] = useState<{ hist: number[]; cur: number }>({
     hist: [0],
@@ -778,7 +782,10 @@ function Compose({
   );
 
   const contactName = sender.trim() || COPY.compose.senderFallback;
-  const countLabel = current ? formatSentCount(current.sentCount) : null;
+  // Visa antal skickade först när det är minst 1 – "Skickad 0 gånger" är svag
+  // social proof och ser ofärdigt ut på nya ursäkter.
+  const countLabel =
+    current && current.sentCount > 0 ? formatSentCount(current.sentCount) : null;
   const phoneValid = !!normalizeToE164(phone);
 
   async function send() {
@@ -816,7 +823,7 @@ function Compose({
           ursäkt: current.text,
           typ: scheduled ? "schemalagt" : "direkt",
         });
-        onSent(scheduled ? (data.sendAt ?? null) : null);
+        onSent(scheduled ? (data.sendAt ?? null) : null, current.text);
         return;
       }
       const data = await res.json().catch(() => ({}));
@@ -1259,11 +1266,13 @@ function SenderField({
 
 function Result({
   sender,
+  message,
   scheduledAt,
   onAgain,
   onRestart,
 }: {
   sender: string;
+  message?: string;
   scheduledAt: string | null;
   onAgain: () => void;
   onRestart: () => void;
@@ -1274,13 +1283,23 @@ function Result({
         minute: "2-digit",
       })
     : null;
+  const contactName = sender.trim() || COPY.compose.senderFallback;
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-        <div className="flex h-20 w-20 items-center justify-center border border-border bg-brand">
+      {/* Telefon-payoff: visar sms:et som det dyker upp hos mottagaren – samma
+          telefon-motiv som på start- och skapa-vyn, så flödet knyts ihop. */}
+      {message && (
+        <div className="mb-2 mt-2">
+          <ClippedPhone maxH="clamp(228px, 32vh, 288px)">
+            <PhonePreview sender={contactName} message={message} delayMin={0} compact />
+          </ClippedPhone>
+        </div>
+      )}
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center border border-border bg-brand">
           <svg
             viewBox="0 0 24 24"
-            className="h-9 w-9"
+            className="h-7 w-7"
             fill="none"
             stroke="#000000"
             strokeWidth={2.5}
@@ -1303,8 +1322,8 @@ function Result({
         </h1>
         <p className="max-w-xs text-[17px] text-text">
           {scheduledTime
-            ? fill(COPY.result.scheduledBody, { time: scheduledTime, name: sender })
-            : fill(COPY.result.successBodyName, { name: sender })}
+            ? fill(COPY.result.scheduledBody, { time: scheduledTime, name: contactName })
+            : fill(COPY.result.successBodyName, { name: contactName })}
         </p>
         {scheduledTime && (
           <p className="max-w-xs text-xs leading-snug text-muted">
