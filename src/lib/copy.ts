@@ -150,7 +150,7 @@ export const COPY = {
   },
 
   compose: {
-    title: "Skapa din ursäkt",
+    title: "Vem ska ursäkten komma från?",
     senderLabel: "Vem ska det se ut att komma från?",
     choose: "Välj avsändare",
     senderFallback: "Avsändare",

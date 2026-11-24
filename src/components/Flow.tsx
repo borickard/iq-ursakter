@@ -435,7 +435,7 @@ function AnimatedNotif({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setAnim((a) => ({ k: a.k + 1, leaving: reduce ? null : p }));
     if (reduce) return;
-    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 460);
+    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 520);
     return () => window.clearTimeout(t);
   }, [sender, text]);
 
@@ -1032,7 +1032,7 @@ function Compose({
           <>
             {/* Slumpa fram / bakåt – i båda vyerna. */}
             <div
-              className="reveal-step flex items-center justify-center gap-3 lg:justify-start"
+              className="reveal-step flex items-stretch justify-center gap-3 lg:justify-start"
               style={{ animationDelay: "120ms" }}
             >
               <button
@@ -1040,7 +1040,7 @@ function Compose({
                 onClick={goBack}
                 disabled={!canGoBack}
                 aria-label={COPY.compose.prev}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-none border border-border bg-transparent transition duration-100 hover:bg-surface-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex w-11 items-center justify-center rounded-none border border-border bg-transparent transition duration-100 hover:bg-white hover:text-black active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1055,11 +1055,10 @@ function Compose({
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
-              <button
-                type="button"
+              <Button
                 onClick={shuffle}
                 disabled={!current}
-                className="inline-flex items-center gap-2 rounded-none border border-border bg-transparent px-5 py-2.5 font-medium transition duration-100 hover:bg-surface-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 py-5 text-lg lg:flex-none lg:px-8"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -1079,7 +1078,7 @@ function Compose({
                 </svg>
                 <span className="lg:hidden">{COPY.compose.shuffle}</span>
                 <span className="hidden lg:inline">{COPY.compose.shuffleLong}</span>
-              </button>
+              </Button>
             </div>
             {/* Antal skickningar. Raden renderas alltid (med en nbsp som
                 platshållare) och döljs bara visuellt vid 0 – så höjden är
@@ -1163,7 +1162,7 @@ function Compose({
                 block
                 onClick={send}
                 disabled={sending || !current || !phoneValid}
-                className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+                className="whitespace-nowrap px-2 py-5 text-[15px] leading-7 lg:text-base"
               >
                 {sending ? COPY.browse.sending : COPY.browse.send}
               </Button>
@@ -1172,7 +1171,7 @@ function Compose({
                 variant="secondary"
                 onClick={showMessage}
                 disabled={!current}
-                className="whitespace-nowrap px-2 text-[15px] lg:text-base"
+                className="whitespace-nowrap px-2 py-5 text-[15px] leading-7 lg:text-base"
               >
                 {COPY.compose.showAsMessage}
               </Button>
@@ -1312,10 +1311,6 @@ function SenderField({
 
   return (
     <div className="space-y-2.5">
-      <label className="block text-lg font-medium lg:text-xl">
-        {COPY.compose.senderLabel}
-      </label>
-
       <div className="flex flex-wrap gap-2">
         {presets.map((name) => (
           <Chip key={name} active={value === name} onClick={() => onChange(name)}>
