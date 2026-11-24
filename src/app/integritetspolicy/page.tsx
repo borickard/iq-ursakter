@@ -46,7 +46,7 @@ export default function IntegritetspolicyPage() {
             <p>
               IQ-Initiativet AB (org.nr [org.nr]) är personuppgiftsansvarig för
               behandlingen. Har du frågor om hur vi hanterar dina uppgifter är du
-              välkommen att kontakta oss på [kontakt-e-post].
+              välkommen att kontakta oss på <a href="mailto:info@iq.se" className="underline underline-offset-2">info@iq.se</a>.
             </p>
           </section>
 
@@ -148,7 +148,7 @@ export default function IntegritetspolicyPage() {
               samt att invända mot viss behandling. Eftersom vi inte sparar ditt
               nummer finns det normalt inget lagrat hos oss att lämna ut eller
               radera, men du är alltid välkommen att höra av dig på
-              [kontakt-e-post].
+              <a href="mailto:info@iq.se" className="underline underline-offset-2">info@iq.se</a>.
             </p>
             <p>
               Du har också rätt att lämna klagomål till tillsynsmyndigheten
