@@ -44,9 +44,9 @@ export default function IntegritetspolicyPage() {
               Personuppgiftsansvarig
             </h2>
             <p>
-              IQ-Initiativet AB (org.nr [org.nr]) är personuppgiftsansvarig för
-              behandlingen. Har du frågor om hur vi hanterar dina uppgifter är du
-              välkommen att kontakta oss på <a href="mailto:info@iq.se" className="underline underline-offset-2">info@iq.se</a>.
+              IQ-Initiativet AB, org.nr 556680-9892, med postadress Box 3653,
+              103 59 Stockholm, är personuppgiftsansvarig för behandlingen av dina
+              personuppgifter.
             </p>
           </section>
 
@@ -81,10 +81,12 @@ export default function IntegritetspolicyPage() {
           <section className="space-y-3">
             <h2 className="font-display text-xl font-normal">Laglig grund</h2>
             <p>
-              Vi behandlar ditt mobilnummer för att kunna utföra den tjänst du
-              själv aktivt begär – att skicka ett sms till dig. Den tillfälliga
-              spärren och den anonyma statistiken grundar sig på vårt berättigade
-              intresse av att driva tjänsten säkert och stabilt.
+              Vi behandlar dina personuppgifter med stöd av att det är nödvändigt
+              för att utföra en uppgift av allmänt intresse och för att fullgöra vår
+              rättsliga förpliktelse enligt avtalet mellan Systembolaget Aktiebolag
+              och staten (”avtalet med staten”). Det allmänna intresset utgörs av att
+              lämna information till allmänheten om de risker som är förenade med
+              konsumtion av alkoholdrycker. Ursäkten är en del av detta uppdrag.
             </p>
           </section>
 
@@ -111,10 +113,14 @@ export default function IntegritetspolicyPage() {
               </li>
             </ul>
             <p>
-              Behandlingen sker i första hand inom EU/EES. Om någon leverantör är
-              etablerad utanför EU/EES (t.ex. i USA) sker överföringen med lämpliga
-              skyddsåtgärder, såsom EU-kommissionens standardavtalsklausuler. Vi
-              säljer aldrig dina uppgifter vidare.
+              Med var och en av dessa leverantörer har vi
+              personuppgiftsbiträdesavtal som reglerar hur de får behandla
+              uppgifterna. Vi och våra leverantörer behandlar som huvudregel endast
+              dina personuppgifter inom EU/EES. I de fall personuppgifter behandlas
+              utanför EU/EES föreligger antingen ett beslut från EU-kommissionen om
+              adekvat skyddsnivå eller lämpliga skyddsåtgärder, i form av
+              standardavtalsklausuler, som säkerställer att dina rättigheter skyddas.
+              Vi säljer aldrig dina uppgifter vidare.
             </p>
             <p className="text-muted">
               Observera att din mobiloperatör och vår sms-leverantör enligt lag kan
@@ -143,12 +149,13 @@ export default function IntegritetspolicyPage() {
           <section className="space-y-3">
             <h2 className="font-display text-xl font-normal">Dina rättigheter</h2>
             <p>
-              Enligt dataskyddsförordningen (GDPR) har du bland annat rätt att
-              begära tillgång till, rättelse eller radering av dina personuppgifter,
-              samt att invända mot viss behandling. Eftersom vi inte sparar ditt
-              nummer finns det normalt inget lagrat hos oss att lämna ut eller
-              radera, men du är alltid välkommen att höra av dig på
-              <a href="mailto:info@iq.se" className="underline underline-offset-2">info@iq.se</a>.
+              I enlighet med gällande dataskyddslagstiftning har du rätt att få
+              tillgång till information om vilka personuppgifter vi behandlar om dig
+              (registerutdrag) samt rätt att begära rättelse. Under vissa
+              förutsättningar har du även rätt att begära radering eller begränsning,
+              invända mot vår behandling, samt rätt till dataportabilitet. Eftersom
+              vi inte sparar ditt nummer finns det normalt inget lagrat hos oss att
+              lämna ut eller radera.
             </p>
             <p>
               Du har också rätt att lämna klagomål till tillsynsmyndigheten
@@ -160,6 +167,21 @@ export default function IntegritetspolicyPage() {
                 className="underline underline-offset-2"
               >
                 imy.se
+              </a>
+              .
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-xl font-normal">Kontakta oss</h2>
+            <p>
+              Vill du utöva dina rättigheter eller har du frågor om hur vi behandlar
+              dina personuppgifter är du välkommen att kontakta oss på{" "}
+              <a
+                href="mailto:info@iq.se"
+                className="underline underline-offset-2"
+              >
+                info@iq.se
               </a>
               .
             </p>
