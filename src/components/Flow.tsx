@@ -1095,7 +1095,9 @@ function Compose({
           </ClippedPhone>
         </div>
 
-        <h1 className="font-display text-2xl font-normal">{COPY.compose.title}</h1>
+        <h1 className="font-display text-[clamp(30px,8vw,38px)] font-normal leading-[1.2] lg:text-[2.5rem] lg:leading-[1.15]">
+          {COPY.compose.title}
+        </h1>
 
         <SenderField value={sender} onChange={onSender} />
 
