@@ -446,7 +446,7 @@ function AnimatedNotif({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setAnim((a) => ({ k: a.k + 1, leaving: reduce ? null : p }));
     if (reduce) return;
-    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 560);
+    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 500);
     return () => window.clearTimeout(t);
   }, [sender, text]);
 
@@ -844,6 +844,45 @@ function Compose({
     [],
   );
 
+  // Throttla ursäkt-bytena så varje byte-animation hinner spela klart innan
+  // nästa startar – annars avbryter snabba tryck på "Slumpa" den pågående
+  // animationen och det blir hackigt. Första trycket går direkt; tryck under
+  // nedkylningen köar ETT efterföljande byte, så din sista tryckning alltid
+  // registreras.
+  const changeGate = useRef<{
+    last: number;
+    pending: (() => void) | null;
+    timer: number | null;
+  }>({ last: 0, pending: null, timer: null });
+  useEffect(
+    () => () => {
+      if (changeGate.current.timer != null)
+        window.clearTimeout(changeGate.current.timer);
+    },
+    [],
+  );
+  const CHANGE_COOLDOWN = 520;
+  const runThrottled = useCallback((fn: () => void) => {
+    const g = changeGate.current;
+    const now = Date.now();
+    const elapsed = now - g.last;
+    if (elapsed >= CHANGE_COOLDOWN) {
+      g.last = now;
+      fn();
+      return;
+    }
+    g.pending = fn;
+    if (g.timer == null) {
+      g.timer = window.setTimeout(() => {
+        g.timer = null;
+        g.last = Date.now();
+        const p = g.pending;
+        g.pending = null;
+        p?.();
+      }, CHANGE_COOLDOWN - elapsed);
+    }
+  }, []);
+
   const contactName = sender.trim() || COPY.compose.senderFallback;
   // Visa antal skickade först när det är minst 1 – "Skickad 0 gånger" är svag
   // social proof och ser ofärdigt ut på nya ursäkter.
@@ -1048,7 +1087,7 @@ function Compose({
             >
               <button
                 type="button"
-                onClick={goBack}
+                onClick={() => runThrottled(goBack)}
                 disabled={!canGoBack}
                 aria-label={COPY.compose.prev}
                 className="inline-flex w-11 items-center justify-center rounded-none border border-border bg-transparent transition duration-100 hover:bg-white hover:text-black active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
@@ -1067,7 +1106,7 @@ function Compose({
                 </svg>
               </button>
               <Button
-                onClick={shuffle}
+                onClick={() => runThrottled(shuffle)}
                 disabled={!current}
                 className="flex-1 py-5 text-lg lg:flex-none lg:px-8"
               >
