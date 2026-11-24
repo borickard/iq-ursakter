@@ -1513,6 +1513,16 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
           </svg>
         </a>
       </p>
+      {/* Länk till den fullständiga integritetspolicyn (egen sida). Visas i
+          sidfoten på alla vyer. */}
+      <p className="mt-3 text-[12px] leading-relaxed">
+        <a
+          href="/integritetspolicy"
+          className="text-muted underline underline-offset-2 hover:text-text"
+        >
+          {COPY.footer.privacyPolicy}
+        </a>
+      </p>
       {/* Integritetstexten visas först i flödet (där numret anges), inte på
           startsidan. På desktop reserveras ändå raden (osynlig) på startsidan så
           att sidfotens höjd – och därmed telefonens vertikala centrering – är

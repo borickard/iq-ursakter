@@ -254,6 +254,7 @@ export const COPY = {
     iqAbout: "IQ finns för att unga ska göra medvetna val kring alkohol.",
     iqLink: "Läs mer på iq.se",
     iqHref: "https://iq.se",
+    privacyPolicy: "Integritetspolicy",
   },
 } as const;
 
