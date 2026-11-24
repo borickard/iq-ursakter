@@ -200,6 +200,20 @@ textarea {
 }
 .reveal-step { animation: revealStep 0.3s ease-out backwards; }
 
+/* Notis-byte (slumpa/nästa ursäkt): den nya notisen släpps in uppifrån och
+   stannar, medan den gamla trycks nedåt och tonas bort – så det tydligt syns
+   att ursäkten byttes ut. Avstängt vid reduced-motion (regeln nedan). */
+@keyframes notifEnter {
+  from { opacity: 0; transform: translateY(-16px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes notifLeave {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(22px) scale(0.97); }
+}
+.notif-enter { animation: notifEnter 0.42s cubic-bezier(0.22, 0.8, 0.32, 1) both; }
+.notif-leave { animation: notifLeave 0.42s cubic-bezier(0.4, 0, 0.6, 1) both; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }
 }

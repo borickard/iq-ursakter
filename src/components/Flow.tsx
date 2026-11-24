@@ -405,6 +405,58 @@ function Notif({
   );
 }
 
+/* ── Notis som animeras när ursäkten byts (slumpa/nästa) ──────────────────────
+   Den nya notisen släpps in uppifrån och stannar; den föregående trycks nedåt
+   och tonas bort ovanpå (absolut positionerad så layouten inte hoppar). Första
+   visningen animeras inte. Vid reduced-motion byts den direkt (ingen "leaving").*/
+function AnimatedNotif({
+  sender,
+  text,
+  time,
+}: {
+  sender: string;
+  text?: string;
+  time: string;
+}) {
+  const prev = useRef<{ sender: string; text?: string } | null>(null);
+  const [anim, setAnim] = useState<{
+    k: number;
+    leaving: { sender: string; text?: string } | null;
+  }>({ k: 0, leaving: null });
+
+  useEffect(() => {
+    const p = prev.current;
+    prev.current = { sender, text };
+    if (!p) return; // första visningen → ingen animation
+    if (p.sender === sender && p.text === text) return;
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setAnim((a) => ({ k: a.k + 1, leaving: reduce ? null : p }));
+    if (reduce) return;
+    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 460);
+    return () => window.clearTimeout(t);
+  }, [sender, text]);
+
+  return (
+    <div className="relative">
+      {anim.leaving && (
+        <div
+          key={`l${anim.k}`}
+          className="notif-leave pointer-events-none absolute inset-x-0 top-0"
+          aria-hidden
+        >
+          <Notif sender={anim.leaving.sender} text={anim.leaving.text} time={time} />
+        </div>
+      )}
+      <div key={`c${anim.k}`} className={anim.k > 0 ? "notif-enter" : undefined}>
+        <Notif sender={sender} text={text} time={time} />
+      </div>
+    </div>
+  );
+}
+
 /* ── Lås-skärms-ram med klocka + datum – delad av telefon-vyerna ───────────── */
 
 function PhoneFrame({
@@ -610,7 +662,7 @@ function PhonePreview({
 
         {/* Notis – ser ut som ett vanligt sms från kontakten. */}
         <div className={(compact ? "mt-3" : "mt-6") + " w-[calc(100%-24px)]"}>
-          <Notif sender={sender} text={message} time={scheduled ?? "nu"} />
+          <AnimatedNotif sender={sender} text={message} time={scheduled ?? "nu"} />
         </div>
 
         {scheduled && (
@@ -952,16 +1004,21 @@ function Compose({
             ligger under. (Desktop: dold här, telefonen visas i högerkolumnen.) */}
         <div className="lg:hidden">
           <ClippedPhone maxH="clamp(246px, 34vh, 256px)">
-            {senderChosen ? (
-              <PhonePreview
-                compact
-                sender={contactName}
-                message={current?.text}
-                delayMin={delayMin}
-              />
-            ) : (
-              <LandingPhoneSolo compact item={solo.item} visible={solo.visible} />
-            )}
+            {/* Samma telefon-ram är monterad hela tiden – bara innehållet byts
+                när en avsändare valts. Då slipper telefonen "blinka"/starta om
+                (tidigare byttes hela komponenten ut vilket nollställde klockan). */}
+            <PhoneFrame compact>
+              {senderChosen ? (
+                <AnimatedNotif sender={contactName} text={current?.text} time="nu" />
+              ) : (
+                <div
+                  className="transition-opacity duration-300 ease-out"
+                  style={{ opacity: solo.visible ? 1 : 0 }}
+                >
+                  <Notif sender={solo.item.sender} text={solo.item.text} time="nu" />
+                </div>
+              )}
+            </PhoneFrame>
           </ClippedPhone>
         </div>
 

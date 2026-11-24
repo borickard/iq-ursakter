@@ -95,25 +95,28 @@ export default function IntegritetspolicyPage() {
               Vilka vi delar uppgifter med
             </h2>
             <p>
-              För att leverera tjänsten anlitar vi några personuppgiftsbiträden som
-              behandlar uppgifter för vår räkning:
+              För att leverera tjänsten använder vi följande leverantörer:
             </p>
             <ul className="list-disc space-y-1 pl-5">
               <li>
-                <strong className="font-semibold">46elks</strong> – skickar själva
-                sms:et.
-              </li>
-              <li>
                 <strong className="font-semibold">Vercel</strong> – drift och
-                hosting av webbplatsen.
+                hosting av webbplatsen (personuppgiftsbiträde).
               </li>
               <li>
-                <strong className="font-semibold">Supabase</strong> – databas
-                (lagrar ursäkterna och de tillfälliga spärr-koderna).
+                <strong className="font-semibold">Supabase</strong> – databas som
+                lagrar ursäkterna och de tillfälliga spärr-koderna
+                (personuppgiftsbiträde).
+              </li>
+              <li>
+                <strong className="font-semibold">46elks</strong> – skickar själva
+                sms:et. 46elks är en registrerad teleoperatör och är i den rollen
+                självständigt personuppgiftsansvarig för förmedlingen av sms:et –
+                inte vårt personuppgiftsbiträde. Vi dokumenterar 46elks som en
+                mottagare i vår interna förteckning.
               </li>
             </ul>
             <p>
-              Med var och en av dessa leverantörer har vi
+              Med våra personuppgiftsbiträden (Vercel och Supabase) har vi
               personuppgiftsbiträdesavtal som reglerar hur de får behandla
               uppgifterna. Vi och våra leverantörer behandlar som huvudregel endast
               dina personuppgifter inom EU/EES. I de fall personuppgifter behandlas
