@@ -200,27 +200,8 @@ textarea {
 }
 .reveal-step { animation: revealStep 0.3s ease-out backwards; }
 
-/* Notis-byte (slumpa/nästa ursäkt): den nya notisen släpps in uppifrån och
-   stannar, medan den gamla trycks nedåt och tonas bort – så det tydligt syns
-   att ursäkten byttes ut. Avstängt vid reduced-motion (regeln nedan). */
-/* Rörelsen (move) har EXAKT samma kurva, tid och sträcka (--notif-d) för både
-   in och ut, så den övre kommer in i samma fart som den undre åker ut. Avståndet
-   mäts i JS (nya notisens höjd + 10 px) så notiserna aldrig överlappar. Opacitet
-   animeras separat: ny fadar in snabbt, gammal tonas bort först efter nedtryck. */
-@keyframes notifMoveIn  { from { transform: translateY(calc(-1 * var(--notif-d, 120px))); } to { transform: translateY(0); } }
-@keyframes notifMoveOut { from { transform: translateY(0); } to { transform: translateY(var(--notif-d, 120px)); } }
-@keyframes notifFadeIn  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes notifFadeOut { from { opacity: 1; } to { opacity: 0; } }
-.notif-enter {
-  animation:
-    notifMoveIn 0.46s cubic-bezier(0.4, 0, 0.2, 1) both,
-    notifFadeIn 0.16s ease-out both;
-}
-.notif-leave {
-  animation:
-    notifMoveOut 0.46s cubic-bezier(0.4, 0, 0.2, 1) both,
-    notifFadeOut 0.22s ease-in 0.24s both;
-}
+/* (Notis-bytets animation drivs numera i JS med Web Animations API i
+   AnimatedNotif – se Flow.tsx – så att snabba byten är interruptbara.) */
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }

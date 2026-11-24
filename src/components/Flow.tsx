@@ -406,12 +406,14 @@ function Notif({
 }
 
 /* ── Notis som animeras när ursäkten byts (slumpa/nästa) ──────────────────────
-   Den nya notisen kommer uppifrån, den gamla trycks lika långt nedåt och ut.
-   Båda rör sig exakt samma sträcka (--notif-d = nya notisens höjd + 10 px) med
-   samma kurva och tid, så in-farten och ut-farten matchar och notiserna aldrig
-   överlappar. Opaciteten animeras separat (ny fadar in snabbt, gammal tonas bort
-   först efter nedtryck). Första visningen animeras inte; vid reduced-motion byts
-   den direkt (ingen "leaving"). */
+   Varje byte lägger till ett nytt lager (den nya notisen) och de äldre animeras
+   ut. Allt drivs med Web Animations API så att snabba byten är helt interruptbara:
+   en notis som redan är på väg ut fortsätter från sin NUVARANDE position (ingen
+   omstart/hopp), och flera kan vara på väg ut samtidigt (de kaskadar nedåt). Den
+   nya kommer in uppifrån och den utgående trycks lika långt ned (samma kurva/tid/
+   sträcka = matchad in-/ut-fart), och eftersom avståndet = notishöjd + 10 px går
+   de aldrig över varandra. Första visningen animeras inte; vid reduced-motion
+   byts den direkt. */
 function AnimatedNotif({
   sender,
   text,
@@ -421,49 +423,109 @@ function AnimatedNotif({
   text?: string;
   time: string;
 }) {
-  const prev = useRef<{ sender: string; text?: string } | null>(null);
+  const [layers, setLayers] = useState<
+    { id: number; sender: string; text?: string }[]
+  >([{ id: 0, sender, text }]);
+  const nextId = useRef(0);
+  const prev = useRef({ sender, text });
   const wrapRef = useRef<HTMLDivElement>(null);
-  const curRef = useRef<HTMLDivElement>(null);
-  const [anim, setAnim] = useState<{
-    k: number;
-    leaving: { sender: string; text?: string } | null;
-  }>({ k: 0, leaving: null });
+  const nodes = useRef(new Map<number, HTMLDivElement>());
+  const entered = useRef(new Set<number>());
+  const exiting = useRef(new Set<number>());
+  const anims = useRef(new Map<number, Animation[]>());
+
+  const DUR = 300;
+  const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+
+  // Nytt innehåll → lägg till ett lager; det föregående animeras ut nedan.
+  useLayoutEffect(() => {
+    if (prev.current.sender === sender && prev.current.text === text) return;
+    prev.current = { sender, text };
+    nextId.current += 1;
+    const id = nextId.current;
+    setLayers((ls) => [...ls, { id, sender, text }]);
+  }, [sender, text]);
 
   useLayoutEffect(() => {
-    const p = prev.current;
-    prev.current = { sender, text };
-    if (!p) return; // första visningen → ingen animation
-    if (p.sender === sender && p.text === text) return;
-    // Mät nya notisens höjd → "push"-avståndet. Då hamnar den gamla alltid minst
-    // 10 px under den nya oavsett textlängd, så de aldrig går över varandra.
-    const h = curRef.current?.offsetHeight ?? 0;
-    if (wrapRef.current && h) {
-      wrapRef.current.style.setProperty("--notif-d", `${h + 10}px`);
-    }
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setAnim((a) => ({ k: a.k + 1, leaving: reduce ? null : p }));
-    if (reduce) return;
-    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 500);
-    return () => window.clearTimeout(t);
-  }, [sender, text]);
+    const lastId = layers[layers.length - 1]?.id;
+    const h = lastId != null ? nodes.current.get(lastId)?.offsetHeight ?? 0 : 0;
+    const D = h ? h + 10 : 120;
+    if (wrapRef.current && h) wrapRef.current.style.height = `${h}px`;
+
+    for (const layer of layers) {
+      const node = nodes.current.get(layer.id);
+      if (!node) continue;
+
+      if (layer.id === lastId) {
+        // Aktuell notis – kommer in uppifrån (en gång, inte vid första visningen).
+        if (!entered.current.has(layer.id)) {
+          entered.current.add(layer.id);
+          if (!reduce && layers.length > 1) {
+            anims.current.set(layer.id, [
+              node.animate(
+                [{ transform: `translateY(-${D}px)` }, { transform: "translateY(0px)" }],
+                { duration: DUR, easing: EASE, fill: "both" },
+              ),
+              node.animate([{ opacity: 0 }, { opacity: 1 }], {
+                duration: 150,
+                easing: "ease-out",
+                fill: "both",
+              }),
+            ]);
+          }
+        }
+      } else if (!exiting.current.has(layer.id)) {
+        // Ska ut – fortsätt från nuvarande position (ingen hoppighet vid snabba byten).
+        exiting.current.add(layer.id);
+        if (reduce) {
+          setLayers((ls) => ls.filter((l) => l.id !== layer.id));
+          continue;
+        }
+        const cs = getComputedStyle(node);
+        const curY = new DOMMatrixReadOnly(
+          cs.transform === "none" ? undefined : cs.transform,
+        ).m42;
+        const curOp = Number.isFinite(Number(cs.opacity)) ? Number(cs.opacity) : 1;
+        anims.current.get(layer.id)?.forEach((a) => a.cancel());
+        const move = node.animate(
+          [{ transform: `translateY(${curY}px)` }, { transform: `translateY(${D}px)` }],
+          { duration: DUR, easing: EASE, fill: "both" },
+        );
+        node.animate([{ opacity: curOp }, { opacity: 0 }], {
+          duration: 170,
+          delay: 110,
+          easing: "ease-in",
+          fill: "both",
+        });
+        move.onfinish = () => {
+          nodes.current.delete(layer.id);
+          entered.current.delete(layer.id);
+          exiting.current.delete(layer.id);
+          anims.current.delete(layer.id);
+          setLayers((ls) => ls.filter((l) => l.id !== layer.id));
+        };
+      }
+    }
+  }, [layers]);
 
   return (
     <div ref={wrapRef} className="relative">
-      {anim.leaving && (
+      {layers.map((layer) => (
         <div
-          key={`l${anim.k}`}
-          className="notif-leave pointer-events-none absolute inset-x-0 top-0"
-          aria-hidden
+          key={layer.id}
+          ref={(el) => {
+            if (el) nodes.current.set(layer.id, el);
+          }}
+          className="absolute inset-x-0 top-0"
+          aria-hidden={layer.id !== layers[layers.length - 1]?.id}
         >
-          <Notif sender={anim.leaving.sender} text={anim.leaving.text} time={time} />
+          <Notif sender={layer.sender} text={layer.text} time={time} />
         </div>
-      )}
-      <div ref={curRef} key={`c${anim.k}`} className={anim.k > 0 ? "notif-enter" : undefined}>
-        <Notif sender={sender} text={text} time={time} />
-      </div>
+      ))}
     </div>
   );
 }
@@ -844,45 +906,6 @@ function Compose({
     [],
   );
 
-  // Throttla ursäkt-bytena så varje byte-animation hinner spela klart innan
-  // nästa startar – annars avbryter snabba tryck på "Slumpa" den pågående
-  // animationen och det blir hackigt. Första trycket går direkt; tryck under
-  // nedkylningen köar ETT efterföljande byte, så din sista tryckning alltid
-  // registreras.
-  const changeGate = useRef<{
-    last: number;
-    pending: (() => void) | null;
-    timer: number | null;
-  }>({ last: 0, pending: null, timer: null });
-  useEffect(
-    () => () => {
-      if (changeGate.current.timer != null)
-        window.clearTimeout(changeGate.current.timer);
-    },
-    [],
-  );
-  const CHANGE_COOLDOWN = 520;
-  const runThrottled = useCallback((fn: () => void) => {
-    const g = changeGate.current;
-    const now = Date.now();
-    const elapsed = now - g.last;
-    if (elapsed >= CHANGE_COOLDOWN) {
-      g.last = now;
-      fn();
-      return;
-    }
-    g.pending = fn;
-    if (g.timer == null) {
-      g.timer = window.setTimeout(() => {
-        g.timer = null;
-        g.last = Date.now();
-        const p = g.pending;
-        g.pending = null;
-        p?.();
-      }, CHANGE_COOLDOWN - elapsed);
-    }
-  }, []);
-
   const contactName = sender.trim() || COPY.compose.senderFallback;
   // Visa antal skickade först när det är minst 1 – "Skickad 0 gånger" är svag
   // social proof och ser ofärdigt ut på nya ursäkter.
@@ -1087,7 +1110,7 @@ function Compose({
             >
               <button
                 type="button"
-                onClick={() => runThrottled(goBack)}
+                onClick={goBack}
                 disabled={!canGoBack}
                 aria-label={COPY.compose.prev}
                 className="inline-flex w-11 items-center justify-center rounded-none border border-border bg-transparent transition duration-100 hover:bg-white hover:text-black active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
@@ -1106,7 +1129,7 @@ function Compose({
                 </svg>
               </button>
               <Button
-                onClick={() => runThrottled(shuffle)}
+                onClick={shuffle}
                 disabled={!current}
                 className="flex-1 py-5 text-lg lg:flex-none lg:px-8"
               >
