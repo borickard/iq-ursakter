@@ -406,9 +406,12 @@ function Notif({
 }
 
 /* ── Notis som animeras när ursäkten byts (slumpa/nästa) ──────────────────────
-   Den nya notisen släpps in uppifrån och stannar; den föregående trycks nedåt
-   och tonas bort ovanpå (absolut positionerad så layouten inte hoppar). Första
-   visningen animeras inte. Vid reduced-motion byts den direkt (ingen "leaving").*/
+   Den nya notisen kommer uppifrån, den gamla trycks lika långt nedåt och ut.
+   Båda rör sig exakt samma sträcka (--notif-d = nya notisens höjd + 10 px) med
+   samma kurva och tid, så in-farten och ut-farten matchar och notiserna aldrig
+   överlappar. Opaciteten animeras separat (ny fadar in snabbt, gammal tonas bort
+   först efter nedtryck). Första visningen animeras inte; vid reduced-motion byts
+   den direkt (ingen "leaving"). */
 function AnimatedNotif({
   sender,
   text,
@@ -419,28 +422,36 @@ function AnimatedNotif({
   time: string;
 }) {
   const prev = useRef<{ sender: string; text?: string } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const curRef = useRef<HTMLDivElement>(null);
   const [anim, setAnim] = useState<{
     k: number;
     leaving: { sender: string; text?: string } | null;
   }>({ k: 0, leaving: null });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const p = prev.current;
     prev.current = { sender, text };
     if (!p) return; // första visningen → ingen animation
     if (p.sender === sender && p.text === text) return;
+    // Mät nya notisens höjd → "push"-avståndet. Då hamnar den gamla alltid minst
+    // 10 px under den nya oavsett textlängd, så de aldrig går över varandra.
+    const h = curRef.current?.offsetHeight ?? 0;
+    if (wrapRef.current && h) {
+      wrapRef.current.style.setProperty("--notif-d", `${h + 10}px`);
+    }
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setAnim((a) => ({ k: a.k + 1, leaving: reduce ? null : p }));
     if (reduce) return;
-    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 520);
+    const t = window.setTimeout(() => setAnim((a) => ({ ...a, leaving: null })), 560);
     return () => window.clearTimeout(t);
   }, [sender, text]);
 
   return (
-    <div className="relative">
+    <div ref={wrapRef} className="relative">
       {anim.leaving && (
         <div
           key={`l${anim.k}`}
@@ -450,7 +461,7 @@ function AnimatedNotif({
           <Notif sender={anim.leaving.sender} text={anim.leaving.text} time={time} />
         </div>
       )}
-      <div key={`c${anim.k}`} className={anim.k > 0 ? "notif-enter" : undefined}>
+      <div ref={curRef} key={`c${anim.k}`} className={anim.k > 0 ? "notif-enter" : undefined}>
         <Notif sender={sender} text={text} time={time} />
       </div>
     </div>

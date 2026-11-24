@@ -203,21 +203,24 @@ textarea {
 /* Notis-byte (slumpa/nästa ursäkt): den nya notisen släpps in uppifrån och
    stannar, medan den gamla trycks nedåt och tonas bort – så det tydligt syns
    att ursäkten byttes ut. Avstängt vid reduced-motion (regeln nedan). */
-@keyframes notifEnter {
-  0%   { opacity: 0; transform: translateY(-18px) scale(0.985); }
-  35%  { opacity: 1; transform: translateY(-5px) scale(0.996); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+/* Rörelsen (move) har EXAKT samma kurva, tid och sträcka (--notif-d) för både
+   in och ut, så den övre kommer in i samma fart som den undre åker ut. Avståndet
+   mäts i JS (nya notisens höjd + 10 px) så notiserna aldrig överlappar. Opacitet
+   animeras separat: ny fadar in snabbt, gammal tonas bort först efter nedtryck. */
+@keyframes notifMoveIn  { from { transform: translateY(calc(-1 * var(--notif-d, 120px))); } to { transform: translateY(0); } }
+@keyframes notifMoveOut { from { transform: translateY(0); } to { transform: translateY(var(--notif-d, 120px)); } }
+@keyframes notifFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes notifFadeOut { from { opacity: 1; } to { opacity: 0; } }
+.notif-enter {
+  animation:
+    notifMoveIn 0.46s cubic-bezier(0.4, 0, 0.2, 1) both,
+    notifFadeIn 0.16s ease-out both;
 }
-@keyframes notifLeave {
-  0%   { opacity: 1; transform: translateY(0) scale(1); }
-  55%  { opacity: 1; transform: translateY(20px) scale(0.99); }
-  100% { opacity: 0; transform: translateY(26px) scale(0.985); }
+.notif-leave {
+  animation:
+    notifMoveOut 0.46s cubic-bezier(0.4, 0, 0.2, 1) both,
+    notifFadeOut 0.22s ease-in 0.24s both;
 }
-/* Ny notis: kommer uppifrån och fadar in snabbt (opacity 1 redan vid 35 %),
-   sätter sig sedan på plats. Gammal notis: trycks nedåt med bibehållen opacity
-   och tonas bort först när den tryckts ner. */
-.notif-enter { animation: notifEnter 0.42s cubic-bezier(0.22, 0.8, 0.32, 1) both; }
-.notif-leave { animation: notifLeave 0.5s cubic-bezier(0.33, 0, 0.3, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }
