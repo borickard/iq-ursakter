@@ -18,6 +18,32 @@ export function detectPlatform(): Platform {
 }
 
 /**
+ * Plattform för "lägg till på hemskärmen"-tipset. Skiljer på iOS, Android och
+ * "other" (desktop/okänt → inget tips). iPadOS 13+ rapporterar sig som Mac med
+ * pekskärm, så det fångas separat.
+ */
+export type InstallPlatform = "ios" | "android" | "other";
+export function detectInstallPlatform(): InstallPlatform {
+  if (typeof navigator === "undefined" || typeof window === "undefined")
+    return "other";
+  const ua = navigator.userAgent || "";
+  const maxTouch = (navigator as unknown as { maxTouchPoints?: number }).maxTouchPoints ?? 0;
+  const iPadOS = /Macintosh/.test(ua) && maxTouch > 1;
+  if (/iphone|ipad|ipod/i.test(ua) || iPadOS) return "ios";
+  if (/android/i.test(ua)) return "android";
+  return "other";
+}
+
+/** Körs appen redan som hemskärms-app (standalone)? Då behövs inget tips. */
+export function isStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  return Boolean(
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true,
+  );
+}
+
+/**
  * Telefonen visar alltid ett ÄKTA statusfält (klocka/batteri) i en vanlig
  * mobil-webbläsare och som hemskärms-app. Dölj därför mockupens egna statusfält
  * på pekskärmar så det inte blir dubbla. Behålls på desktop (inget äkta finns).

@@ -247,6 +247,36 @@ export const COPY = {
       "Ditt nummer skickas till vår SMS-leverantör (ett anlitat personuppgiftsbiträde) enbart för att skicka meddelandet – vi sparar det aldrig själva. Leverantören kan enligt svensk lag spara trafikuppgifter, inklusive numret, i upp till 60 dagar.",
   },
 
+  // Tips (efter första utskicket): lägg till Ursäkten på hemskärmen. Visas som en
+  // diskret ruta som går att klicka bort; klick öppnar detaljerade steg per OS.
+  addToHome: {
+    tipTitle: "Ha Ursäkten nära till hands",
+    tipText: "Lägg till på hemskärmen – så är den ett tryck bort nästa gång.",
+    tipAria: "Tips: lägg till Ursäkten på hemskärmen",
+    dismiss: "Stäng tipset",
+    modalTitle: "Lägg till på hemskärmen",
+    modalIntro:
+      "Då öppnar du Ursäkten snabbt som en app – diskret, utan att leta upp sidan.",
+    close: "Stäng",
+    install: "Lägg till nu",
+    ios: {
+      heading: "På iPhone (i Safari)",
+      steps: [
+        "Tryck på Dela-ikonen i verktygsfältet.",
+        "Skrolla ner och välj ”Lägg till på hemskärmen”.",
+        "Tryck ”Lägg till” uppe till höger.",
+      ],
+    },
+    android: {
+      heading: "På Android (i Chrome)",
+      steps: [
+        "Tryck på menyn (⋮) uppe till höger.",
+        "Välj ”Lägg till på startskärmen” (eller ”Installera app”).",
+        "Bekräfta.",
+      ],
+    },
+  },
+
   // Avsändarraden i sidfoten (ett ställe, tydligt men litet – som Fatta Fyllan).
   footer: {
     // Loggan levererar "IQ" på slutet av raden (se Footer), därför ingen "IQ" här.

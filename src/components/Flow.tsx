@@ -19,6 +19,7 @@ import { MessagePreview } from "@/components/MessagePreview";
 import { detectPlatform, type Platform } from "@/lib/device";
 import { Wordmark } from "@/components/Wordmark";
 import { IqLogo } from "@/components/IqLogo";
+import { AddToHome } from "@/components/AddToHome";
 
 type Step = "landing" | "compose" | "result" | "suggest";
 type Excuse = {
@@ -1507,6 +1508,9 @@ function Result({
           {COPY.result.restart}
         </Button>
       </div>
+      {/* Efter utskicket: diskret tips om att lägga till på hemskärmen (bara på
+          iOS/Android, självstängande, med detaljerade steg per OS). */}
+      <AddToHome />
     </div>
   );
 }
