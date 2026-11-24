@@ -12,7 +12,10 @@
        url("/fonts/Copernicus-Book.woff") format("woff");
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  /* block: håll rubriktexten osynlig tills Copernicus laddats, istället för att
+     visa ett reservtypsnitt som sedan byts ut (FOUT). Förladdas i layout.tsx så
+     den osynliga stunden blir minimal. */
+  font-display: block;
 }
 
 /*

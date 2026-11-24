@@ -11,12 +11,13 @@ const syne = Syne({
   subsets: ["latin"],
   weight: ["700", "800"],
   variable: "--font-syne",
-  display: "swap",
+  // block → ingen flash av reservtypsnitt (next/font förladdar filen).
+  display: "block",
 });
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
-  display: "swap",
+  display: "block",
 });
 
 export const metadata: Metadata = {
@@ -56,6 +57,16 @@ export default function RootLayout({
   return (
     <html lang="sv" className={`${syne.variable} ${geist.variable}`}>
       <body>
+        {/* Förladda Copernicus (rubriktypsnittet) så det hinner laddas innan
+            rubrikerna målas → med font-display: block visas de direkt i rätt
+            typsnitt utan flash. */}
+        <link
+          rel="preload"
+          href="/fonts/Copernicus-Book.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         {/* Smal kolumn på mobil; bredare på desktop så skapa-vyn får plats med
             två kolumner (kontroller + telefonförhandsvisning). Varje vy sätter
             sin egen maxbredd inuti. */}
