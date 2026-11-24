@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { COPY, fill, formatSentCount } from "@/lib/copy";
 import { clsx } from "@/lib/clsx";
 import { track } from "@/lib/analytics";
@@ -162,13 +162,32 @@ export default function Flow() {
     };
   }, []);
 
+  // Byt vy med en "shared element"-övergång på desktop: telefonen och ordmärket
+  // (med IQ-loggan) glider/zoomar mjukt mellan sina lägen. Faller tillbaka på
+  // direkt byte där View Transitions saknas, vid reduced-motion eller på mobil.
+  const navigate = useCallback((fn: () => void) => {
+    const d = document as Document & {
+      startViewTransition?: (cb: () => void) => unknown;
+    };
+    if (
+      typeof window !== "undefined" &&
+      typeof d.startViewTransition === "function" &&
+      window.matchMedia("(min-width: 1024px)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      d.startViewTransition(() => flushSync(fn));
+    } else {
+      fn();
+    }
+  }, []);
+
   return (
     <main className="flex flex-1 flex-col">
       {/* Sticky logga högst upp – ligger kvar vid scroll, med halvtransparent
           vit yta i fullbredd bakom. På desktop göms den på landningen (då ligger
           ordmärket i vänsterkolumnen istället). */}
       <StickyHeader
-        onHome={() => setStep("landing")}
+        onHome={() => navigate(() => setStep("landing"))}
         desktopHidden={step === "landing"}
       />
 
@@ -179,7 +198,7 @@ export default function Flow() {
             // Går från start- till skapa-vyn (knappen "Skicka mig en ursäkt"
             // eller den klickbara "ursäkt"-länken).
             track("Starta flöde");
-            setStep("compose");
+            navigate(() => setStep("compose"));
           }}
           thread={thread}
           solo={solo}
@@ -249,10 +268,24 @@ function StickyHeader({
           aria-hidden
           className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-white/75 backdrop-blur-sm"
         />
-        <Wordmark
-          onClick={onHome}
-          className="relative cursor-pointer text-[26px] lg:text-[44px]"
-        />
+        {/* IQ-loggan + ordmärket som en grupp (samma som landningen) så de kan
+            glida/zooma tillsammans mellan vyerna. Loggan visas bara på desktop. */}
+        <div className="relative flex items-center gap-3.5 lg:[view-transition-name:wordmark]">
+          <a
+            href={COPY.footer.iqHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track("IQ-logga")}
+            aria-label={COPY.footer.iqLink}
+            className="hidden shrink-0 lg:block"
+          >
+            <IqLogo className="h-[34px] w-auto" />
+          </a>
+          <Wordmark
+            onClick={onHome}
+            className="cursor-pointer text-[26px] lg:text-[44px]"
+          />
+        </div>
       </div>
     </header>
   );
@@ -297,7 +330,7 @@ function Landing({
         {/* Ordmärket med IQ-loggan precis till vänster (samma höjd som texten).
             Bara på desktop (på mobil ligger ordmärket i sticky-headern; IQ-loggan
             i foten). Klickbar logga → iq.se, spåras. */}
-        <div className="mb-20 hidden items-center gap-3.5 lg:flex">
+        <div className="mb-20 hidden items-center gap-3.5 lg:flex lg:[view-transition-name:wordmark]">
           <a
             href={COPY.footer.iqHref}
             target="_blank"
@@ -337,7 +370,7 @@ function Landing({
       {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma", vertikalt
           centrerad. Animeras in från höger. Höjdbegränsad till min(78svh, 690px)
           så hero + footer får plats i en skärmhöjd (skalas ner på låga fönster). */}
-      <div className="phone-slide-in hidden lg:flex lg:justify-center">
+      <div className="phone-slide-in hidden lg:flex lg:justify-center lg:[view-transition-name:phone]">
         <HeightScaledPhone maxScale={0.72}>
           <LandingPhone shown={notifShown} />
         </HeightScaledPhone>
@@ -1257,7 +1290,7 @@ function Compose({
 
       {/* Höger: telefon – exempel-notiser tills avsändare valts, sen live.
           Vertikalt centrerad (items-center på rutnätet). */}
-      <div className="hidden lg:flex lg:justify-center">
+      <div className="hidden lg:flex lg:justify-center lg:[view-transition-name:phone]">
         {senderChosen ? (
           <div className="reveal-step">
             <PhonePreview

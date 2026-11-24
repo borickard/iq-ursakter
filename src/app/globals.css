@@ -206,6 +206,14 @@ textarea {
 /* (Notis-bytets animation drivs numera i JS med Web Animations API i
    AnimatedNotif – se Flow.tsx – så att snabba byten är interruptbara.) */
 
+/* "Shared element"-övergång (desktop): telefonen och ordmärket (+IQ-loggan)
+   glider/zoomar mjukt mellan start- och skapa-vyn. */
+::view-transition-group(phone),
+::view-transition-group(wordmark) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }
 }
