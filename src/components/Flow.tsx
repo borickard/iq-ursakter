@@ -1452,6 +1452,10 @@ function Result({
         minute: "2-digit",
       })
     : null;
+  const scheduledMins = scheduledAt
+    ? Math.max(1, Math.round((new Date(scheduledAt).getTime() - Date.now()) / 60000))
+    : 0;
+  const minsLabel = scheduledMins === 1 ? "1 minut" : `${scheduledMins} minuter`;
   const contactName = sender.trim() || COPY.compose.senderFallback;
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
@@ -1486,19 +1490,11 @@ function Result({
             )}
           </svg>
         </div>
-        <h1 className="font-display text-3xl font-normal">
-          {scheduledTime ? COPY.result.scheduledTitle : COPY.result.successTitle}
-        </h1>
-        <p className="max-w-xs text-[17px] text-text">
+        <h1 className="max-w-sm font-display text-3xl font-normal">
           {scheduledTime
-            ? fill(COPY.result.scheduledBody, { time: scheduledTime, name: contactName })
-            : fill(COPY.result.successBodyName, { name: contactName })}
-        </p>
-        {scheduledTime && (
-          <p className="max-w-xs text-xs leading-snug text-muted">
-            {COPY.result.scheduledNote}
-          </p>
-        )}
+            ? fill(COPY.result.scheduledTitle, { mins: minsLabel })
+            : COPY.result.successTitle}
+        </h1>
       </div>
       <div className="space-y-3 pt-4">
         <Button block onClick={onAgain}>
@@ -1508,8 +1504,8 @@ function Result({
           {COPY.result.restart}
         </Button>
       </div>
-      {/* Efter utskicket: diskret tips om att lägga till på hemskärmen (bara på
-          iOS/Android, självstängande, med detaljerade steg per OS). */}
+      {/* Efter utskicket: inline-tips om att lägga till på hemskärmen (bara på
+          iOS/Android). Stegen fälls ut direkt på sidan för rätt OS. */}
       <AddToHome />
     </div>
   );

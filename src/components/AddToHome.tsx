@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { COPY } from "@/lib/copy";
 import { Button } from "@/components/ui";
 import {
@@ -10,14 +9,12 @@ import {
   type InstallPlatform,
 } from "@/lib/device";
 
-const STORAGE_KEY = "ursakt_a2hs";
-
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-/** Liten app-ikon (samma som hemskärms-ikonen) för tipsrutan. */
+/** Liten app-ikon (samma som hemskärms-ikonen). */
 function AppIconMini({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 100 100" className={className} aria-hidden>
@@ -56,29 +53,19 @@ function ShareIcon({ className }: { className?: string }) {
 }
 
 /**
- * Hemskärms-tips. Visas som en diskret ruta längst ner (bara på iOS/Android, och
- * bara om appen inte redan körs som hemskärms-app och inte redan stängts bort).
- * Klick på rutan öppnar en popup med detaljerade steg för rätt operativsystem.
- * På Android visas även en inbyggd "Installera"-knapp om webbläsaren stöder det.
+ * Inline-tips på skickat-sidan: lägg till Ursäkten på hemskärmen. Visas bara på
+ * iOS/Android (inte desktop) och inte om appen redan körs från hemskärmen. Klick
+ * fäller ut detaljerade steg för rätt OS direkt på sidan (ingen popup). På Android
+ * visas en inbyggd "Installera"-knapp om webbläsaren stöder det.
  */
 export function AddToHome() {
   const [platform, setPlatform] = useState<InstallPlatform | null>(null);
-  const [visible, setVisible] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     const p = detectInstallPlatform();
-    if ((p === "ios" || p === "android") && !isStandalone()) {
-      let done = false;
-      try {
-        done = localStorage.getItem(STORAGE_KEY) === "done";
-      } catch {}
-      if (!done) {
-        setPlatform(p);
-        setVisible(true);
-      }
-    }
+    if ((p === "ios" || p === "android") && !isStandalone()) setPlatform(p);
     const onBIP = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
@@ -87,160 +74,77 @@ export function AddToHome() {
     return () => window.removeEventListener("beforeinstallprompt", onBIP);
   }, []);
 
-  function markDone() {
-    try {
-      localStorage.setItem(STORAGE_KEY, "done");
-    } catch {}
-  }
-
-  function dismiss() {
-    setVisible(false);
-    setOpen(false);
-    markDone();
-  }
-
   async function nativeInstall() {
     if (!deferred) return;
     await deferred.prompt();
-    const choice = await deferred.userChoice.catch(() => null);
+    await deferred.userChoice.catch(() => null);
     setDeferred(null);
-    if (choice?.outcome === "accepted") dismiss();
   }
 
-  if (!platform || (!visible && !open)) return null;
+  if (!platform) return null;
 
   const copy = COPY.addToHome;
   const steps = platform === "ios" ? copy.ios : copy.android;
 
   return (
-    <>
-      {/* Diskret tipsruta längst ner. */}
-      {visible && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-[90] flex justify-center px-4 pb-[max(14px,env(safe-area-inset-bottom))]"
-          role="region"
-          aria-label={copy.tipAria}
+    <section className="mt-8 border border-border text-left">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full items-center gap-3 p-4 text-left"
+      >
+        <AppIconMini className="h-10 w-10 shrink-0 rounded-[8px]" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold leading-tight">
+            {copy.tipTitle}
+          </span>
+          <span className="mt-0.5 block text-xs leading-snug text-muted">
+            {copy.tipText}
+          </span>
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          className={
+            "h-5 w-5 shrink-0 text-muted transition-transform duration-200 " +
+            (expanded ? "rotate-180" : "")
+          }
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
         >
-          <div className="flex w-full max-w-md items-center gap-3 rounded-none border border-border bg-surface px-3.5 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.14)]">
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="flex min-w-0 flex-1 items-center gap-3 text-left"
-            >
-              <AppIconMini className="h-9 w-9 shrink-0 rounded-[7px]" />
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold leading-tight">
-                  {copy.tipTitle}
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border p-4 pt-3.5">
+          {platform === "android" && deferred && (
+            <Button block onClick={nativeInstall} className="mb-4">
+              {copy.install}
+            </Button>
+          )}
+          <p className="text-sm font-semibold">{steps.heading}</p>
+          <ol className="mt-2.5 space-y-2.5">
+            {steps.steps.map((step, i) => (
+              <li key={i} className="flex gap-3 text-[15px] leading-snug">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-border text-xs font-semibold">
+                  {i + 1}
                 </span>
-                <span className="mt-0.5 block truncate text-xs text-muted">
-                  {copy.tipText}
+                <span className="flex items-center gap-1.5 pt-0.5">
+                  {platform === "ios" && i === 0 && (
+                    <ShareIcon className="inline-block h-[18px] w-[18px]" />
+                  )}
+                  {step}
                 </span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={dismiss}
-              aria-label={copy.dismiss}
-              className="shrink-0 p-1.5 text-muted transition hover:text-text"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                aria-hidden
-              >
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          </div>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
-
-      {/* Detaljerad popup. */}
-      {open &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={copy.modalTitle}
-            className="fixed inset-0 z-[110] flex items-end justify-center bg-black/50 sm:items-center sm:p-5"
-            onClick={() => setOpen(false)}
-          >
-            <div
-              className="w-full max-w-md rounded-none border border-border bg-surface p-6 pb-[max(24px,env(safe-area-inset-bottom))]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <AppIconMini className="h-10 w-10 shrink-0 rounded-[8px]" />
-                  <h2 className="font-display text-xl font-normal">
-                    {copy.modalTitle}
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  aria-label={copy.close}
-                  className="shrink-0 p-1 text-muted transition hover:text-text"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-6 w-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.2}
-                    strokeLinecap="round"
-                    aria-hidden
-                  >
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
-              </div>
-
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                {copy.modalIntro}
-              </p>
-
-              {platform === "android" && deferred && (
-                <Button block onClick={nativeInstall} className="mt-4">
-                  {copy.install}
-                </Button>
-              )}
-
-              <div className="mt-5">
-                <p className="text-sm font-semibold">{steps.heading}</p>
-                <ol className="mt-2 space-y-2.5">
-                  {steps.steps.map((step, i) => (
-                    <li key={i} className="flex gap-3 text-[15px] leading-snug">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-border text-xs font-semibold">
-                        {i + 1}
-                      </span>
-                      <span className="flex items-center gap-1.5 pt-0.5">
-                        {platform === "ios" && i === 0 && (
-                          <ShareIcon className="inline-block h-[18px] w-[18px]" />
-                        )}
-                        {step}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              <button
-                type="button"
-                onClick={dismiss}
-                className="mt-6 w-full text-center text-sm text-muted underline underline-offset-2 hover:text-text"
-              >
-                {copy.close}
-              </button>
-            </div>
-          </div>,
-          document.body,
-        )}
-    </>
+    </section>
   );
 }

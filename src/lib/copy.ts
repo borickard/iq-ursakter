@@ -213,12 +213,12 @@ export const COPY = {
   },
 
   result: {
-    successTitle: "Skickat – kolla din telefon",
+    successTitle: "Skickat! Ursäkten kommer strax som SMS",
     successBody:
       "Ursäkten är på väg. Har du sparat kontakten dyker den upp som ett SMS från “{name}”.",
     successBodyName:
       "Ursäkten är på väg och dyker upp som ett SMS från “{name}”.",
-    scheduledTitle: "Inplanerat",
+    scheduledTitle: "Skickat! Ursäkten kommer om {mins} som SMS",
     // {time} = klockslag, {name} = avsändare.
     scheduledBody:
       "Ursäkten skickas kl {time} och dyker upp som ett sms från “{name}”. Du kan stänga sidan – vi sköter resten.",
