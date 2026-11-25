@@ -12,8 +12,12 @@ export function Wordmark({
   className?: string;
   onClick?: () => void;
 }) {
+  // p-0/m-0/appearance-none: nollställ knappens standard-padding så ordmärket får
+  // EXAKT samma storlek vare sig det renderas som <span> (hjälten) eller <button>
+  // (headern). Annars blir header-varianten några px större → view transition
+  // skalar upp "URSÄKTEN" en aning precis innan den glider upp.
   const cls =
-    "inline-flex items-center font-wordmark font-extrabold uppercase leading-none tracking-tight text-text " +
+    "inline-flex items-center appearance-none border-0 bg-transparent p-0 m-0 font-wordmark font-extrabold uppercase leading-none tracking-tight text-text " +
     className;
   if (onClick) {
     return (

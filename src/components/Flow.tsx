@@ -153,6 +153,10 @@ export default function Flow({
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   // Texten på den skickade ursäkten – visas i telefon-payoffen på bekräftelsen.
   const [sentMessage, setSentMessage] = useState(previewMessage ?? "");
+  // Telefonens intro-slide (in från höger) ska bara spela vid FÖRSTA landningen.
+  // När man kommer tillbaka (via headern) sköter view transition förflyttningen,
+  // så vi hoppar över slide-in:en då (annars åker telefonen ut åt sidan först).
+  const phoneIntroDoneRef = useRef(false);
 
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [leadIns, setLeadIns] = useState<LeadIn[]>([]);
@@ -209,10 +213,12 @@ export default function Flow({
             // Går från start- till skapa-vyn (knappen "Skicka mig en ursäkt"
             // eller den klickbara "ursäkt"-länken).
             track("Starta flöde");
+            phoneIntroDoneRef.current = true;
             navigate(() => setStep("compose"));
           }}
           thread={thread}
           solo={solo}
+          skipPhoneIntro={phoneIntroDoneRef.current}
         />
       )}
 
@@ -280,17 +286,18 @@ function StickyHeader({
           className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-white/75 backdrop-blur-sm"
         />
         {/* IQ-loggan + ordmärket som en grupp (samma som landningen) så de kan
-            glida/zooma tillsammans mellan vyerna. Loggan visas bara på desktop. */}
-        <div className="relative flex items-center gap-3.5 lg:[view-transition-name:wordmark]">
+            glida/zooma tillsammans mellan vyerna. Visas på både mobil och desktop
+            (loggan skalas ned på mobil så den matchar det mindre ordmärket). */}
+        <div className="relative flex items-center gap-2.5 lg:gap-3.5 lg:[view-transition-name:wordmark]">
           <a
             href={COPY.footer.iqHref}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track("IQ-logga")}
             aria-label={COPY.footer.iqLink}
-            className="hidden shrink-0 lg:block"
+            className="shrink-0"
           >
-            <IqLogo className="h-[34px] w-auto" />
+            <IqLogo className="h-[21px] w-auto lg:h-[34px]" />
           </a>
           <Wordmark
             onClick={onHome}
@@ -308,10 +315,12 @@ function Landing({
   onStart,
   thread,
   solo,
+  skipPhoneIntro = false,
 }: {
   onStart: () => void;
   thread: ThreadLoop;
   solo: SoloCarousel;
+  skipPhoneIntro?: boolean;
 }) {
   // Notis-loopen + CTA-skenet drivs i Flow (överlever vybyte) och kommer in som
   // props → ingen omstart/blink när man byter till skapa-vyn.
@@ -381,7 +390,12 @@ function Landing({
       {/* Desktop-hjälte: telefon med flera notiser i rad från "Mamma", vertikalt
           centrerad. Animeras in från höger. Höjdbegränsad till min(78svh, 690px)
           så hero + footer får plats i en skärmhöjd (skalas ner på låga fönster). */}
-      <div className="phone-slide-in hidden lg:flex lg:justify-center lg:[view-transition-name:phone]">
+      <div
+        className={clsx(
+          !skipPhoneIntro && "phone-slide-in",
+          "hidden lg:flex lg:justify-center lg:[view-transition-name:phone]",
+        )}
+      >
         <HeightScaledPhone maxScale={0.72}>
           <LandingPhone shown={notifShown} />
         </HeightScaledPhone>
