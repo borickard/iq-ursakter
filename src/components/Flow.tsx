@@ -1468,29 +1468,34 @@ function Result({
           </ClippedPhone>
         </div>
       )}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center border border-border bg-brand">
-          <svg
-            viewBox="0 0 24 24"
-            className="h-7 w-7"
-            fill="none"
-            stroke="#000000"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            {scheduledTime ? (
-              <>
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 8v4l3 2" />
-              </>
-            ) : (
-              <path d="M5 13l4 4L19 7" />
-            )}
-          </svg>
-        </div>
-        <h1 className="max-w-sm font-display text-3xl font-normal">
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <h1 className="max-w-sm font-display text-3xl font-normal leading-tight">
+          <span className="inline-flex items-center gap-2">
+            {COPY.result.sentPrefix}
+            {/* Liten bock i textens höjd, direkt efter "Skickat!". */}
+            <span className="inline-flex aspect-square h-[0.9em] items-center justify-center border border-border bg-brand align-[-0.08em]">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-[0.58em] w-[0.58em]"
+                fill="none"
+                stroke="#000000"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                {scheduledTime ? (
+                  <>
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v4l3 2" />
+                  </>
+                ) : (
+                  <path d="M5 13l4 4L19 7" />
+                )}
+              </svg>
+            </span>
+          </span>
+          <br />
           {scheduledTime
             ? fill(COPY.result.scheduledTitle, { mins: minsLabel })
             : COPY.result.successTitle}
