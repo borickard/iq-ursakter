@@ -288,6 +288,7 @@ export const COPY = {
     iqLink: "Läs mer på iq.se",
     iqHref: "https://iq.se",
     privacyPolicy: "Integritetspolicy",
+    policyMore: "Läs mer i vår integritetspolicy",
   },
 } as const;
 

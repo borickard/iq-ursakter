@@ -254,7 +254,7 @@ export default function Flow({
 
       {step === "suggest" && <Suggest onBack={() => setStep("compose")} />}
 
-      <Footer showPrivacy={step !== "landing"} />
+      <Footer />
       </div>
     </main>
   );
@@ -1468,7 +1468,7 @@ function Result({
   const minsLabel = scheduledMins === 1 ? "1 minut" : `${scheduledMins} minuter`;
   const contactName = sender.trim() || COPY.compose.senderFallback;
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:justify-center lg:gap-6">
       {/* Telefon-payoff: visar sms:et som det dyker upp hos mottagaren – samma
           telefon-motiv som på start- och skapa-vyn, så flödet knyts ihop. */}
       {message && (
@@ -1480,7 +1480,7 @@ function Result({
       )}
       {/* Lika mycket luft över som under rubriken (py) på mobil; på desktop
           centreras den ändå vertikalt (flex-1 justify-center). */}
-      <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center py-8 text-center lg:flex-none lg:py-0">
         <h1 className="max-w-sm font-display text-3xl font-normal leading-tight">
           <span className="inline-flex items-center gap-2">
             {COPY.result.sentPrefix}
@@ -1643,13 +1643,11 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
   );
 }
 
-function Footer({ showPrivacy }: { showPrivacy: boolean }) {
+function Footer() {
   return (
     <footer className="mt-12 border-t border-border pt-5">
-      {/* Avsändarraden: ett ställe, tydligt men litet (som Fatta Fyllan).
-          Första raden: "Ursäkten är en del av [IQ-logga]" – loggan står för
-          "IQ" och ligger inline i samma höjd som texten (klickbar → iq.se,
-          spåras som "IQ-logga"). På raden under skrivs "IQ" som text. */}
+      {/* Rad 1: "Ursäkten är en del av [IQ-logga]" (loggan klickbar → iq.se).
+          Rad 2: hela "IQ finns för…"-raden är klickbar → iq.se. */}
       <p className="text-[12px] leading-relaxed text-text">
         <span className="font-medium">{COPY.footer.iqLine}</span>{" "}
         <a
@@ -1662,58 +1660,26 @@ function Footer({ showPrivacy }: { showPrivacy: boolean }) {
         >
           <IqLogo className="h-[1.2em] w-auto" />
         </a>
-        {/* Bryt alltid efter loggan så att "IQ finns…" (med "IQ" i text) hamnar
-            på raden under, på både mobil och desktop. */}
-        <br />{" "}
-        {COPY.footer.iqAbout}{" "}
+        <br />
         <a
           href={COPY.footer.iqHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline-offset-2"
+          onClick={() => track("IQ-logga")}
+          className="underline-offset-2 hover:underline"
         >
-          <span className="underline">{COPY.footer.iqLink}</span>{" "}
-          {/* Inline-SVG istället för unicode-pilen "↗" (U+2197): den har en
-              emoji-variant som Windows (Segoe UI Emoji) annars ritar som en
-              färgad/inramad symbol. En SVG ser likadan ut överallt. */}
-          <svg
-            viewBox="0 0 10 10"
-            aria-hidden="true"
-            className="inline-block h-[0.72em] w-[0.72em] align-[0.02em]"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 7 7 3" />
-            <path d="M3.6 3H7v3.4" />
-          </svg>
+          {COPY.footer.iqAbout}
         </a>
       </p>
-      {/* Länk till den fullständiga integritetspolicyn (egen sida). Visas i
-          sidfoten på alla vyer. */}
-      <p className="mt-3 text-[12px] leading-relaxed">
+      {/* Integritetsnotisen (visas på alla vyer) med policy-länken på samma rad. */}
+      <p className="mt-4 text-[12px] leading-relaxed text-muted">
+        {COPY.privacy.short}{" "}
         <a
           href="/integritetspolicy"
-          className="text-muted underline underline-offset-2 hover:text-text"
+          className="underline underline-offset-2 hover:text-text"
         >
-          {COPY.footer.privacyPolicy}
+          {COPY.footer.policyMore}
         </a>
-      </p>
-      {/* Integritetstexten visas först i flödet (där numret anges), inte på
-          startsidan. På desktop reserveras ändå raden (osynlig) på startsidan så
-          att sidfotens höjd – och därmed telefonens vertikala centrering – är
-          exakt densamma i båda vyerna (annars hoppar mobilen ~16 px vid vybyte).
-          På mobil döljs den helt (ingen tom lucka). */}
-      <p
-        aria-hidden={!showPrivacy}
-        className={clsx(
-          "mt-4 text-[12px] leading-relaxed text-muted",
-          !showPrivacy && "hidden lg:invisible lg:block",
-        )}
-      >
-        {COPY.privacy.short}
       </p>
     </footer>
   );

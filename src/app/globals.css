@@ -213,6 +213,19 @@ textarea {
   animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* Ordmärket + telefonen ska bara FÖRFLYTTAS/ZOOMAS, inte korsfadas (annars ser
+   det ut som att de byts ut / loggan "försvinner" mitt i). Ta bort korsfadet:
+   dölj den gamla och visa den nya direkt – bara gruppens transform (position/
+   storlek) animeras, så det blir en ren glidning/zoom utan hopp. */
+::view-transition-old(wordmark),
+::view-transition-old(phone) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(wordmark),
+::view-transition-new(phone) {
+  animation: none;
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }
