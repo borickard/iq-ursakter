@@ -252,8 +252,9 @@ export const COPY = {
   // Tips (efter första utskicket): lägg till Ursäkten på hemskärmen. Visas som en
   // diskret ruta som går att klicka bort; klick öppnar detaljerade steg per OS.
   addToHome: {
-    tipTitle: "Ha Ursäkten nära till hands",
-    tipText: "Lägg till på hemskärmen – så är den ett tryck bort nästa gång.",
+    tipTitle: "Spara Ursäkten som app",
+    tipText:
+      "Ha den nära till hands nästa gång du behöver en ursäkt för att slippa.",
     tipAria: "Tips: lägg till Ursäkten på hemskärmen",
     dismiss: "Stäng tipset",
     modalTitle: "Lägg till på hemskärmen",

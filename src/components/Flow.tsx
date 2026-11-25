@@ -1462,18 +1462,21 @@ function Result({
       {/* Telefon-payoff: visar sms:et som det dyker upp hos mottagaren – samma
           telefon-motiv som på start- och skapa-vyn, så flödet knyts ihop. */}
       {message && (
-        <div className="mb-2 mt-2">
+        <div className="mt-2">
           <ClippedPhone maxH="clamp(228px, 32vh, 288px)">
             <PhonePreview sender={contactName} message={message} delayMin={0} compact />
           </ClippedPhone>
         </div>
       )}
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
+      {/* Lika mycket luft över som under rubriken (py) på mobil; på desktop
+          centreras den ändå vertikalt (flex-1 justify-center). */}
+      <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
         <h1 className="max-w-sm font-display text-3xl font-normal leading-tight">
           <span className="inline-flex items-center gap-2">
             {COPY.result.sentPrefix}
-            {/* Liten bock i textens höjd, direkt efter "Skickat!". */}
-            <span className="inline-flex aspect-square h-[0.9em] items-center justify-center border border-border bg-brand align-[-0.08em]">
+            {/* Liten bock i textens höjd, direkt efter "Skickat!" – nudgad upp
+                en aning så den linjerar optiskt med bokstäverna. */}
+            <span className="inline-flex aspect-square h-[0.9em] -translate-y-[0.07em] items-center justify-center border border-border bg-brand">
               <svg
                 viewBox="0 0 24 24"
                 className="h-[0.58em] w-[0.58em]"
@@ -1501,11 +1504,11 @@ function Result({
             : COPY.result.successTitle}
         </h1>
       </div>
-      <div className="space-y-3 pt-4">
-        <Button block onClick={onAgain}>
+      <div className="grid grid-cols-2 gap-3">
+        <Button block onClick={onAgain} className="whitespace-nowrap px-2">
           {COPY.result.again}
         </Button>
-        <Button block variant="ghost" onClick={onRestart}>
+        <Button block variant="secondary" onClick={onRestart} className="whitespace-nowrap px-2">
           {COPY.result.restart}
         </Button>
       </div>

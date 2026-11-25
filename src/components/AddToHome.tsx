@@ -92,21 +92,21 @@ export function AddToHome() {
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex w-full items-center gap-3 p-4 text-left"
+        className="flex w-full items-center gap-4 p-5 text-left"
       >
-        <AppIconMini className="h-10 w-10 shrink-0 rounded-[8px]" />
+        <AppIconMini className="h-14 w-14 shrink-0 rounded-[11px]" />
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold leading-tight">
+          <span className="block text-base font-semibold leading-tight">
             {copy.tipTitle}
           </span>
-          <span className="mt-0.5 block text-xs leading-snug text-muted">
+          <span className="mt-1 block text-sm leading-snug text-muted">
             {copy.tipText}
           </span>
         </span>
         <svg
           viewBox="0 0 24 24"
           className={
-            "h-5 w-5 shrink-0 text-muted transition-transform duration-200 " +
+            "h-6 w-6 shrink-0 text-muted transition-transform duration-200 " +
             (expanded ? "rotate-180" : "")
           }
           fill="none"
