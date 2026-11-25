@@ -246,7 +246,7 @@ export const COPY = {
 
   privacy: {
     short:
-      "Ditt nummer skickas till vår SMS-leverantör (ett anlitat personuppgiftsbiträde) enbart för att skicka meddelandet – vi sparar det aldrig själva. Leverantören kan enligt svensk lag spara trafikuppgifter, inklusive numret, i upp till 60 dagar.",
+      "Vi sparar aldrig ditt mobilnummer – det används bara för att skicka sms:et.",
   },
 
   // Tips (efter första utskicket): lägg till Ursäkten på hemskärmen. Visas som en
