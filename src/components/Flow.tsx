@@ -272,7 +272,7 @@ function StickyHeader({
   return (
     <header className={clsx("sticky top-0 z-30", desktopHidden && "lg:hidden")}>
       {/* Mobil: extra luft ovanför loggan (minst 28px, mer vid notch/safe-area). */}
-      <div className="relative flex justify-center pb-3 pt-[max(28px,env(safe-area-inset-top))] lg:py-4">
+      <div className="relative flex justify-center pb-3 pt-[max(28px,env(safe-area-inset-top))] lg:pb-6 lg:pt-10">
         {/* Halvtransparent vit yta i FULLBREDD bakom loggan (tonar ner innehåll
             som scrollar förbi). */}
         <div
