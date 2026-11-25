@@ -132,17 +132,27 @@ function useSoloCarousel(): SoloCarousel {
   return { item: items[i], visible };
 }
 
-export default function Flow() {
-  const [step, setStep] = useState<Step>("landing");
+export default function Flow({
+  // Förhandsvisning: starta direkt på en viss vy med exempeldata (används av
+  // /skickat för att visa bekräftelsen utan att skicka ett riktigt sms).
+  initialStep = "landing",
+  previewSender,
+  previewMessage,
+}: {
+  initialStep?: Step;
+  previewSender?: string;
+  previewMessage?: string;
+} = {}) {
+  const [step, setStep] = useState<Step>(initialStep);
   // Telefon-loopar som delas av landning + skapa (överlever vybyte, ingen blink).
   const thread = useThreadLoop();
   const solo = useSoloCarousel();
   const [phone, setPhone] = useState("");
-  const [sender, setSender] = useState("");
+  const [sender, setSender] = useState(previewSender ?? "");
   // ISO-tid om utskicket schemalagts (annars null = skickat direkt).
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   // Texten på den skickade ursäkten – visas i telefon-payoffen på bekräftelsen.
-  const [sentMessage, setSentMessage] = useState("");
+  const [sentMessage, setSentMessage] = useState(previewMessage ?? "");
 
   const [excuses, setExcuses] = useState<Excuse[] | null>(null);
   const [leadIns, setLeadIns] = useState<LeadIn[]>([]);
