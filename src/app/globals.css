@@ -210,8 +210,15 @@ textarea {
    glider/zoomar mjukt mellan start- och skapa-vyn. */
 ::view-transition-group(phone),
 ::view-transition-group(wordmark) {
-  animation-duration: 0.5s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Rapp men mjuk: ease-OUT (snabb start, len inbromsning) känns snyggare och
+     utan "tvekan/hopp" i början jämfört med en ease-in-out. */
+  animation-duration: 0.42s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Håll bakgrunds-korsfadet kort så sidbytet känns rappt. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.28s;
 }
 /* Ordmärket + telefonen ska bara FÖRFLYTTAS/ZOOMAS, inte korsfadas (annars ser
    det ut som att de byts ut / loggan "försvinner" mitt i). Ta bort korsfadet:

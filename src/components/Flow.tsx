@@ -283,7 +283,7 @@ function StickyHeader({
             som scrollar förbi). */}
         <div
           aria-hidden
-          className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-white/75 backdrop-blur-sm"
+          className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-white/85"
         />
         {/* IQ-loggan + ordmärket som en grupp (samma som landningen) så de kan
             glida/zooma tillsammans mellan vyerna. Visas på både mobil och desktop
@@ -1127,7 +1127,7 @@ function Compose({
       {/* Samma rutnät som startsidan (grid-cols-2 + gap-14); kolumnerna centreras
           vertikalt på desktop över hela höjden (grid-rows:1fr) så telefonen hamnar
           på exakt samma vertikala plats som i steg 1. */}
-      <div className="mt-5 flex flex-1 flex-col lg:mx-auto lg:mt-0 lg:grid lg:w-full lg:max-w-4xl lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
+      <div className="mt-10 flex flex-1 flex-col lg:mx-auto lg:mt-0 lg:grid lg:w-full lg:max-w-4xl lg:grid-cols-2 lg:items-center lg:gap-14 lg:[grid-template-rows:1fr]">
       {/* Vänster: kontroller */}
       <div ref={controlsRef} className="flex flex-1 flex-col gap-4 lg:gap-5 lg:flex-none">
         {/* Mobil: klippt telefon HÖGST UPP (precis som startsidan) – roterande
