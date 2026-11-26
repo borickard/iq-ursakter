@@ -27,17 +27,24 @@ export const metadata: Metadata = {
   // redirectar dit, så länken fungerar ändå. /og.png serveras på alla domäner.
   metadataBase: new URL("https://ursakten.se"),
   title: COPY.brand.name,
-  description: COPY.landing.subtitle,
+  description: COPY.share.description,
   authors: [{ name: "IQ", url: "https://iq.se" }],
   robots: { index: false, follow: false }, // POC – håll den ur sökmotorer.
   appleWebApp: { capable: true, title: COPY.brand.name, statusBarStyle: "default" },
   openGraph: {
-    title: COPY.brand.name,
-    description: COPY.landing.subtitle,
+    title: COPY.share.title,
+    description: COPY.share.description,
+    siteName: COPY.brand.name,
     url: "/", // kanonisk URL (löses mot metadataBase) → og:url
     locale: "sv_SE",
     type: "website",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: COPY.brand.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: COPY.share.title,
+    description: COPY.share.description,
+    images: ["/og.png"],
   },
 };
 

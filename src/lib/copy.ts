@@ -13,6 +13,15 @@ export const COPY = {
     byline: "En utväg, ett sms bort.",
   },
 
+  // Text som visas i delningskortet (og:title/og:description + Twitter-kort) när
+  // länken klistras in i sms, Messenger, LinkedIn osv. Titeln är fetad raden,
+  // beskrivningen säljer in vad det är. Bilden (og.png) sätts i layout.tsx.
+  share: {
+    title: "Vad är din ursäkt?",
+    description:
+      "Få ett sms skickat till dig som ser ut att komma från Mamma, Chefen eller Baby – en trovärdig ursäkt för att kunna gå när du vill.",
+  },
+
   landing: {
     // Rubrik (Copernicus) i en rad; "ursäkt" är en klickbar gul chip (går till
     // flödet). Delarna sätts ihop: {2a}{länk}{2b} = "En ursäkt, levererad via sms."
