@@ -350,7 +350,7 @@ function Landing({
         {/* Ordmärket med IQ-loggan precis till vänster (samma höjd som texten).
             Bara på desktop (på mobil ligger ordmärket i sticky-headern; IQ-loggan
             i foten). Klickbar logga → iq.se, spåras. */}
-        <div className="mb-20 hidden items-center gap-3.5 lg:flex lg:[view-transition-name:wordmark]">
+        <div className="mb-20 hidden items-center gap-3.5 lg:flex lg:self-start lg:[view-transition-name:wordmark]">
           <a
             href={COPY.footer.iqHref}
             target="_blank"
