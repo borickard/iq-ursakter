@@ -20,6 +20,11 @@ const geist = Geist({
   display: "block",
 });
 
+// Delningskortets text (og/twitter) återanvänder startsidans huvudbudskap så att
+// delning och landning alltid hålls i synk. Titeln = hela rubriken i en rad.
+const shareTitle = `${COPY.landing.headline2a}${COPY.landing.headlineLink}${COPY.landing.headline2b}`;
+const shareDescription = COPY.landing.subtitle;
+
 export const metadata: Metadata = {
   // Absolut bas för og:url/og:image m.m. Vi använder ASCII-domänen ursakten.se
   // (inte ä-domänen) så delningskort visar "ursakten.se" snyggt istället för
@@ -27,13 +32,13 @@ export const metadata: Metadata = {
   // redirectar dit, så länken fungerar ändå. /og.png serveras på alla domäner.
   metadataBase: new URL("https://ursakten.se"),
   title: COPY.brand.name,
-  description: COPY.share.description,
+  description: shareDescription,
   authors: [{ name: "IQ", url: "https://iq.se" }],
   robots: { index: false, follow: false }, // POC – håll den ur sökmotorer.
   appleWebApp: { capable: true, title: COPY.brand.name, statusBarStyle: "default" },
   openGraph: {
-    title: COPY.share.title,
-    description: COPY.share.description,
+    title: shareTitle,
+    description: shareDescription,
     siteName: COPY.brand.name,
     url: "/", // kanonisk URL (löses mot metadataBase) → og:url
     locale: "sv_SE",
@@ -42,8 +47,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: COPY.share.title,
-    description: COPY.share.description,
+    title: shareTitle,
+    description: shareDescription,
     images: ["/og.png"],
   },
 };
