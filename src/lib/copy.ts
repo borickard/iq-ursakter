@@ -18,7 +18,7 @@ export const COPY = {
   // beskrivningen säljer in vad det är. Bilden (og.png) sätts i layout.tsx.
   share: {
     title: "Vad är din ursäkt?",
-    description: "Få ett trovärdigt sms skickat till dig – när du behöver det.",
+    description: "Få ett trovärdigt sms skickat till dig – precis när du behöver det.",
   },
 
   landing: {
