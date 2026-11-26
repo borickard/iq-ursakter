@@ -177,9 +177,12 @@ export default function Flow({
     };
   }, []);
 
-  // Byt vy med en "shared element"-övergång på desktop: telefonen och ordmärket
-  // (med IQ-loggan) glider/zoomar mjukt mellan sina lägen. Faller tillbaka på
-  // direkt byte där View Transitions saknas, vid reduced-motion eller på mobil.
+  // Byt vy med en View Transition. På desktop glider telefonen + ordmärket (med
+  // IQ-loggan) mjukt mellan sina lägen (de har view-transition-name vid lg). På
+  // mobil finns inga sådana namn → det blir en ren, mjuk övertoning istället, som
+  // döljer att vyn faktiskt monteras om (annars "hackar" bytet till om en notis
+  // just höll på att tonas när man trycker). Faller tillbaka på direkt byte där
+  // View Transitions saknas eller vid reduced-motion.
   const navigate = useCallback((fn: () => void) => {
     const d = document as Document & {
       startViewTransition?: (cb: () => void) => unknown;
@@ -187,7 +190,6 @@ export default function Flow({
     if (
       typeof window !== "undefined" &&
       typeof d.startViewTransition === "function" &&
-      window.matchMedia("(min-width: 1024px)").matches &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       d.startViewTransition(() => flushSync(fn));
@@ -452,11 +454,12 @@ function Notif({
         </svg>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex justify-between gap-2 whitespace-nowrap text-[11px] font-semibold text-[#6b6b70]">
-          <span>MEDDELANDEN</span>
-          <span>{time}</span>
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="truncate text-[15px] font-bold">{sender}</span>
+          <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-[#6b6b70]">
+            {time}
+          </span>
         </div>
-        <div className="mt-px text-[15px] font-bold">{sender}</div>
         <div className="mt-px text-[14px] leading-snug text-[#1c1c1e]">{text}</div>
       </div>
     </div>
