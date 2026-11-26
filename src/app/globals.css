@@ -215,10 +215,20 @@ textarea {
   animation-duration: 0.42s;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
-/* Håll bakgrunds-korsfadet kort så sidbytet känns rappt. */
-::view-transition-old(root),
+/* Innehållet (allt UTOM telefonen + ordmärket, som glider i egna grupper) byts
+   med en "glid uppåt" istället för ett korsfade: det gamla försvinner direkt –
+   ingen uttoning, så texterna smälter aldrig ihop ovanpå varandra – och det nya
+   glider upp underifrån och tonar in. */
+::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
 ::view-transition-new(root) {
-  animation-duration: 0.28s;
+  animation: vtSlideUp 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes vtSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
 }
 /* Ordmärket + telefonen ska bara FÖRFLYTTAS/ZOOMAS, inte korsfadas (annars ser
    det ut som att de byts ut / loggan "försvinner" mitt i). Ta bort korsfadet:
